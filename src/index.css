@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Bloomberg Terminal — dark-only theme */
+:root {
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+
+  /* Core surfaces */
+  --background: 220 15% 5%;
+  --foreground: 40 10% 85%;
+  --border: 220 10% 15%;
+
+  /* Cards / panels */
+  --card: 220 14% 7%;
+  --card-foreground: 40 10% 85%;
+  --card-border: 220 10% 12%;
+
+  /* Sidebar */
+  --sidebar: 220 16% 6%;
+  --sidebar-foreground: 40 10% 85%;
+  --sidebar-border: 220 10% 13%;
+  --sidebar-primary: 36 100% 50%;
+  --sidebar-primary-foreground: 0 0% 0%;
+  --sidebar-accent: 220 12% 12%;
+  --sidebar-accent-foreground: 40 10% 85%;
+  --sidebar-ring: 36 100% 50%;
+
+  /* Popover */
+  --popover: 220 14% 9%;
+  --popover-foreground: 40 10% 85%;
+  --popover-border: 220 10% 15%;
+
+  /* Primary — Bloomberg orange */
+  --primary: 36 100% 50%;
+  --primary-foreground: 0 0% 0%;
+
+  /* Secondary */
+  --secondary: 220 12% 14%;
+  --secondary-foreground: 40 10% 85%;
+
+  /* Muted */
+  --muted: 220 10% 16%;
+  --muted-foreground: 220 8% 50%;
+
+  /* Accent */
+  --accent: 220 12% 14%;
+  --accent-foreground: 40 10% 85%;
+
+  /* Destructive */
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Input / ring */
+  --input: 220 10% 22%;
+  --ring: 36 100% 50%;
+
+  /* Chart colors */
+  --chart-1: 36 100% 50%;
+  --chart-2: 142 76% 36%;
+  --chart-3: 0 72% 51%;
+  --chart-4: 199 89% 48%;
+  --chart-5: 262 83% 58%;
+
+  /* Bloomberg-specific semantic colors */
+  --bb-green: 142 76% 36%;
+  --bb-red: 0 72% 51%;
+  --bb-orange: 36 100% 50%;
+  --bb-blue: 199 89% 48%;
+  --bb-yellow: 48 96% 53%;
+  --bb-cyan: 174 72% 56%;
+  --bb-panel-bg: 220 15% 8%;
+  --bb-panel-header: 220 15% 10%;
+
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+
+  --radius: .375rem;
+  --spacing: 0.25rem;
+
+  /* Shadows — minimal for terminal aesthetic */
+  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.25);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.30);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.30), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.30), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.30), 0px 2px 4px -2px hsl(0 0% 0% / 0.20);
+  --shadow-lg: 0px 8px 10px -1px hsl(0 0% 0% / 0.30), 0px 4px 6px -2px hsl(0 0% 0% / 0.20);
+  --shadow-xl: 0px 16px 20px -2px hsl(0 0% 0% / 0.30), 0px 8px 10px -3px hsl(0 0% 0% / 0.20);
+  --shadow-2xl: 0px 24px 48px -12px hsl(0 0% 0% / 0.50);
+  --tracking-normal: 0em;
+
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --primary-border: hsl(var(--primary));
+  --secondary-border: hsl(var(--secondary));
+  --muted-border: hsl(var(--muted));
+  --accent-border: hsl(var(--accent));
+  --destructive-border: hsl(var(--destructive));
+}
+
+/* Force dark mode always */
+.dark {
+  /* Same as :root since Bloomberg is always dark */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  body {
+    @apply font-mono antialiased bg-background text-foreground;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
+/* Bloomberg-specific utilities */
+@layer utilities {
+  /* Hide ugly search cancel button */
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  .bb-panel {
+    @apply bg-[hsl(var(--bb-panel-bg))] border border-[hsl(var(--border))] rounded-sm;
+  }
+
+  .bb-panel-header {
+    @apply bg-[hsl(var(--bb-panel-header))] px-3 py-1.5 border-b border-[hsl(var(--border))] flex items-center justify-between gap-2;
+  }
+
+  .bb-green { color: hsl(var(--bb-green)); }
+  .bb-red { color: hsl(var(--bb-red)); }
+  .bb-orange { color: hsl(var(--bb-orange)); }
+  .bb-blue { color: hsl(var(--bb-blue)); }
+  .bb-yellow { color: hsl(var(--bb-yellow)); }
+  .bb-cyan { color: hsl(var(--bb-cyan)); }
+
+  .bb-ticker-up {
+    @apply text-[hsl(142,76%,36%)];
+  }
+  .bb-ticker-down {
+    @apply text-[hsl(0,72%,51%)];
+  }
+  .bb-ticker-flat {
+    @apply text-[hsl(var(--muted-foreground))];
+  }
+
+  /* Scrollbar styling */
+  .bb-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .bb-scrollbar::-webkit-scrollbar-track {
+    background: hsl(220, 15%, 6%);
+  }
+  .bb-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(220, 10%, 22%);
+    border-radius: 3px;
+  }
+  .bb-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(220, 10%, 30%);
+  }
+
+  /* Blinking cursor for command bar */
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  .bb-cursor-blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  /* Number flash animation */
+  @keyframes flash-green {
+    0% { background-color: hsla(142, 76%, 36%, 0.3); }
+    100% { background-color: transparent; }
+  }
+  @keyframes flash-red {
+    0% { background-color: hsla(0, 72%, 51%, 0.3); }
+    100% { background-color: transparent; }
+  }
+  .flash-up {
+    animation: flash-green 0.6s ease-out;
+  }
+  .flash-down {
+    animation: flash-red 0.6s ease-out;
+  }
+}
