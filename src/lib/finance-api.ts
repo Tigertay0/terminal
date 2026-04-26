@@ -1,48 +1,19 @@
-// Finance API helper — calls our serverless API routes
+// Finance API helper — calls our Vercel serverless Yahoo Finance proxy
 
 export async function fetchJSON<T>(url: string): Promise<T> {
-  const token = getAuthToken();
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(url, { headers });
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res.json();
 }
 
 export async function postJSON<T>(url: string, body: any): Promise<T> {
-  const token = getAuthToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res.json();
-}
-
-export async function putJSON<T>(url: string, body: any): Promise<T> {
-  const token = getAuthToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(url, { method: "PUT", headers, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-  return res.json();
-}
-
-// Auth token management (in-memory only, no localStorage in sandboxed iframe)
-let _authToken: string | null = null;
-
-export function setAuthToken(token: string | null) {
-  _authToken = token;
-}
-
-export function getAuthToken(): string | null {
-  return _authToken;
-}
-
-export function clearAuthToken() {
-  _authToken = null;
 }
 
 // Format large numbers compactly

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { searchStocks } from "../_lib/yahoo.js";
-import { corsHeaders } from "../_lib/auth.js";
+import { corsHeaders } from "../_lib/cors.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return res.status(200).json({});

@@ -21,7 +21,7 @@ import { AuthScreen } from "@/components/AuthScreen";
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useSimulation, type SimSettings } from "@/hooks/use-simulation";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchJSON, putJSON, postJSON } from "@/lib/finance-api";
+import { getWatchlist, saveWatchlist, upsertSimSave } from "@/lib/supabase";
 
 const DEFAULT_WATCHLIST = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM",
@@ -31,7 +31,7 @@ const DEFAULT_WATCHLIST = [
 type AppMode = "auth" | "select" | "real" | "sim";
 
 // ─── Real Mode Terminal ──────────────────────────────────────────
-function RealTerminal({ isAuthenticated, initialWatchlist }: { isAuthenticated: boolean; initialWatchlist: string[] }) {
+function RealTerminal({ userId, initialWatchlist }: { userId: string | null; initialWatchlist: string[] }) {
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [watchlist, setWatchlist] = useState(initialWatchlist);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -52,12 +52,12 @@ function RealTerminal({ isAuthenticated, initialWatchlist }: { isAuthenticated: 
 
   // Save watchlist when it changes (debounced)
   useEffect(() => {
-    if (!isAuthenticated || loading) return;
+    if (!userId || loading) return;
     const timeout = setTimeout(() => {
-      putJSON("/api/user/watchlist", { symbols: watchlist }).catch(() => {});
+      saveWatchlist(userId, watchlist).catch(() => {});
     }, 2000);
     return () => clearTimeout(timeout);
-  }, [watchlist, isAuthenticated, loading]);
+  }, [watchlist, userId, loading]);
 
   useEffect(() => {
     if (!loading && selectedSymbol) {
@@ -135,12 +135,12 @@ function RealTerminal({ isAuthenticated, initialWatchlist }: { isAuthenticated: 
 }
 
 // ─── Simulation Terminal ─────────────────────────────────────────
-function SimTerminal({ settings, onExit, isAuthenticated }: { settings: SimSettings; onExit: () => void; isAuthenticated: boolean }) {
+function SimTerminal({ settings, onExit, userId }: { settings: SimSettings; onExit: () => void; userId: string | null }) {
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [watchlist, setWatchlist] = useState(DEFAULT_WATCHLIST);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [showTutorial, setShowTutorial] = useState(true);
-  const [saveId, setSaveId] = useState<number | null>(null);
+  const [saveId, setSaveId] = useState<string | null>(null);
 
   const baseData = useFinanceData();
 
@@ -150,27 +150,28 @@ function SimTerminal({ settings, onExit, isAuthenticated }: { settings: SimSetti
 
   // Auto-save simulation every 30 seconds if authenticated
   useEffect(() => {
-    if (!isAuthenticated || baseData.loading) return;
-    const interval = setInterval(() => {
+    if (!userId || baseData.loading) return;
+    const interval = setInterval(async () => {
       const portfolio = {
         cash: sim.cash,
         holdings: sim.holdings,
         trades: sim.trades,
       };
-      postJSON("/api/user/sim-save", {
-        id: saveId,
-        name: "Auto-save",
-        settings,
-        portfolio,
-        watchlist,
-        dayNumber: sim.dayNumber,
-        simTime: sim.simTime.toISOString(),
-      }).then((data: any) => {
-        if (data.id && !saveId) setSaveId(data.id);
-      }).catch(() => {});
+      try {
+        const newId = await upsertSimSave(userId, {
+          id: saveId,
+          name: "Auto-save",
+          settings,
+          portfolio,
+          watchlist,
+          day_number: sim.dayNumber,
+          sim_time: sim.simTime.toISOString(),
+        });
+        if (newId && !saveId) setSaveId(newId);
+      } catch {}
     }, 30000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, baseData.loading, sim.cash, sim.holdings, sim.trades, sim.dayNumber, sim.simTime, saveId, settings, watchlist]);
+  }, [userId, baseData.loading, sim.cash, sim.holdings, sim.trades, sim.dayNumber, sim.simTime, saveId, settings, watchlist]);
 
   const handleSearch = useCallback(async (query: string) => {
     const upper = query.toUpperCase();
@@ -268,17 +269,22 @@ export default function App() {
   const [userWatchlist, setUserWatchlist] = useState<string[]>(DEFAULT_WATCHLIST);
   const auth = useAuth();
 
-  // Load user watchlist when authenticated
+  // Load user watchlist when authenticated, route back to auth on logout
   useEffect(() => {
-    if (auth.isAuthenticated) {
-      fetchJSON<{ symbols: string[] }>("/api/user/watchlist")
-        .then((data) => {
-          if (data.symbols?.length > 0) setUserWatchlist(data.symbols);
-          setMode("select");
+    if (auth.loading) return;
+    if (auth.isAuthenticated && auth.userId) {
+      getWatchlist(auth.userId)
+        .then((symbols) => {
+          if (symbols && symbols.length > 0) setUserWatchlist(symbols);
+          if (mode === "auth") setMode("select");
         })
-        .catch(() => setMode("select"));
+        .catch(() => { if (mode === "auth") setMode("select"); });
+    } else if (!auth.isAuthenticated && mode !== "auth") {
+      // User logged out
+      setMode("auth");
+      setUserWatchlist(DEFAULT_WATCHLIST);
     }
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, auth.userId, auth.loading, mode]);
 
   // If auth is still loading, show splash
   if (auth.loading) {
@@ -323,9 +329,9 @@ export default function App() {
           }}
         />
       )}
-      {mode === "real" && <RealTerminal isAuthenticated={auth.isAuthenticated} initialWatchlist={userWatchlist} />}
+      {mode === "real" && <RealTerminal userId={auth.userId} initialWatchlist={userWatchlist} />}
       {mode === "sim" && simSettings && (
-        <SimTerminal settings={simSettings} onExit={() => setMode("select")} isAuthenticated={auth.isAuthenticated} />
+        <SimTerminal settings={simSettings} onExit={() => setMode("select")} userId={auth.userId} />
       )}
       <Toaster />
     </QueryClientProvider>

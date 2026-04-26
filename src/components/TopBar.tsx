@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, LogOut, User } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SearchResult {
   symbol: string;
@@ -200,12 +202,46 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols }: Top
 
       <div className="w-px h-4 bg-border" />
 
+      {/* User menu */}
+      <UserMenu />
+
+      <div className="w-px h-4 bg-border" />
+
       {/* Clock */}
       <div className="flex items-center gap-2 shrink-0">
         <span className="text-2xs text-muted-foreground">{dateStr}</span>
         <span className="text-xs font-bold text-foreground tabular-nums">{timeStr}</span>
         <span className="text-2xs text-muted-foreground">ET</span>
       </div>
+    </div>
+  );
+}
+
+function UserMenu() {
+  const auth = useAuth();
+  if (!auth.isAuthenticated || !auth.user) {
+    return (
+      <div className="flex items-center gap-1 shrink-0">
+        <User className="w-3 h-3 text-muted-foreground" />
+        <span className="text-2xs text-muted-foreground">Guest</span>
+      </div>
+    );
+  }
+  const name = (auth.user.user_metadata?.display_name as string) || auth.user.email?.split("@")[0] || "User";
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1">
+        <div className="w-1.5 h-1.5 rounded-full bg-bb-green" />
+        <span className="text-2xs font-medium text-foreground" data-testid="text-user">{name}</span>
+      </div>
+      <button
+        onClick={() => supabase.auth.signOut()}
+        className="flex items-center gap-1 text-2xs text-muted-foreground hover:text-bb-orange transition-colors"
+        data-testid="button-logout"
+        title="Sign out"
+      >
+        <LogOut className="w-3 h-3" />
+      </button>
     </div>
   );
 }
