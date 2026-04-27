@@ -137,16 +137,29 @@ function generateSimNews(
     impact = 0.998 + Math.random() * 0.004;
   }
 
-  const possibleSymbols = template.symbols || allSymbols;
-  const sym = pickRandom(possibleSymbols);
-  const title = template.title.replace("{sym}", sym);
+  // Symbol-specific templates: pick from intersection of template's symbols and what's loaded
+  // so we never produce "undefined" titles.
+  let possibleSymbols: string[];
+  if (template.symbols && template.symbols.length > 0) {
+    const loaded = template.symbols.filter((s) => allSymbols.includes(s));
+    possibleSymbols = loaded.length > 0 ? loaded : (allSymbols.length > 0 ? allSymbols : []);
+  } else {
+    possibleSymbols = allSymbols;
+  }
+
+  // For non-neutral templates that need a {sym}, abort if no symbols are available.
+  const needsSymbol = template.title.includes("{sym}");
+  if (needsSymbol && possibleSymbols.length === 0) return null;
+
+  const sym = needsSymbol ? pickRandom(possibleSymbols) : undefined;
+  const title = needsSymbol && sym ? template.title.replace("{sym}", sym) : template.title;
 
   return {
     id: ++newsIdCounter,
     title,
     source: pickRandom(NEWS_SOURCES),
     time: new Date(),
-    category: sentiment === "neutral" ? "MACRO" : sym,
+    category: sentiment === "neutral" || !sym ? "MACRO" : sym,
     symbol: sentiment !== "neutral" ? sym : undefined,
     sentiment,
     isBreaking: isBigEvent,

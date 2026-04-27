@@ -1,4 +1,12 @@
-import yahooFinance from "yahoo-finance2";
+import * as yahooFinanceModule from "yahoo-finance2";
+
+// Robustly resolve default export — Vercel's Node runtime may nest it under .default
+// or expose it directly depending on how the ESM/CJS interop resolves.
+const yfRaw: any = yahooFinanceModule as any;
+const yahooFinance: any = yfRaw.default ?? yfRaw;
+
+// Suppress yahoo-finance2 schema-validation notices in serverless logs
+try { yahooFinance.suppressNotices?.(["yahooSurvey"]); } catch {}
 
 // In-memory caches (per serverless instance)
 const quoteCache = new Map<string, { data: any; ts: number }>();
@@ -81,6 +89,8 @@ export async function fetchQuotes(symbols: string[]) {
         const mapped = mapQuote(result.value);
         quoteCache.set(toFetch[i], { data: mapped, ts: Date.now() });
         results.push(mapped);
+      } else if (result.status === "rejected") {
+        console.warn("Quote rejected for", toFetch[i], result.reason?.message || result.reason);
       }
     }
   }
