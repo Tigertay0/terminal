@@ -1,11 +1,9 @@
-import * as yahooFinanceModule from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
 
-// Robustly resolve default export — Vercel's Node runtime may nest it under .default
-// or expose it directly depending on how the ESM/CJS interop resolves.
-const yfRaw: any = yahooFinanceModule as any;
-const yahooFinance: any = yfRaw.default ?? yfRaw;
+// v3+ exports a class, not a singleton — must instantiate.
+const yahooFinance: any = new (YahooFinance as any)();
 
-// Suppress yahoo-finance2 schema-validation notices in serverless logs
+// Suppress schema-validation notices in serverless logs
 try { yahooFinance.suppressNotices?.(["yahooSurvey"]); } catch {}
 
 // In-memory caches (per serverless instance)
