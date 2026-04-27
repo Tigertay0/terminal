@@ -64,14 +64,11 @@ export function CommandBar({ onCommand, commandHistory }: CommandBarProps) {
       />
       <span className="text-2xs text-muted-foreground/40 shrink-0 font-mono">/</span>
       <div className="w-px h-3 bg-border mx-1" />
-      <a
-        href="https://www.perplexity.ai/computer"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-[9px] text-muted-foreground/30 hover:text-muted-foreground/50 transition-colors shrink-0 whitespace-nowrap"
+      <span
+        className="text-[9px] text-muted-foreground/30 shrink-0 whitespace-nowrap"
       >
-        Created with Perplexity Computer
-      </a>
+        Created by Adetayo Agueh
+      </span>
     </div>
   );
 }
