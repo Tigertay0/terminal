@@ -104,9 +104,97 @@
   --destructive-border: hsl(var(--destructive));
 }
 
-/* Force dark mode always */
-.dark {
-  /* Same as :root since Bloomberg is always dark */
+/* Light mode theme */
+.light {
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .06);
+
+  /* Core surfaces */
+  --background: 40 20% 97%;
+  --foreground: 220 15% 15%;
+  --border: 220 10% 85%;
+
+  /* Cards / panels */
+  --card: 0 0% 100%;
+  --card-foreground: 220 15% 15%;
+  --card-border: 220 10% 88%;
+
+  /* Sidebar */
+  --sidebar: 40 15% 95%;
+  --sidebar-foreground: 220 15% 15%;
+  --sidebar-border: 220 10% 85%;
+  --sidebar-primary: 36 100% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 40 10% 92%;
+  --sidebar-accent-foreground: 220 15% 15%;
+  --sidebar-ring: 36 100% 45%;
+
+  /* Popover */
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 15% 15%;
+  --popover-border: 220 10% 85%;
+
+  /* Primary — Bloomberg orange (slightly deeper for contrast on white) */
+  --primary: 36 100% 45%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary */
+  --secondary: 220 12% 92%;
+  --secondary-foreground: 220 15% 15%;
+
+  /* Muted */
+  --muted: 220 10% 92%;
+  --muted-foreground: 220 8% 46%;
+
+  /* Accent */
+  --accent: 220 12% 92%;
+  --accent-foreground: 220 15% 15%;
+
+  /* Destructive */
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Input / ring */
+  --input: 220 10% 82%;
+  --ring: 36 100% 45%;
+
+  /* Chart colors */
+  --chart-1: 36 100% 45%;
+  --chart-2: 142 76% 30%;
+  --chart-3: 0 72% 48%;
+  --chart-4: 199 89% 42%;
+  --chart-5: 262 83% 50%;
+
+  /* Bloomberg-specific semantic colors */
+  --bb-green: 142 76% 30%;
+  --bb-red: 0 72% 48%;
+  --bb-orange: 36 100% 45%;
+  --bb-blue: 199 89% 42%;
+  --bb-yellow: 48 96% 42%;
+  --bb-cyan: 174 72% 38%;
+  --bb-panel-bg: 40 15% 96%;
+  --bb-panel-header: 40 12% 93%;
+
+  /* Shadows — softer for light mode */
+  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.08), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.08), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.08), 0px 2px 4px -2px hsl(0 0% 0% / 0.05);
+  --shadow-lg: 0px 8px 10px -1px hsl(0 0% 0% / 0.08), 0px 4px 6px -2px hsl(0 0% 0% / 0.05);
+  --shadow-xl: 0px 16px 20px -2px hsl(0 0% 0% / 0.10), 0px 8px 10px -3px hsl(0 0% 0% / 0.05);
+  --shadow-2xl: 0px 24px 48px -12px hsl(0 0% 0% / 0.15);
+
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --primary-border: hsl(var(--primary));
+  --secondary-border: hsl(var(--secondary));
+  --muted-border: hsl(var(--muted));
+  --accent-border: hsl(var(--accent));
+  --destructive-border: hsl(var(--destructive));
 }
 
 @layer base {
@@ -173,14 +261,14 @@
     height: 6px;
   }
   .bb-scrollbar::-webkit-scrollbar-track {
-    background: hsl(220, 15%, 6%);
+    background: hsl(var(--background));
   }
   .bb-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(220, 10%, 22%);
+    background: hsl(var(--border));
     border-radius: 3px;
   }
   .bb-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(220, 10%, 30%);
+    background: hsl(var(--muted-foreground));
   }
 
   /* Blinking cursor for command bar */

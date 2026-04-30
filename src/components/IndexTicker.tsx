@@ -29,7 +29,7 @@ export function IndexTicker({ indices }: IndexTickerProps) {
 
   return (
     <div
-      className="h-6 bg-[hsl(220,16%,5%)] border-b border-border overflow-hidden shrink-0 select-none"
+      className="h-6 bg-sidebar border-b border-border overflow-hidden shrink-0 select-none"
       data-testid="index-ticker"
     >
       <div ref={scrollRef} className="flex items-center h-full gap-6 px-2 overflow-hidden whitespace-nowrap">

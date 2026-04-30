@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, X, LogOut, User, Home } from "lucide-react";
+import { Search, X, LogOut, User, Home, Sun, Moon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/hooks/use-theme";
 
 interface SearchResult {
   symbol: string;
@@ -113,7 +114,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
 
   return (
     <div
-      className="flex items-center h-8 px-2 gap-3 border-b border-border bg-[hsl(220,16%,6%)] shrink-0 select-none"
+      className="flex items-center h-8 px-2 gap-3 border-b border-border bg-sidebar shrink-0 select-none"
       data-testid="topbar"
     >
       {/* Bloomberg logo */}
@@ -151,7 +152,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
       {/* Search bar with autocomplete */}
       <div className="relative flex-1 max-w-md" ref={dropdownRef}>
         <form onSubmit={handleSubmit} className="flex items-center">
-          <div className="flex items-center bg-[hsl(220,14%,9%)] border border-border rounded-sm px-2 h-5 w-full">
+          <div className="flex items-center bg-card border border-border rounded-sm px-2 h-5 w-full">
             <Search className="w-3 h-3 text-muted-foreground shrink-0" />
             <input
               type="text"
@@ -174,7 +175,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
 
         {/* Autocomplete dropdown */}
         {showDropdown && results.length > 0 && (
-          <div className="absolute top-6 left-0 right-0 bg-[hsl(220,14%,9%)] border border-border rounded-sm shadow-xl z-50 max-h-64 overflow-y-auto bb-scrollbar" data-testid="search-dropdown">
+          <div className="absolute top-6 left-0 right-0 bg-card border border-border rounded-sm shadow-xl z-50 max-h-64 overflow-y-auto bb-scrollbar" data-testid="search-dropdown">
             {results.map((r, i) => (
               <button
                 key={r.symbol}
@@ -224,6 +225,9 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
 
       <div className="w-px h-4 bg-border" />
 
+      {/* Theme toggle */}
+      <ThemeToggle />
+
       {/* Clock */}
       <div className="flex items-center gap-2 shrink-0">
         <span className="text-2xs text-muted-foreground">{dateStr}</span>
@@ -260,5 +264,23 @@ function UserMenu() {
         <LogOut className="w-3 h-3" />
       </button>
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-bb-orange hover:bg-bb-orange/10 transition-all"
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      data-testid="button-theme-toggle"
+    >
+      {theme === "dark" ? (
+        <Sun className="w-3.5 h-3.5" />
+      ) : (
+        <Moon className="w-3.5 h-3.5" />
+      )}
+    </button>
   );
 }

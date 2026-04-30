@@ -56,7 +56,7 @@ export function TimeControlBar({
   const savedAgoStr = formatSavedAgo(lastSavedAt);
 
   return (
-    <div className="flex items-center h-8 px-3 gap-3 bg-[hsl(220,16%,5%)] border-t border-b border-border shrink-0 select-none" data-testid="time-controls">
+    <div className="flex items-center h-8 px-3 gap-3 bg-sidebar border-t border-b border-border shrink-0 select-none" data-testid="time-controls">
       {/* Sim badge */}
       <div className="flex items-center gap-1.5 shrink-0">
         <div className="w-1.5 h-1.5 rounded-full bg-bb-orange animate-pulse" />
