@@ -6,6 +6,10 @@ interface ModeSelectProps {
   onSelectReal: () => void;
   onSelectSim: (settings: SimSettings) => void;
   onBack?: () => void;
+  startInSettings?: boolean;
+  /** If provided, called when user clicks the Simulation card on the choose screen
+   *  (instead of going to the internal settings phase). */
+  onSimClick?: () => void;
 }
 
 const CASH_OPTIONS = [
@@ -22,8 +26,8 @@ const VARIATION_OPTIONS: { label: string; value: MarketVariation; desc: string }
   { label: "HIGH", value: "high", desc: "Volatile, big swings" },
 ];
 
-export function ModeSelect({ onSelectReal, onSelectSim, onBack }: ModeSelectProps) {
-  const [phase, setPhase] = useState<"choose" | "settings">("choose");
+export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings, onSimClick }: ModeSelectProps) {
+  const [phase, setPhase] = useState<"choose" | "settings">(startInSettings ? "settings" : "choose");
   const [cash, setCash] = useState(100000);
   const [variation, setVariation] = useState<MarketVariation>("realistic");
 
@@ -170,7 +174,7 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack }: ModeSelectProp
 
           {/* Simulation Mode */}
           <button
-            onClick={() => setPhase("settings")}
+            onClick={() => onSimClick ? onSimClick() : setPhase("settings")}
             className="group p-6 rounded-sm border border-border bg-card hover:border-bb-orange/50 hover:bg-bb-orange/[0.03] transition-all text-left"
             data-testid="button-sim-mode"
           >

@@ -30,7 +30,7 @@ const DEFAULT_WATCHLIST = [
   "V", "UNH", "BRK-B", "JNJ", "WMT", "MA", "PG"
 ];
 
-type AppMode = "auth" | "select" | "save-select" | "real" | "sim";
+type AppMode = "auth" | "select" | "save-select" | "sim-settings" | "real" | "sim";
 
 // ─── Helpers: Serialize / Deserialize portfolio ──────────────────
 function serializePortfolio(cash: number, holdings: Map<string, Holding>, trades: TradeRecord[]) {
@@ -501,27 +501,29 @@ export default function App() {
       {mode === "select" && (
         <ModeSelect
           onSelectReal={() => setMode("real")}
-          onSelectSim={async (settings) => {
-            // Check for existing saves if logged in
+          onSelectSim={() => {
+            // This shouldn't be called in select mode since onSimClick intercepts,
+            // but as a fallback, go to sim-settings
+            setMode("sim-settings");
+          }}
+          onSimClick={async () => {
+            // Simulation card clicked → go to save-select first
             if (auth.userId) {
+              setSavesLoading(true);
               try {
                 const saves = await listSimSaves(auth.userId);
                 setSavesList(saves);
-                if (saves.length > 0) {
-                  // User has saves — show save picker instead
-                  setSimSettings(settings);
-                  setMode("save-select");
-                  return;
-                }
               } catch {
-                // Fall through to start new sim
+                setSavesList([]);
+              } finally {
+                setSavesLoading(false);
               }
+              setMode("save-select");
+            } else {
+              // Not logged in — go straight to settings (no saves possible)
+              setActiveSave(null);
+              setMode("sim-settings");
             }
-            // No saves or not logged in — start new sim directly
-            setSimSettings(settings);
-            setActiveSave(null);
-            setSimKey(k => k + 1);
-            setMode("sim");
           }}
         />
       )}
@@ -545,10 +547,30 @@ export default function App() {
               return;
             }
             setActiveSave(null);
-            setMode("select");
+            setMode("sim-settings");
           }}
           onDelete={handleDeleteSave}
           onBack={() => setMode("select")}
+        />
+      )}
+      {mode === "sim-settings" && (
+        <ModeSelect
+          onSelectReal={() => setMode("real")}
+          onSelectSim={(settings) => {
+            setSimSettings(settings);
+            setActiveSave(null);
+            setSimKey(k => k + 1);
+            setMode("sim");
+          }}
+          onBack={() => {
+            // Go back to save-select if logged in, otherwise mode select
+            if (auth.userId) {
+              setMode("save-select");
+            } else {
+              setMode("select");
+            }
+          }}
+          startInSettings
         />
       )}
       {mode === "real" && <RealTerminal userId={auth.userId} initialWatchlist={userWatchlist} />}
