@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, X, LogOut, User } from "lucide-react";
+import { Search, X, LogOut, User, Home } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -15,9 +15,10 @@ interface TopBarProps {
   selectedSymbol: string;
   simMode?: boolean;
   searchSymbols?: (query: string) => Promise<SearchResult[]>;
+  onHome?: () => void;
 }
 
-export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols }: TopBarProps) {
+export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHome }: TopBarProps) {
   const [time, setTime] = useState(new Date());
   const [searchValue, setSearchValue] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -130,6 +131,22 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols }: Top
       </div>
 
       <div className="w-px h-4 bg-border" />
+
+      {/* Home button */}
+      {onHome && (
+        <>
+          <button
+            onClick={onHome}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-bb-orange hover:bg-bb-orange/10 transition-all"
+            title="Back to Mode Select"
+            data-testid="button-home"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold tracking-wider">HOME</span>
+          </button>
+          <div className="w-px h-4 bg-border" />
+        </>
+      )}
 
       {/* Search bar with autocomplete */}
       <div className="relative flex-1 max-w-md" ref={dropdownRef}>
