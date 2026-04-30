@@ -51,9 +51,15 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
           redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
         },
       });
-      if (error) throw error;
+      if (error) {
+        // Provide a clearer message for common issues
+        if (error.message?.includes("provider") || error.message?.includes("not enabled")) {
+          throw new Error("Google sign-in is not configured. Please use email/password or continue as guest.");
+        }
+        throw error;
+      }
     } catch (err: any) {
-      setLocalError(err.message || "Google sign-in unavailable");
+      setLocalError(err.message || "Google sign-in unavailable. Please use email/password or continue as guest.");
       setSubmitting(false);
     }
   };
@@ -116,7 +122,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
               type="button"
               onClick={handleGoogle}
               disabled={submitting}
-              className="w-full h-11 flex items-center justify-center gap-3 bg-[hsl(220,14%,9%)] border border-border hover:border-bb-orange/50 hover:bg-[hsl(220,14%,11%)] transition-colors disabled:opacity-50 group"
+              className="w-full h-11 flex items-center justify-center gap-3 bg-card border border-border hover:border-bb-orange/50 hover:bg-accent transition-colors disabled:opacity-50 group"
               data-testid="button-google"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
@@ -149,7 +155,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                     placeholder="you@example.com"
                     required
                     autoFocus
-                    className="w-full h-11 bg-[hsl(220,14%,9%)] border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
+                    className="w-full h-11 bg-card border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                     data-testid="input-email"
                   />
                 </div>
@@ -168,7 +174,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                 <button
                   type="button"
                   onClick={() => { setStep("email"); setPassword(""); setLocalError(null); }}
-                  className="w-full text-left h-11 bg-[hsl(220,14%,7%)] border border-border px-3 flex items-center justify-between group"
+                  className="w-full text-left h-11 bg-card border border-border px-3 flex items-center justify-between group"
                   data-testid="button-change-email"
                 >
                   <span className="text-sm text-foreground font-mono truncate">{email}</span>
@@ -185,7 +191,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Your name"
-                      className="w-full h-11 bg-[hsl(220,14%,9%)] border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
+                      className="w-full h-11 bg-card border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                       data-testid="input-display-name"
                     />
                   </div>
@@ -203,7 +209,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                     required
                     autoFocus
                     minLength={6}
-                    className="w-full h-11 bg-[hsl(220,14%,9%)] border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
+                    className="w-full h-11 bg-card border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                     data-testid="input-password"
                   />
                 </div>
@@ -244,6 +250,22 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
             </div>
           </div>
 
+          {/* Guest access — prominent */}
+          <div className="flex items-center gap-3 pt-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] tracking-[0.2em] font-mono text-muted-foreground">OR</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <button
+            onClick={onSkip}
+            className="w-full h-11 border border-border bg-card hover:border-muted-foreground/30 hover:bg-accent transition-colors flex items-center justify-center gap-2 mt-3"
+            data-testid="button-skip"
+          >
+            <span className="text-sm font-mono text-foreground">Continue as Guest</span>
+            <span className="text-[10px] font-mono text-muted-foreground">— no save</span>
+          </button>
+
           {/* Email error when shown on email step */}
           {step === "email" && displayError && (
             <div className="mt-4 flex items-start gap-2 text-bb-red text-xs font-mono bg-bb-red/[0.08] border border-bb-red/30 px-3 py-2">
@@ -255,20 +277,13 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
       </main>
 
       {/* Footer */}
-      <footer className="px-6 py-5 border-t border-border bg-[hsl(220,14%,5%)] z-10">
-        <div className="max-w-[420px] mx-auto text-center space-y-3">
+      <footer className="px-6 py-5 border-t border-border bg-sidebar z-10">
+        <div className="max-w-[420px] mx-auto text-center space-y-2">
           <p className="text-[10px] text-muted-foreground/70 font-mono leading-relaxed">
             By continuing, you agree to use this terminal for educational purposes only. Market data provided by Yahoo Finance.
           </p>
-          <button
-            onClick={onSkip}
-            className="text-[11px] text-muted-foreground hover:text-bb-orange font-mono tracking-[0.15em] transition-colors"
-            data-testid="button-skip"
-          >
-            CONTINUE AS GUEST →
-          </button>
           <p className="text-[9px] text-muted-foreground/50 font-mono">
-            Progress will not be saved
+            Created by Adetayo Agueh
           </p>
         </div>
       </footer>
