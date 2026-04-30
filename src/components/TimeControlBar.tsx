@@ -11,6 +11,9 @@ interface TimeControlBarProps {
   onManualSave?: () => void;
   saveStatus?: "idle" | "saving" | "saved" | "error";
   lastSavedAt?: Date | null;
+  /** Event mode: show countdown and EVENT badge */
+  eventMode?: boolean;
+  totalEventDays?: number;
 }
 
 const SPEED_BUTTONS: { speed: TimeSpeed; label: string; icon: "pause" | "play" | "fast" | "skip" }[] = [
@@ -44,6 +47,7 @@ function formatSavedAgo(date: Date | null | undefined): string {
 export function TimeControlBar({
   simTime, dayNumber, timeSpeed, onSetSpeed,
   saveName, onSaveNameChange, onManualSave, saveStatus, lastSavedAt,
+  eventMode, totalEventDays,
 }: TimeControlBarProps) {
   const timeStr = simTime.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
   const dateStr = simTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
@@ -57,10 +61,12 @@ export function TimeControlBar({
 
   return (
     <div className="flex items-center h-8 px-3 gap-3 bg-sidebar border-t border-b border-border shrink-0 select-none" data-testid="time-controls">
-      {/* Sim badge */}
+      {/* Sim/Event badge */}
       <div className="flex items-center gap-1.5 shrink-0">
-        <div className="w-1.5 h-1.5 rounded-full bg-bb-orange animate-pulse" />
-        <span className="text-[10px] font-bold text-bb-orange tracking-wider">SIM</span>
+        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${eventMode ? 'bg-bb-cyan' : 'bg-bb-orange'}`} />
+        <span className={`text-[10px] font-bold tracking-wider ${eventMode ? 'text-bb-cyan' : 'text-bb-orange'}`}>
+          {eventMode ? 'EVENT' : 'SIM'}
+        </span>
       </div>
 
       <div className="w-px h-4 bg-border" />
@@ -84,11 +90,22 @@ export function TimeControlBar({
         </>
       )}
 
-      {/* Day counter */}
+      {/* Day counter / Event countdown */}
       <div className="flex items-center gap-1 shrink-0">
-        <Calendar className="w-3 h-3 text-muted-foreground" />
-        <span className="text-2xs text-muted-foreground">DAY</span>
-        <span className="text-2xs font-bold text-foreground">{dayNumber}</span>
+        <Calendar className={`w-3 h-3 ${eventMode ? 'text-bb-cyan' : 'text-muted-foreground'}`} />
+        {eventMode && totalEventDays ? (
+          <>
+            <span className="text-2xs text-bb-cyan font-bold">DAYS LEFT</span>
+            <span className="text-2xs font-bold text-bb-cyan tabular-nums">
+              {Math.max(0, totalEventDays - dayNumber)}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-2xs text-muted-foreground">DAY</span>
+            <span className="text-2xs font-bold text-foreground">{dayNumber}</span>
+          </>
+        )}
       </div>
 
       <div className="w-px h-4 bg-border" />

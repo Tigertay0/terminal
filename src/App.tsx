@@ -18,19 +18,27 @@ import { SimNewsFeed } from "@/components/SimNewsFeed";
 import { Tutorial } from "@/components/Tutorial";
 import { AuthScreen } from "@/components/AuthScreen";
 import { SaveSelect } from "@/components/SaveSelect";
+import { EventLeaderboard } from "@/components/EventLeaderboard";
+import { EventComplete } from "@/components/EventComplete";
 
 import { useFinanceData } from "@/hooks/use-finance-data";
 import { useSimulation, type SimSettings, type SimInitialState, type Holding, type TradeRecord } from "@/hooks/use-simulation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { getWatchlist, saveWatchlist, upsertSimSave, listSimSaves, deleteSimSave, type SimSaveRow } from "@/lib/supabase";
+import {
+  getWatchlist, saveWatchlist, upsertSimSave, listSimSaves, deleteSimSave,
+  getEventParticipant, joinEvent, updateEventProgress, completeEvent as completeEventApi,
+  getCompletedEvents, getEventLeaderboard,
+  type SimSaveRow, type EventParticipantRow,
+} from "@/lib/supabase";
+import { getCurrentEvent, type EventDefinition } from "@/lib/events";
 
 const DEFAULT_WATCHLIST = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM",
   "V", "UNH", "BRK-B", "JNJ", "WMT", "MA", "PG"
 ];
 
-type AppMode = "auth" | "select" | "save-select" | "sim-settings" | "real" | "sim";
+type AppMode = "auth" | "select" | "save-select" | "sim-settings" | "real" | "sim" | "event";
 
 // ─── Helpers: Serialize / Deserialize portfolio ──────────────────
 function serializePortfolio(cash: number, holdings: Map<string, Holding>, trades: TradeRecord[]) {
@@ -364,6 +372,217 @@ function SimTerminal({
   );
 }
 
+// ─── Event Terminal ──────────────────────────────────────────────
+function EventTerminal({
+  event,
+  participant,
+  onExit,
+  userId,
+  displayName,
+  onAuth,
+}: {
+  event: EventDefinition;
+  participant: EventParticipantRow;
+  onExit: () => void;
+  userId: string;
+  displayName: string;
+  onAuth: () => void;
+}) {
+  const eventSettings: SimSettings = {
+    startingCash: event.startingCash,
+    variation: event.variation,
+  };
+
+  // Build initial state from participant if resuming
+  const initialState: SimInitialState | undefined = participant.current_day > 1 && participant.portfolio
+    ? {
+        cash: participant.portfolio.cash ?? event.startingCash,
+        holdings: new Map<string, Holding>(participant.portfolio.holdings ?? []),
+        trades: (participant.portfolio.trades ?? []).map((t: any) => ({
+          ...t,
+          timestamp: new Date(t.timestamp),
+        })),
+        dayNumber: participant.current_day,
+        simTime: (() => {
+          const d = new Date();
+          d.setHours(9, 30, 0, 0);
+          return d;
+        })(),
+      }
+    : undefined;
+
+  const eventWatchlist = event.allowedSymbols ?? [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM",
+    "V", "UNH", "BRK-B", "JNJ", "WMT", "MA", "PG"
+  ];
+
+  const [selectedSymbol, setSelectedSymbol] = useState(eventWatchlist[0] || "AAPL");
+  const [watchlist, setWatchlist] = useState(eventWatchlist);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [showComplete, setShowComplete] = useState(false);
+  const [leaderboardRank, setLeaderboardRank] = useState(0);
+  const [totalParticipants, setTotalParticipants] = useState(0);
+
+  const baseData = useFinanceData();
+
+  const handleDayCapReached = useCallback(() => {
+    setShowComplete(true);
+  }, []);
+
+  const sim = useSimulation(
+    eventSettings,
+    new Map(baseData.getAllStocks().map(s => [s.symbol, s])),
+    initialState,
+    event.durationDays,
+    handleDayCapReached,
+  );
+
+  // ─── Sync progress to Supabase ────────────────────────────────
+  const lastSyncedDay = useRef(participant.current_day);
+  useEffect(() => {
+    if (baseData.loading) return;
+    if (sim.dayNumber === lastSyncedDay.current && !showComplete) return;
+    lastSyncedDay.current = sim.dayNumber;
+
+    const profit = +(sim.getPortfolioValue() - event.startingCash).toFixed(2);
+    const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades);
+
+    if (showComplete) {
+      // Compute final stats
+      const finalStats = {
+        portfolioValue: sim.getPortfolioValue(),
+        profit,
+        totalTrades: sim.trades.length,
+        dailySnapshots: sim.dailySnapshots,
+      };
+      completeEventApi(participant.id, profit, portfolio, sim.dayNumber, finalStats).then(() => {
+        // Fetch rank after completing
+        getEventLeaderboard(event.eventKey).then(lb => {
+          const rank = lb.findIndex(p => p.user_id === userId) + 1;
+          setLeaderboardRank(rank || lb.length);
+          setTotalParticipants(lb.length);
+        });
+      });
+    } else {
+      updateEventProgress(participant.id, sim.dayNumber, profit, portfolio);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sim.dayNumber, showComplete]);
+
+  const handleSearch = useCallback(async (query: string) => {
+    const upper = query.toUpperCase();
+    // Only allow searching within event-allowed stocks
+    if (event.allowedSymbols && !event.allowedSymbols.includes(upper)) return;
+    const existing = sim.getStock(upper);
+    if (existing) {
+      setSelectedSymbol(upper);
+      setWatchlist(prev => prev.includes(upper) ? prev : [...prev, upper]);
+      return;
+    }
+    const stock = await baseData.addSymbol(upper);
+    if (stock) {
+      sim.addStock(stock);
+      setSelectedSymbol(stock.symbol);
+      setWatchlist(prev => prev.includes(stock.symbol) ? prev : [...prev, stock.symbol]);
+    }
+  }, [sim.getStock, sim.addStock, baseData.addSymbol, event.allowedSymbols]);
+
+  const handleCommand = useCallback(async (cmd: string) => {
+    setCommandHistory(prev => [...prev, cmd]);
+    if (cmd === "EXIT" || cmd === "QUIT") {
+      onExit();
+      return;
+    }
+    const upper = cmd.toUpperCase();
+    if (event.allowedSymbols && !event.allowedSymbols.includes(upper)) return;
+    const existing = sim.getStock(upper);
+    if (existing) {
+      setSelectedSymbol(upper);
+      setWatchlist(prev => prev.includes(upper) ? prev : [...prev, upper]);
+      return;
+    }
+    const stock = await baseData.addSymbol(upper);
+    if (stock) {
+      sim.addStock(stock);
+      setSelectedSymbol(stock.symbol);
+      setWatchlist(prev => prev.includes(stock.symbol) ? prev : [...prev, stock.symbol]);
+    }
+  }, [sim.getStock, sim.addStock, baseData.addSymbol, onExit, event.allowedSymbols]);
+
+  const handleRemoveSymbol = useCallback((symbol: string) => {
+    setWatchlist(prev => prev.filter(s => s !== symbol));
+  }, []);
+
+  const currentStock = sim.getStock(selectedSymbol);
+  const historicalData = sim.getSimHistorical(selectedSymbol);
+
+  if (baseData.loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="mx-auto animate-pulse">
+            <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" />
+            <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" opacity="0.7" />
+            <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" opacity="0.5" />
+            <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" opacity="0.3" />
+          </svg>
+          <div className="text-bb-cyan font-bold text-sm tracking-wider">EVENT MODE</div>
+          <div className="text-muted-foreground text-xs">Loading {event.name}...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex flex-col bg-background overflow-hidden select-none" data-testid="event-terminal">
+      {showComplete && (
+        <EventComplete
+          event={event}
+          finalCash={sim.cash}
+          holdings={sim.holdings}
+          trades={sim.trades}
+          dayNumber={sim.dayNumber}
+          getStock={sim.getStock}
+          portfolioValue={sim.getPortfolioValue()}
+          leaderboardRank={leaderboardRank}
+          totalParticipants={totalParticipants}
+          dailySnapshots={sim.dailySnapshots}
+          onViewLeaderboard={() => setShowComplete(false)}
+          onGoHome={onExit}
+        />
+      )}
+      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} simMode searchSymbols={baseData.searchSymbols} onHome={onExit} onAuth={onAuth} />
+      <TimeControlBar
+        simTime={sim.simTime}
+        dayNumber={sim.dayNumber}
+        timeSpeed={sim.timeSpeed}
+        onSetSpeed={sim.setTimeSpeed}
+        eventMode
+        totalEventDays={event.durationDays}
+      />
+      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[195px_minmax(0,1fr)_260px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
+        <div className="row-span-2 min-h-0">
+          <WatchlistPanel symbols={watchlist} getStock={sim.getStock} onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} onRemoveSymbol={handleRemoveSymbol} />
+        </div>
+        <div className="min-h-0">
+          <PriceChart symbol={selectedSymbol} stock={currentStock} historicalData={historicalData} />
+        </div>
+        <div className="min-h-0">
+          <PortfolioPanel cash={sim.cash} holdings={sim.holdings} trades={sim.trades} startingCash={event.startingCash} getPortfolioValue={sim.getPortfolioValue} getTotalPnL={sim.getTotalPnL} getHoldingPnL={sim.getHoldingPnL} getStock={sim.getStock} onBuy={sim.buyStock} onSell={sim.sellStock} selectedSymbol={selectedSymbol} onSelectSymbol={setSelectedSymbol} />
+        </div>
+        <div className="min-h-0 min-w-0 grid grid-cols-2 gap-px bg-border overflow-hidden">
+          <MarketMovers gainers={sim.getTopGainers()} losers={sim.getTopLosers()} active={sim.getMostActive()} onSelectSymbol={setSelectedSymbol} />
+          <SectorHeatmap stocks={sim.getAllStocks()} onSelectSymbol={setSelectedSymbol} />
+        </div>
+        <div className="min-h-0">
+          <EventLeaderboard event={event} userId={userId} />
+        </div>
+      </div>
+      <CommandBar onCommand={handleCommand} commandHistory={commandHistory} />
+    </div>
+  );
+}
+
 // ─── Root App ────────────────────────────────────────────────────
 export default function App() {
   const [mode, setMode] = useState<AppMode>("auth");
@@ -374,6 +593,9 @@ export default function App() {
   const [activeSave, setActiveSave] = useState<SimSaveRow | null>(null);
   // Key to force re-mount SimTerminal when switching saves
   const [simKey, setSimKey] = useState(0);
+  const [activeEvent, setActiveEvent] = useState<EventDefinition | null>(null);
+  const [activeParticipant, setActiveParticipant] = useState<EventParticipantRow | null>(null);
+  const [completedEvents, setCompletedEvents] = useState<EventParticipantRow[]>([]);
   const auth = useAuth();
   const { toast } = useToast();
 
@@ -405,6 +627,9 @@ export default function App() {
       setUserWatchlist(DEFAULT_WATCHLIST);
       setSavesList([]);
       setActiveSave(null);
+      setActiveEvent(null);
+      setActiveParticipant(null);
+      setCompletedEvents([]);
     }
   }, [auth.isAuthenticated, auth.userId, auth.loading]); // Removed mode from deps to avoid re-triggering
 
@@ -466,6 +691,59 @@ export default function App() {
     }
   }, [auth.userId, toast]);
 
+  // ─── Handle Join Event ──────────────────────────────────────────
+  const handleJoinEvent = useCallback(async (event: EventDefinition) => {
+    if (!auth.userId) {
+      toast({ title: "Please log in to join events", variant: "destructive" });
+      return;
+    }
+
+    const displayName = auth.user?.user_metadata?.display_name ?? auth.user?.email?.split("@")[0] ?? "Anonymous";
+
+    try {
+      // Check if already participating
+      let participant = await getEventParticipant(event.eventKey, auth.userId);
+
+      if (participant) {
+        if (participant.status === "completed") {
+          toast({ title: "Event already completed", description: "You've already finished this event." });
+          return;
+        }
+        // Resume existing participation
+      } else {
+        // Join the event
+        participant = await joinEvent(event.eventKey, auth.userId, displayName, {
+          startingCash: event.startingCash,
+          variation: event.variation,
+          eventName: event.name,
+        });
+        if (!participant) {
+          toast({ title: "Failed to join event", variant: "destructive" });
+          return;
+        }
+      }
+
+      setActiveEvent(event);
+      setActiveParticipant(participant);
+      setSimKey(k => k + 1);
+      setMode("event");
+    } catch (err) {
+      console.error("Join event error:", err);
+      toast({ title: "Failed to join event", variant: "destructive" });
+    }
+  }, [auth.userId, auth.user, toast]);
+
+  // ─── Load completed events for save tab ─────────────────────────
+  const loadCompletedEvents = useCallback(async () => {
+    if (!auth.userId) return;
+    try {
+      const events = await getCompletedEvents(auth.userId);
+      setCompletedEvents(events);
+    } catch (err) {
+      console.error("Failed to load completed events:", err);
+    }
+  }, [auth.userId]);
+
   // If auth is still loading, show splash
   if (auth.loading) {
     return (
@@ -515,6 +793,7 @@ export default function App() {
               try {
                 const saves = await listSimSaves(auth.userId);
                 setSavesList(saves);
+                await loadCompletedEvents();
               } catch {
                 setSavesList([]);
               } finally {
@@ -527,6 +806,8 @@ export default function App() {
               setMode("sim-settings");
             }
           }}
+          userId={auth.userId}
+          onJoinEvent={handleJoinEvent}
         />
       )}
       {mode === "save-select" && (
@@ -553,6 +834,7 @@ export default function App() {
           }}
           onDelete={handleDeleteSave}
           onBack={() => setMode("select")}
+          completedEvents={completedEvents}
         />
       )}
       {mode === "sim-settings" && (
@@ -586,6 +868,21 @@ export default function App() {
           }}
           userId={auth.userId}
           initialSave={activeSave}
+          onAuth={() => setMode("auth")}
+        />
+      )}
+      {mode === "event" && activeEvent && activeParticipant && auth.userId && (
+        <EventTerminal
+          key={simKey}
+          event={activeEvent}
+          participant={activeParticipant}
+          onExit={() => {
+            setActiveEvent(null);
+            setActiveParticipant(null);
+            setMode("select");
+          }}
+          userId={auth.userId}
+          displayName={auth.user?.user_metadata?.display_name ?? auth.user?.email?.split("@")[0] ?? "Anonymous"}
           onAuth={() => setMode("auth")}
         />
       )}

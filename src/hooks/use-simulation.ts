@@ -180,6 +180,8 @@ export function useSimulation(
   settings: SimSettings,
   baseStocks: Map<string, TickerData>,
   initialState?: SimInitialState,
+  maxDays?: number,
+  onDayCapReached?: () => void,
 ) {
   const [simStocks, setSimStocks] = useState<Map<string, TickerData>>(new Map());
   const [cash, setCash] = useState(() => initialState?.cash ?? settings.startingCash);
@@ -196,6 +198,7 @@ export function useSimulation(
   const [dayNumber, setDayNumber] = useState(() => initialState?.dayNumber ?? 1);
   const [news, setNews] = useState<SimNewsItem[]>([]);
   const [timeSpeed, setTimeSpeed] = useState<TimeSpeed>("paused");
+  const [dailySnapshots, setDailySnapshots] = useState<number[]>([]);
   const [historicalCache, setHistoricalCache] = useState<Map<string, OHLCVBar[]>>(new Map());
 
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
@@ -302,7 +305,23 @@ export function useSimulation(
             nextDay.setDate(nextDay.getDate() + 1);
           }
           nextDay.setHours(9, 30, 0, 0);
-          setDayNumber(d => d + 1);
+          setDayNumber(d => {
+            const newDay = d + 1;
+            // Check if day cap reached (event mode)
+            if (maxDays && newDay >= maxDays) {
+              // Will be handled by the useEffect below
+            }
+            return newDay;
+          });
+          // Snapshot portfolio value at end of day
+          setDailySnapshots(prev => {
+            let value = cash;
+            holdings.forEach((h) => {
+              const stock = simStocks.get(h.symbol);
+              if (stock) value += stock.price * h.shares;
+            });
+            return [...prev, +value.toFixed(2)];
+          });
           // Reset day high/low for new day
           setSimStocks(prev => {
             const next = new Map(prev);
@@ -330,7 +349,16 @@ export function useSimulation(
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [timeSpeed, tick]);
+  }, [timeSpeed, tick, maxDays, cash, holdings, simStocks]);
+
+  // ─── Day cap check (event mode) ────────────────────────────────
+  useEffect(() => {
+    if (maxDays && dayNumber >= maxDays && timeSpeed !== "paused") {
+      setTimeSpeed("paused");
+      onDayCapReached?.();
+    }
+  }, [dayNumber, maxDays, timeSpeed, onDayCapReached]);
+
 
   // ─── Trading actions ───────────────────────────────────────────
   const buyStock = useCallback((symbol: string, shares: number): boolean => {
@@ -460,6 +488,7 @@ export function useSimulation(
     dayNumber,
     news,
     timeSpeed,
+    dailySnapshots,
     // Actions
     setTimeSpeed,
     buyStock,

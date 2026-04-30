@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Play, Trash2, Plus, ArrowLeft, Save, Clock, Calendar, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { Play, Trash2, Plus, ArrowLeft, Save, Clock, Calendar, DollarSign, TrendingUp, TrendingDown, Trophy } from "lucide-react";
 import type { SimSaveRow } from "@/lib/supabase";
+import type { EventParticipantRow } from "@/lib/supabase";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ interface SaveSelectProps {
   onNew: () => void;
   onDelete: (id: string) => void;
   onBack: () => void;
+  completedEvents?: EventParticipantRow[];
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -40,7 +42,7 @@ function formatCurrency(val: number): string {
   return val.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
-export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack }: SaveSelectProps) {
+export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack, completedEvents }: SaveSelectProps) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   if (loading) {
@@ -177,6 +179,62 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
           <ArrowLeft className="w-3 h-3" />
           Back to Mode Select
         </button>
+
+        {/* Completed Events */}
+        {completedEvents && completedEvents.length > 0 && (
+          <>
+            <div className="flex items-center gap-2 mt-6 mb-3">
+              <Trophy className="w-3.5 h-3.5 text-bb-cyan" />
+              <span className="text-[10px] font-bold text-bb-cyan tracking-wider">COMPLETED EVENTS</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+            <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
+              {completedEvents.map((ep) => {
+                const profit = ep.profit ?? 0;
+                const isPositive = profit >= 0;
+                const startingCash = ep.settings?.startingCash ?? 10000;
+                const pnlPct = startingCash > 0 ? (profit / startingCash) * 100 : 0;
+
+                return (
+                  <div
+                    key={ep.id}
+                    className="border border-border/60 bg-card/50 rounded-sm p-3 opacity-80"
+                    data-testid={`event-save-${ep.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[8px] font-bold tracking-wider text-bb-cyan bg-bb-cyan/10 px-1.5 py-0.5 rounded-sm border border-bb-cyan/20">EVENT</span>
+                          <span className="text-xs font-bold text-foreground/80 truncate">
+                            {ep.settings?.eventName ?? ep.event_key}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-2.5 h-2.5" />
+                            Day {ep.current_day}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" />
+                            {formatRelativeTime(ep.updated_at)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className={`text-xs font-bold tabular-nums ${isPositive ? 'text-bb-green' : 'text-bb-red'}`}>
+                          {isPositive ? '+' : ''}{formatCurrency(profit)}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">
+                          {isPositive ? '+' : ''}{pnlPct.toFixed(1)}% return
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* Delete confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>

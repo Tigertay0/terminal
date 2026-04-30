@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { TrendingUp, Gamepad2, ArrowRight, DollarSign, Activity } from "lucide-react";
 import type { SimSettings, MarketVariation } from "@/hooks/use-simulation";
+import { EventBanner } from "@/components/EventBanner";
+import type { EventDefinition } from "@/lib/events";
 
 interface ModeSelectProps {
   onSelectReal: () => void;
@@ -10,6 +12,9 @@ interface ModeSelectProps {
   /** If provided, called when user clicks the Simulation card on the choose screen
    *  (instead of going to the internal settings phase). */
   onSimClick?: () => void;
+  /** If provided (logged-in user), show the event banner */
+  userId?: string | null;
+  onJoinEvent?: (event: EventDefinition) => void;
 }
 
 const CASH_OPTIONS = [
@@ -26,7 +31,7 @@ const VARIATION_OPTIONS: { label: string; value: MarketVariation; desc: string }
   { label: "HIGH", value: "high", desc: "Volatile, big swings" },
 ];
 
-export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings, onSimClick }: ModeSelectProps) {
+export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings, onSimClick, userId, onJoinEvent }: ModeSelectProps) {
   const [phase, setPhase] = useState<"choose" | "settings">(startInSettings ? "settings" : "choose");
   const [cash, setCash] = useState(100000);
   const [variation, setVariation] = useState<MarketVariation>("realistic");
@@ -146,6 +151,11 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
           </div>
           <p className="text-muted-foreground text-xs tracking-wide">SELECT MODE</p>
         </div>
+
+        {/* Event Banner — only for logged-in users */}
+        {userId && onJoinEvent && (
+          <EventBanner onJoinEvent={onJoinEvent} />
+        )}
 
         {/* Mode Cards */}
         <div className="grid grid-cols-2 gap-4">
