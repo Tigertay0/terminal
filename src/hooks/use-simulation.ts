@@ -210,7 +210,16 @@ export function useSimulation(
   }, [baseStocks]);
 
   // The tick function — advances prices based on variation + news impacts
+  // Only moves prices during market hours (9:30 AM – 4:00 PM ET)
   const tick = useCallback(() => {
+    // Check if market is open
+    const hours = simTime.getHours();
+    const mins = simTime.getMinutes();
+    const totalMins = hours * 60 + mins;
+    const isMarketOpen = totalMins >= 570 && totalMins < 960; // 9:30 - 16:00
+
+    if (!isMarketOpen) return; // No price movement outside market hours
+
     const config = VARIATION_CONFIGS[settings.variation];
 
     setSimStocks(prev => {
@@ -242,7 +251,7 @@ export function useSimulation(
       return next;
     });
 
-    // Generate news
+    // Generate news (only during market hours)
     const newsItem = generateSimNews(baseStocks, settings.variation);
     if (newsItem) {
       newsItem.time = new Date(simTime.getTime()); // use sim time
