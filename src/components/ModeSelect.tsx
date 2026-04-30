@@ -5,6 +5,7 @@ import type { SimSettings, MarketVariation } from "@/hooks/use-simulation";
 interface ModeSelectProps {
   onSelectReal: () => void;
   onSelectSim: (settings: SimSettings) => void;
+  onBack?: () => void;
 }
 
 const CASH_OPTIONS = [
@@ -21,7 +22,7 @@ const VARIATION_OPTIONS: { label: string; value: MarketVariation; desc: string }
   { label: "HIGH", value: "high", desc: "Volatile, big swings" },
 ];
 
-export function ModeSelect({ onSelectReal, onSelectSim }: ModeSelectProps) {
+export function ModeSelect({ onSelectReal, onSelectSim, onBack }: ModeSelectProps) {
   const [phase, setPhase] = useState<"choose" | "settings">("choose");
   const [cash, setCash] = useState(100000);
   const [variation, setVariation] = useState<MarketVariation>("realistic");
@@ -108,11 +109,17 @@ export function ModeSelect({ onSelectReal, onSelectSim }: ModeSelectProps) {
           </button>
 
           <button
-            onClick={() => setPhase("choose")}
+            onClick={() => {
+              if (onBack) {
+                onBack();
+              } else {
+                setPhase("choose");
+              }
+            }}
             className="w-full mt-3 py-2 text-muted-foreground text-xs hover:text-foreground transition-colors"
             data-testid="button-back"
           >
-            Back to Mode Select
+            {onBack ? "Back to Saves" : "Back to Mode Select"}
           </button>
         </div>
       </div>

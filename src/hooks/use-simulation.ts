@@ -48,6 +48,14 @@ export interface SimState {
   portfolioValue: number;
 }
 
+export interface SimInitialState {
+  cash: number;
+  holdings: Map<string, Holding>;
+  trades: TradeRecord[];
+  dayNumber: number;
+  simTime: Date;
+}
+
 // ─── Variation multipliers ───────────────────────────────────────
 const VARIATION_CONFIGS: Record<MarketVariation, { tickVol: number; newsFreq: number; bigEventChance: number }> = {
   low:       { tickVol: 0.04, newsFreq: 0.08, bigEventChance: 0.01 },
@@ -171,17 +179,21 @@ function generateSimNews(
 export function useSimulation(
   settings: SimSettings,
   baseStocks: Map<string, TickerData>,
+  initialState?: SimInitialState,
 ) {
   const [simStocks, setSimStocks] = useState<Map<string, TickerData>>(new Map());
-  const [cash, setCash] = useState(settings.startingCash);
-  const [holdings, setHoldings] = useState<Map<string, Holding>>(new Map());
-  const [trades, setTrades] = useState<TradeRecord[]>([]);
+  const [cash, setCash] = useState(() => initialState?.cash ?? settings.startingCash);
+  const [holdings, setHoldings] = useState<Map<string, Holding>>(
+    () => initialState?.holdings ?? new Map()
+  );
+  const [trades, setTrades] = useState<TradeRecord[]>(() => initialState?.trades ?? []);
   const [simTime, setSimTime] = useState(() => {
+    if (initialState?.simTime) return initialState.simTime;
     const d = new Date();
     d.setHours(9, 30, 0, 0);
     return d;
   });
-  const [dayNumber, setDayNumber] = useState(1);
+  const [dayNumber, setDayNumber] = useState(() => initialState?.dayNumber ?? 1);
   const [news, setNews] = useState<SimNewsItem[]>([]);
   const [timeSpeed, setTimeSpeed] = useState<TimeSpeed>("paused");
   const [historicalCache, setHistoricalCache] = useState<Map<string, OHLCVBar[]>>(new Map());

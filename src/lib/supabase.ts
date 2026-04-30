@@ -33,6 +33,18 @@ export async function saveWatchlist(userId: string, symbols: string[]): Promise<
 }
 
 // ─── Sim Saves ──────────────────────────────────────────────────
+export interface SimSaveRow {
+  id: string;
+  user_id: string;
+  name: string;
+  settings: any;
+  portfolio: any;
+  watchlist: string[];
+  day_number: number;
+  sim_time: string;
+  updated_at: string;
+}
+
 export interface SimSavePayload {
   id?: string | null;
   name: string;
@@ -43,7 +55,7 @@ export interface SimSavePayload {
   sim_time: string;
 }
 
-export async function listSimSaves(userId: string) {
+export async function listSimSaves(userId: string): Promise<SimSaveRow[]> {
   const { data, error } = await supabase
     .from("sim_saves")
     .select("*")
