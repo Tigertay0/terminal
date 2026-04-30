@@ -17,6 +17,8 @@ export interface EventDefinition {
   /** Real-world start/end dates */
   startsAt: Date;
   endsAt: Date;
+  /** Prize description for the event winner (optional) */
+  prize?: string;
 }
 
 // ─── Launch Event ────────────────────────────────────────────────
@@ -30,6 +32,7 @@ const LAUNCH_EVENT: Omit<EventDefinition, "eventKey" | "startsAt" | "endsAt"> = 
   durationDays: 100,
   startingCash: 10000,
   variation: "high",
+  prize: "🏆 Winner's Prize: 3 months of Snapchat+, 1 month of PS Plus, or 1 month of Xbox Game Pass Ultimate",
 };
 
 // ─── Rotating Event Templates ────────────────────────────────────

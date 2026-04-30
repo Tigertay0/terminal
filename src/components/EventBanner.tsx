@@ -65,6 +65,11 @@ export function EventBanner({ onJoinEvent }: EventBannerProps) {
           <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
             {event.description}
           </p>
+          {event.prize && (
+            <p className="text-[9px] font-bold text-bb-orange mt-0.5 flex items-center gap-1">
+              {event.prize}
+            </p>
+          )}
           <div className="flex items-center gap-3 mt-1">
             <span className="text-[9px] text-muted-foreground flex items-center gap-1">
               <Zap className="w-2.5 h-2.5 text-bb-cyan" />

@@ -140,6 +140,13 @@ export function EventComplete({
               {isPositive ? "+" : ""}{profitPct}% return
             </div>
           </div>
+
+          {/* Prize callout */}
+          {event.prize && (
+            <div className="mt-3 bg-bb-orange/[0.08] border border-bb-orange/20 rounded-sm px-3 py-2 inline-block">
+              <p className="text-[10px] font-bold text-bb-orange">{event.prize}</p>
+            </div>
+          )}
         </div>
 
         {/* Rank */}

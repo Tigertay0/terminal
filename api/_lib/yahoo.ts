@@ -4,7 +4,7 @@ import YahooFinance from "yahoo-finance2";
 const yahooFinance: any = new (YahooFinance as any)();
 
 // Suppress schema-validation notices in serverless logs
-try { yahooFinance.suppressNotices?.(["yahooSurvey"]); } catch {}
+try { yahooFinance.suppressNotices?.(["yahooSurvey"]); } catch { }
 
 // In-memory caches (per serverless instance)
 const quoteCache = new Map<string, { data: any; ts: number }>();
