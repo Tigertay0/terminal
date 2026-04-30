@@ -64,7 +64,7 @@ function deserializeSaveToInitialState(save: SimSaveRow): SimInitialState {
 }
 
 // ─── Real Mode Terminal ──────────────────────────────────────────
-function RealTerminal({ userId, initialWatchlist, onHome }: { userId: string | null; initialWatchlist: string[]; onHome: () => void }) {
+function RealTerminal({ userId, initialWatchlist, onHome, onAuth }: { userId: string | null; initialWatchlist: string[]; onHome: () => void; onAuth: () => void }) {
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [watchlist, setWatchlist] = useState(initialWatchlist);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -150,7 +150,7 @@ function RealTerminal({ userId, initialWatchlist, onHome }: { userId: string | n
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden select-none" data-testid="terminal">
-      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} searchSymbols={searchSymbols} onHome={onHome} />
+      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} searchSymbols={searchSymbols} onHome={onHome} onAuth={onAuth} />
       <IndexTicker indices={getIndices()} />
       <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[195px_minmax(0,1fr)_240px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
         <div className="row-span-2 min-h-0">
@@ -181,11 +181,13 @@ function SimTerminal({
   onExit,
   userId,
   initialSave,
+  onAuth,
 }: {
   settings: SimSettings;
   onExit: () => void;
   userId: string | null;
   initialSave: SimSaveRow | null;
+  onAuth: () => void;
 }) {
   // Determine effective settings: saved settings override prop when continuing a save
   const effectiveSettings: SimSettings = initialSave?.settings ?? settings;
@@ -327,7 +329,7 @@ function SimTerminal({
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden select-none" data-testid="sim-terminal">
       {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
-      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} simMode searchSymbols={baseData.searchSymbols} onHome={onExit} />
+      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} simMode searchSymbols={baseData.searchSymbols} onHome={onExit} onAuth={onAuth} />
       <TimeControlBar
         simTime={sim.simTime}
         dayNumber={sim.dayNumber}
@@ -573,7 +575,7 @@ export default function App() {
           startInSettings
         />
       )}
-      {mode === "real" && <RealTerminal userId={auth.userId} initialWatchlist={userWatchlist} onHome={() => setMode("select")} />}
+      {mode === "real" && <RealTerminal userId={auth.userId} initialWatchlist={userWatchlist} onHome={() => setMode("select")} onAuth={() => setMode("auth")} />}
       {mode === "sim" && (simSettings || activeSave) && (
         <SimTerminal
           key={simKey}
@@ -584,6 +586,7 @@ export default function App() {
           }}
           userId={auth.userId}
           initialSave={activeSave}
+          onAuth={() => setMode("auth")}
         />
       )}
       <Toaster />

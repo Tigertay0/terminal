@@ -17,9 +17,10 @@ interface TopBarProps {
   simMode?: boolean;
   searchSymbols?: (query: string) => Promise<SearchResult[]>;
   onHome?: () => void;
+  onAuth?: () => void;
 }
 
-export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHome }: TopBarProps) {
+export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHome, onAuth }: TopBarProps) {
   const [time, setTime] = useState(new Date());
   const [searchValue, setSearchValue] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -221,7 +222,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
       <div className="w-px h-4 bg-border" />
 
       {/* User menu */}
-      <UserMenu />
+      <UserMenu onAuth={onAuth} />
 
       <div className="w-px h-4 bg-border" />
 
@@ -238,14 +239,19 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
   );
 }
 
-function UserMenu() {
+function UserMenu({ onAuth }: { onAuth?: () => void }) {
   const auth = useAuth();
   if (!auth.isAuthenticated || !auth.user) {
     return (
-      <div className="flex items-center gap-1 shrink-0">
+      <button
+        onClick={onAuth}
+        className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-sm hover:bg-bb-orange/10 transition-all cursor-pointer"
+        title="Sign in"
+        data-testid="button-sign-in"
+      >
         <User className="w-3 h-3 text-muted-foreground" />
-        <span className="text-2xs text-muted-foreground">Guest</span>
-      </div>
+        <span className="text-2xs text-muted-foreground hover:text-bb-orange transition-colors">Guest</span>
+      </button>
     );
   }
   const name = (auth.user.user_metadata?.display_name as string) || auth.user.email?.split("@")[0] || "User";
