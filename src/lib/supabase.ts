@@ -225,7 +225,7 @@ export async function getEventLeaderboard(
   return data ?? [];
 }
 
-/** Subscribe to realtime leaderboard changes */
+/** Subscribe to realtime leaderboard changes + polling fallback */
 export function subscribeToLeaderboard(
   eventKey: string,
   callback: (participants: EventParticipantRow[]) => void,
@@ -233,7 +233,12 @@ export function subscribeToLeaderboard(
   // Initial fetch
   getEventLeaderboard(eventKey).then(callback);
 
-  // Realtime subscription
+  // Polling fallback — refresh every 30s regardless of realtime
+  const pollInterval = setInterval(() => {
+    getEventLeaderboard(eventKey).then(callback);
+  }, 30_000);
+
+  // Realtime subscription (fires on any INSERT/UPDATE/DELETE)
   const channel = supabase
     .channel(`event_leaderboard_${eventKey}`)
     .on(
@@ -245,7 +250,6 @@ export function subscribeToLeaderboard(
         filter: `event_key=eq.${eventKey}`,
       },
       () => {
-        // Re-fetch full leaderboard on any change (simplest approach)
         getEventLeaderboard(eventKey).then(callback);
       },
     )
@@ -253,6 +257,7 @@ export function subscribeToLeaderboard(
 
   // Return unsubscribe function
   return () => {
+    clearInterval(pollInterval);
     supabase.removeChannel(channel);
   };
 }

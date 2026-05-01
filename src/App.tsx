@@ -470,6 +470,19 @@ function EventTerminal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sim.dayNumber, showComplete]);
 
+  // ─── Periodic profit sync (every 15s while running) ────────────
+  useEffect(() => {
+    if (baseData.loading || showComplete) return;
+    const interval = setInterval(() => {
+      if (sim.timeSpeed === "paused") return;
+      const profit = +(sim.getPortfolioValue() - event.startingCash).toFixed(2);
+      const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades);
+      updateEventProgress(participant.id, sim.dayNumber, profit, portfolio);
+    }, 15_000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseData.loading, showComplete, sim.timeSpeed]);
+
   const handleSearch = useCallback(async (query: string) => {
     const upper = query.toUpperCase();
     // Only allow searching within event-allowed stocks
