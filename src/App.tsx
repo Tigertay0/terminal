@@ -422,6 +422,7 @@ function EventTerminal({
   const [showComplete, setShowComplete] = useState(false);
   const [leaderboardRank, setLeaderboardRank] = useState(0);
   const [totalParticipants, setTotalParticipants] = useState(0);
+  const [eventPanel, setEventPanel] = useState<"leaderboard" | "news">("leaderboard");
 
   const baseData = useFinanceData();
 
@@ -574,8 +575,31 @@ function EventTerminal({
           <MarketMovers gainers={sim.getTopGainers()} losers={sim.getTopLosers()} active={sim.getMostActive()} onSelectSymbol={setSelectedSymbol} />
           <SectorHeatmap stocks={sim.getAllStocks()} onSelectSymbol={setSelectedSymbol} />
         </div>
-        <div className="min-h-0">
-          <EventLeaderboard event={event} userId={userId} />
+        <div className="min-h-0 flex flex-col">
+          {/* Toggle tabs */}
+          <div className="flex border-b border-border shrink-0 bg-[hsl(var(--bb-panel-bg))]">
+            <button
+              onClick={() => setEventPanel("leaderboard")}
+              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "leaderboard" ? "text-bb-cyan border-b border-bb-cyan" : "text-muted-foreground hover:text-foreground"}`}
+              data-testid="tab-leaderboard"
+            >
+              LEADERBOARD
+            </button>
+            <button
+              onClick={() => setEventPanel("news")}
+              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "news" ? "text-bb-cyan border-b border-bb-cyan" : "text-muted-foreground hover:text-foreground"}`}
+              data-testid="tab-news"
+            >
+              NEWS
+            </button>
+          </div>
+          <div className="flex-1 min-h-0">
+            {eventPanel === "leaderboard" ? (
+              <EventLeaderboard event={event} userId={userId} />
+            ) : (
+              <SimNewsFeed news={sim.news} selectedSymbol={selectedSymbol} />
+            )}
+          </div>
         </div>
       </div>
       <CommandBar onCommand={handleCommand} commandHistory={commandHistory} />
