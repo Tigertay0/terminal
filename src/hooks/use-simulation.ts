@@ -603,6 +603,14 @@ export function useSimulation(
     return bars;
   }, [simStocks, baseStocks, historicalCache]);
 
+  // Trigger initial AI news fetch for Day 1
+  useEffect(() => {
+    if (dayNumber === 1 && aiNewsFetchedDay.current < 1 && simStocks.size > 0) {
+      aiNewsFetchedDay.current = 1;
+      triggerAINewsFetch();
+    }
+  }, [dayNumber, simStocks.size, triggerAINewsFetch]);
+
   return {
     // State
     simStocks,
