@@ -1,8 +1,6 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { corsHeaders } from "./_lib/cors.js";
 
-export const config = {
-  runtime: 'edge',
-};
 interface StockInput {
   symbol: string;
   name: string;
@@ -21,32 +19,27 @@ interface AINewsItem {
   expectedGrowth: number;
 }
 
-export default async function handler(req: Request) {
-  const cors = corsHeaders() as Record<string, string>;
-  const headers = { ...cors, "Content-Type": "application/json" };
-
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: cors });
-  }
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === "OPTIONS") return res.status(200).json({});
+  Object.entries(corsHeaders()).forEach(([k, v]) => res.setHeader(k, v));
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers });
+    return res.status(405).json({ error: "POST only" });
   }
 
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "PERPLEXITY_API_KEY not configured" }), { status: 500, headers });
+    return res.status(500).json({ error: "PERPLEXITY_API_KEY not configured" });
   }
 
   try {
-    const bodyText = await req.text();
-    const { stocks, variation } = JSON.parse(bodyText) as {
+    const { stocks, variation } = req.body as {
       stocks: StockInput[];
       variation: string;
     };
 
     if (!stocks?.length) {
-      return new Response(JSON.stringify({ error: "No stocks provided" }), { status: 400, headers });
+      return res.status(400).json({ error: "No stocks provided" });
     }
 
     // Build stock summary for the prompt
@@ -73,7 +66,7 @@ STOCKS:
 ${stockList}
 
 RULES:
-1. Generate exactly ${Math.min(stocks.length * 2, 30)} news items total.
+1. Generate exactly ${Math.min(stocks.length, 8)} news items total.
 2. Every company must get at least 1 news item. Larger companies can get 2-3.
 3. Mix of positive and negative news (roughly 55% positive, 30% negative, 15% neutral-framed).
 4. Each item MUST have importance = "high" or "low". About 30% should be "high".
@@ -127,10 +120,10 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
     if (!response.ok) {
       const errText = await response.text();
       console.error("Perplexity API error:", response.status, errText);
-      return new Response(JSON.stringify({
+      return res.status(502).json({
         error: `Perplexity API returned ${response.status}`,
         detail: errText.slice(0, 200),
-      }), { status: 502, headers });
+      });
     }
 
     const data = await response.json();
@@ -146,10 +139,10 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
       parsed = JSON.parse(cleaned);
     } catch (parseErr) {
       console.error("Failed to parse Perplexity response:", content.slice(0, 500));
-      return new Response(JSON.stringify({
+      return res.status(502).json({
         error: "Failed to parse AI response as JSON",
         raw: content.slice(0, 300),
-      }), { status: 502, headers });
+      });
     }
 
     // Validate and sanitize
@@ -170,13 +163,11 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
         expectedGrowth: Number(item.expectedGrowth) || 0,
       }));
 
-    return new Response(JSON.stringify(validated), {
-      status: 200,
-      headers: { ...headers, "Cache-Control": "no-store" }
-    });
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json(validated);
   } catch (err: any) {
     console.error("Perplexity news error:", err.message);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
+    return res.status(500).json({ error: err.message });
   }
 }
 
