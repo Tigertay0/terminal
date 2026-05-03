@@ -62,8 +62,9 @@ export function SimNewsPanel({
     });
   }, [aiNews, selectedCompanies, selectedSector, importanceFilter, growthRange]);
 
+  const [showAll, setShowAll] = useState(false);
   const highItems = useMemo(() => aiNews.filter(i => i.importance === "high"), [aiNews]);
-  const displayedMinimized = highItems.slice(0, 5);
+  const displayedMinimized = showAll ? aiNews.slice(0, 20) : highItems.slice(0, 5);
   const moreCount = aiNews.length - displayedMinimized.length;
 
   const toggleCompany = useCallback((sym: string) => {
@@ -315,6 +316,12 @@ export function SimNewsPanel({
           <span className="text-2xs font-bold text-bb-orange tracking-wider uppercase">NEWS</span>
         </div>
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={e => { e.stopPropagation(); setShowAll(p => !p); }}
+            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm transition-colors ${showAll ? "bg-bb-orange/20 text-bb-orange" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {showAll ? "TOP" : "ALL"}
+          </button>
           <span className="text-2xs text-muted-foreground">{aiNews.length} ITEMS</span>
           <ChevronDown className="w-3 h-3 text-muted-foreground group-hover:text-foreground transition-colors" />
         </div>
