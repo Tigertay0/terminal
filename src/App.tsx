@@ -354,7 +354,7 @@ function SimTerminal({
           <WatchlistPanel symbols={watchlist} getStock={sim.getStock} onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} onRemoveSymbol={handleRemoveSymbol} />
         </div>
         <div className="min-h-0">
-          <PriceChart symbol={selectedSymbol} stock={currentStock} historicalData={historicalData} intradayTicks={sim.intradayTicks.get(selectedSymbol)} />
+          <PriceChart symbol={selectedSymbol} stock={currentStock} historicalData={historicalData} intradayTicks={sim.intradayTicks.get(selectedSymbol) ?? []} />
         </div>
         <div className="min-h-0">
           <PortfolioPanel cash={sim.cash} holdings={sim.holdings} trades={sim.trades} startingCash={effectiveSettings.startingCash} getPortfolioValue={sim.getPortfolioValue} getTotalPnL={sim.getTotalPnL} getHoldingPnL={sim.getHoldingPnL} getStock={sim.getStock} onBuy={sim.buyStock} onSell={sim.sellStock} selectedSymbol={selectedSymbol} onSelectSymbol={setSelectedSymbol} />
@@ -579,7 +579,7 @@ function EventTerminal({
           <WatchlistPanel symbols={watchlist} getStock={sim.getStock} onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} onRemoveSymbol={handleRemoveSymbol} />
         </div>
         <div className="min-h-0">
-          <PriceChart symbol={selectedSymbol} stock={currentStock} historicalData={historicalData} intradayTicks={sim.intradayTicks.get(selectedSymbol)} />
+          <PriceChart symbol={selectedSymbol} stock={currentStock} historicalData={historicalData} intradayTicks={sim.intradayTicks.get(selectedSymbol) ?? []} />
         </div>
         <div className="min-h-0">
           <PortfolioPanel cash={sim.cash} holdings={sim.holdings} trades={sim.trades} startingCash={event.startingCash} getPortfolioValue={sim.getPortfolioValue} getTotalPnL={sim.getTotalPnL} getHoldingPnL={sim.getHoldingPnL} getStock={sim.getStock} onBuy={sim.buyStock} onSell={sim.sellStock} selectedSymbol={selectedSymbol} onSelectSymbol={setSelectedSymbol} />

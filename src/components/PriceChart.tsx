@@ -325,9 +325,9 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
 
   const changeColor = getChangeColor(stock.change);
 
-  // Determine which time ranges to show
-  const hasIntraday = !!intradayTicks && intradayTicks.length > 0;
-  const timeRanges: TimeRange[] = hasIntraday
+  // Determine which time ranges to show — LIVE/1D available whenever we're in sim mode (prop is passed)
+  const isSimMode = intradayTicks !== undefined;
+  const timeRanges: TimeRange[] = isSimMode
     ? ["LIVE", "1D", "1W", "1M", "3M", "6M", "1Y"]
     : ["1W", "1M", "3M", "6M", "1Y"];
 
