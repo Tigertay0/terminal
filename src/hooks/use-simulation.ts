@@ -198,6 +198,7 @@ export function useSimulation(
   initialState?: SimInitialState,
   maxDays?: number,
   onDayCapReached?: () => void,
+  saveId?: string | null,
 ) {
   const [simStocks, setSimStocks] = useState<Map<string, TickerData>>(new Map());
   const [cash, setCash] = useState(() => initialState?.cash ?? settings.startingCash);
@@ -219,17 +220,17 @@ export function useSimulation(
   const [intradayTicks, setIntradayTicks] = useState<Map<string, IntradayTick[]>>(new Map());
 
   // ─── AI News state ───────────────────────────────────────────────
-  const [aiNews, setAiNews] = useState<AINewsItem[]>(() => loadNewsFromStorage());
+  const [aiNews, setAiNews] = useState<AINewsItem[]>(() => loadNewsFromStorage(saveId));
   const [aiNewsLoading, setAiNewsLoading] = useState(false);
   const [aiNewsError, setAiNewsError] = useState<string | null>(null);
   const aiNewsFetchedDay = useRef(-1); // track which day we last fetched
   const coherenceTracker = useRef(new NewsCoherenceTracker());
   const dayOpenPrices = useRef<Map<string, number>>(new Map()); // track day-open for price move detection
 
-  // Persist news to localStorage whenever it changes
+  // Persist news to localStorage whenever it changes (scoped per save)
   useEffect(() => {
-    if (aiNews.length > 0) saveNewsToStorage(aiNews);
-  }, [aiNews]);
+    if (aiNews.length > 0) saveNewsToStorage(aiNews, saveId);
+  }, [aiNews, saveId]);
 
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const tradeIdRef = useRef(0);

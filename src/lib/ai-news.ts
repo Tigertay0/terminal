@@ -29,18 +29,22 @@ interface StockInput {
   marketCap: number;
 }
 
-// ─── localStorage persistence ────────────────────────────────────
-const NEWS_STORAGE_KEY = "bb_sim_ai_news";
+// ─── localStorage persistence (scoped per save) ─────────────────
+const NEWS_STORAGE_PREFIX = "bb_sim_ai_news";
 
-export function saveNewsToStorage(items: AINewsItem[]) {
+function newsKey(saveId?: string | null): string {
+  return saveId ? `${NEWS_STORAGE_PREFIX}_${saveId}` : NEWS_STORAGE_PREFIX;
+}
+
+export function saveNewsToStorage(items: AINewsItem[], saveId?: string | null) {
   try {
-    localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(items.slice(0, 100)));
+    localStorage.setItem(newsKey(saveId), JSON.stringify(items.slice(0, 100)));
   } catch { /* quota exceeded — silently ignore */ }
 }
 
-export function loadNewsFromStorage(): AINewsItem[] {
+export function loadNewsFromStorage(saveId?: string | null): AINewsItem[] {
   try {
-    const raw = localStorage.getItem(NEWS_STORAGE_KEY);
+    const raw = localStorage.getItem(newsKey(saveId));
     if (!raw) return [];
     return JSON.parse(raw) as AINewsItem[];
   } catch {
@@ -48,8 +52,8 @@ export function loadNewsFromStorage(): AINewsItem[] {
   }
 }
 
-export function clearNewsStorage() {
-  localStorage.removeItem(NEWS_STORAGE_KEY);
+export function clearNewsStorage(saveId?: string | null) {
+  localStorage.removeItem(newsKey(saveId));
 }
 
 // ─── Fetch headlines only (fast — no summaries) ──────────────────

@@ -223,6 +223,9 @@ function SimTerminal({
     effectiveSettings,
     new Map(baseData.getAllStocks().map(s => [s.symbol, s])),
     initialState,
+    undefined,
+    undefined,
+    saveId,
   );
 
   // Mark mounted after first render
@@ -446,6 +449,7 @@ function EventTerminal({
     initialState,
     event.durationDays,
     handleDayCapReached,
+    `event_${participant.id}`,
   );
 
   // ─── Sync progress to Supabase ────────────────────────────────
