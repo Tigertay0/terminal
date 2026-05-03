@@ -1,6 +1,8 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { corsHeaders } from "./_lib/cors.js";
 
+export const config = {
+  runtime: 'edge',
+};
 interface StockInput {
   symbol: string;
   name: string;
@@ -19,27 +21,32 @@ interface AINewsItem {
   expectedGrowth: number;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(200).json({});
-  Object.entries(corsHeaders()).forEach(([k, v]) => res.setHeader(k, v));
+export default async function handler(req: Request) {
+  const cors = corsHeaders() as Record<string, string>;
+  const headers = { ...cors, "Content-Type": "application/json" };
+
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: cors });
+  }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "POST only" });
+    return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers });
   }
 
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "PERPLEXITY_API_KEY not configured" });
+    return new Response(JSON.stringify({ error: "PERPLEXITY_API_KEY not configured" }), { status: 500, headers });
   }
 
   try {
-    const { stocks, variation } = req.body as {
+    const bodyText = await req.text();
+    const { stocks, variation } = JSON.parse(bodyText) as {
       stocks: StockInput[];
       variation: string;
     };
 
     if (!stocks?.length) {
-      return res.status(400).json({ error: "No stocks provided" });
+      return new Response(JSON.stringify({ error: "No stocks provided" }), { status: 400, headers });
     }
 
     // Build stock summary for the prompt
@@ -79,7 +86,7 @@ RULES:
 7. Headlines must be SPECIFIC and informative (NOT generic like "Company reports results").
    GOOD: "NovaTech Q3 revenue beats estimates by 18% on cloud segment growth"
    BAD: "NovaTech reports quarterly results"
-8. Each item needs a 2-3 sentence summary explaining the news.
+8. Each item needs a detailed 4-5 sentence in-depth news article body explaining the news context, financial impact, and implications. Put this in the "summary" field.
 9. No duplicate or contradictory headlines for the same company.
 10. News must have logical causal connection to the expectedGrowth value.
 
@@ -90,7 +97,7 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
     "companyId": "TICKER",
     "sector": "Sector",
     "headline": "Specific headline here",
-    "summary": "2-3 sentence summary",
+    "summary": "Detailed 4-5 sentence in-depth article body here...",
     "importance": "high" or "low",
     "expectedGrowth": 4.5
   }
@@ -120,10 +127,10 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
     if (!response.ok) {
       const errText = await response.text();
       console.error("Perplexity API error:", response.status, errText);
-      return res.status(502).json({
+      return new Response(JSON.stringify({
         error: `Perplexity API returned ${response.status}`,
         detail: errText.slice(0, 200),
-      });
+      }), { status: 502, headers });
     }
 
     const data = await response.json();
@@ -139,10 +146,10 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
       parsed = JSON.parse(cleaned);
     } catch (parseErr) {
       console.error("Failed to parse Perplexity response:", content.slice(0, 500));
-      return res.status(502).json({
+      return new Response(JSON.stringify({
         error: "Failed to parse AI response as JSON",
         raw: content.slice(0, 300),
-      });
+      }), { status: 502, headers });
     }
 
     // Validate and sanitize
@@ -163,11 +170,13 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
         expectedGrowth: Number(item.expectedGrowth) || 0,
       }));
 
-    res.setHeader("Cache-Control", "no-store");
-    return res.status(200).json(validated);
+    return new Response(JSON.stringify(validated), {
+      status: 200,
+      headers: { ...headers, "Cache-Control": "no-store" }
+    });
   } catch (err: any) {
     console.error("Perplexity news error:", err.message);
-    return res.status(500).json({ error: err.message });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
   }
 }
 

@@ -91,9 +91,9 @@ export function SimNewsPanel({
   // ─── EXPANDED VIEW ─────────────────────────────────────────────
   if (expanded) {
     return (
-      <div className="bb-panel flex flex-col h-full" data-testid="sim-news-expanded">
+      <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md" data-testid="sim-news-expanded">
         {/* Header */}
-        <div className="bb-panel-header">
+        <div className="bb-panel-header shrink-0 border-b border-border">
           <div className="flex items-center gap-1.5">
             <Newspaper className="w-3 h-3 text-bb-orange" />
             <span className="text-2xs font-bold text-bb-orange tracking-wider uppercase">
@@ -103,9 +103,9 @@ export function SimNewsPanel({
           </div>
           <button
             onClick={() => setExpanded(false)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors p-2 -mr-2"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -340,40 +340,40 @@ function NewsCard({ item }: { item: AINewsItem }) {
   const importanceBg = item.importance === "high" ? "bg-amber-500/15 text-amber-400" : "bg-zinc-500/10 text-zinc-500";
 
   return (
-    <div className="px-2.5 py-2 border-b border-border/30 hover:bg-white/[0.015] transition-colors">
+    <div className="px-6 py-4 border-b border-border/30 hover:bg-white/[0.015] transition-colors">
       {/* Headline */}
-      <div className="text-[11px] font-semibold text-foreground leading-snug mb-1">
+      <div className="text-base font-bold text-foreground leading-snug mb-2">
         {item.headline}
       </div>
 
-      {/* Summary */}
-      <div className="text-[10px] text-muted-foreground leading-relaxed mb-1.5">
+      {/* Summary / Article Body */}
+      <div className="text-xs text-muted-foreground leading-relaxed mb-3 max-w-4xl">
         {item.summary}
       </div>
 
       {/* Tags row */}
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         {/* Company */}
-        <span className="text-[9px] font-bold text-bb-orange bg-bb-orange/10 px-1 py-px rounded-sm">
+        <span className="text-xs font-bold text-bb-orange bg-bb-orange/10 px-1.5 py-0.5 rounded-sm">
           {item.companyId}
         </span>
 
         {/* Sector */}
-        <span className="text-[9px] text-muted-foreground bg-white/[0.04] px-1 py-px rounded-sm">
+        <span className="text-xs text-muted-foreground bg-white/[0.04] px-1.5 py-0.5 rounded-sm">
           {item.sector}
         </span>
 
         {/* Importance badge */}
-        <span className={`text-[8px] font-bold px-1 py-px rounded-sm uppercase ${importanceBg}`}>
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase ${importanceBg}`}>
           {item.importance}
         </span>
 
         {/* Expected growth */}
-        <span className={`text-[9px] font-bold tabular-nums px-1 py-px rounded-sm ${growthColor} ${growthBg} ml-auto flex items-center gap-0.5`}>
+        <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-sm ${growthColor} ${growthBg} ml-auto flex items-center gap-1`}>
           {item.expectedGrowth >= 0 ? (
-            <TrendingUp className="w-2.5 h-2.5" />
+            <TrendingUp className="w-3 h-3" />
           ) : (
-            <TrendingDown className="w-2.5 h-2.5" />
+            <TrendingDown className="w-3 h-3" />
           )}
           {item.expectedGrowth >= 0 ? "+" : ""}{item.expectedGrowth.toFixed(1)}%
         </span>
