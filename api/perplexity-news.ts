@@ -58,43 +58,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? "low volatility (calm markets, mostly routine news)"
           : "realistic volatility (normal market conditions)";
 
-    const prompt = `You are a financial news generator for a stock market simulation game.
+    const numItems = Math.min(stocks.length, 5);
+    const prompt = `Generate ${numItems} financial news items as JSON array for a stock simulation.
 
-Generate realistic, specific financial news for the following stocks. The market is in ${modeDesc} mode.
+STOCKS: ${stockList}
 
-STOCKS:
-${stockList}
-
-RULES:
-1. Generate exactly ${Math.min(stocks.length, 8)} news items total.
-2. Every company must get at least 1 news item. Larger companies can get 2-3.
-3. Mix of positive and negative news (roughly 55% positive, 30% negative, 15% neutral-framed).
-4. Each item MUST have importance = "high" or "low". About 30% should be "high".
-5. Each item MUST have expectedGrowth as a percentage number (e.g. 4.5 or -2.1).
-6. CRITICAL CALIBRATION for expectedGrowth:
-   - Large-cap stocks (>$100/share): major events = +1% to +5%, minor = +0.1% to +0.8%
-   - Mid-cap stocks ($20-$100): major events = +3% to +10%
-   - Small-cap/penny stocks (<$20): major events = +5% to +25%, minor = +0.5% to +3%
-   - Same ranges apply in the NEGATIVE direction for bad news.
-7. Headlines must be SPECIFIC and informative (NOT generic like "Company reports results").
-   GOOD: "NovaTech Q3 revenue beats estimates by 18% on cloud segment growth"
-   BAD: "NovaTech reports quarterly results"
-8. Each item needs a detailed 4-5 sentence in-depth news article body explaining the news context, financial impact, and implications. Put this in the "summary" field.
-9. No duplicate or contradictory headlines for the same company.
-10. News must have logical causal connection to the expectedGrowth value.
-
-Return ONLY a JSON array (no markdown, no explanation) with this exact structure:
-[
-  {
-    "companyName": "Company Name",
-    "companyId": "TICKER",
-    "sector": "Sector",
-    "headline": "Specific headline here",
-    "summary": "Detailed 4-5 sentence in-depth article body here...",
-    "importance": "high" or "low",
-    "expectedGrowth": 4.5
-  }
-]`;
+Market: ${modeDesc}. Each item: companyName, companyId (TICKER), sector, headline (specific, not generic), summary (2-3 sentences), importance ("high"/"low", ~30% high), expectedGrowth (% number: large-cap ±1-5%, mid-cap ±3-10%, small-cap ±5-25%). Mix positive/negative. Return ONLY JSON array:
+[{"companyName":"...","companyId":"TICKER","sector":"...","headline":"...","summary":"...","importance":"high","expectedGrowth":4.5}]`;
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -112,7 +82,7 @@ Return ONLY a JSON array (no markdown, no explanation) with this exact structure
           },
           { role: "user", content: prompt },
         ],
-        max_tokens: 4096,
+        max_tokens: 2048,
         temperature: 0.7,
       }),
     });

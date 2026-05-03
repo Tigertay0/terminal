@@ -33,25 +33,48 @@ export async function fetchAINews(
   stocks: StockInput[],
   variation: string,
 ): Promise<AINewsItem[]> {
-  const res = await fetch("/api/perplexity-news", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stocks, variation }),
-  });
+  // Only send top 5 stocks to keep the prompt small and fast
+  const topStocks = stocks.slice(0, 5);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: "Unknown error" }));
-    throw new Error(err.error || `API returned ${res.status}`);
+  // Retry up to 3 times (Vercel cold starts can cause 504s)
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch("/api/perplexity-news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stocks: topStocks, variation }),
+      });
+
+      if (res.status === 504) {
+        // Vercel timeout — retry after a short delay (function is now warm)
+        lastError = new Error("Server timeout — retrying...");
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `API returned ${res.status}` }));
+        throw new Error(err.error || `API returned ${res.status}`);
+      }
+
+      const raw = await res.json();
+      const now = Date.now();
+
+      return raw.map((item: any, idx: number) => ({
+        ...item,
+        id: `ai-${now}-${idx}`,
+        generatedAt: now,
+      }));
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
   }
 
-  const raw = await res.json();
-  const now = Date.now();
-
-  return raw.map((item: any, idx: number) => ({
-    ...item,
-    id: `ai-${now}-${idx}`,
-    generatedAt: now,
-  }));
+  throw lastError || new Error("Failed after 3 attempts");
 }
 
 // ─── Synthetic news for unexplained price moves ──────────────────
