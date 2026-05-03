@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { TickerData, OHLCVBar } from "./use-finance-data";
+import {
+  fetchAINews,
+  generateSyntheticNews,
+  NewsCoherenceTracker,
+  type AINewsItem,
+  type AINewsState,
+} from "@/lib/ai-news";
 
 // ─── Types ───────────────────────────────────────────────────────
 export interface IntradayTick {
@@ -208,6 +215,14 @@ export function useSimulation(
   const [historicalCache, setHistoricalCache] = useState<Map<string, OHLCVBar[]>>(new Map());
   const [intradayTicks, setIntradayTicks] = useState<Map<string, IntradayTick[]>>(new Map());
 
+  // ─── AI News state ───────────────────────────────────────────────
+  const [aiNews, setAiNews] = useState<AINewsItem[]>([]);
+  const [aiNewsLoading, setAiNewsLoading] = useState(false);
+  const [aiNewsError, setAiNewsError] = useState<string | null>(null);
+  const aiNewsFetchedDay = useRef(-1); // track which day we last fetched
+  const coherenceTracker = useRef(new NewsCoherenceTracker());
+  const dayOpenPrices = useRef<Map<string, number>>(new Map()); // track day-open for price move detection
+
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const tradeIdRef = useRef(0);
   const pendingImpacts = useRef<Map<string, number>>(new Map());
@@ -278,17 +293,28 @@ export function useSimulation(
       return next;
     });
 
-    // Generate news (only during market hours)
+    // Generate intraday news (only during market hours) — legacy system as coherent small news
     const newsItem = generateSimNews(baseStocks, settings.variation);
     if (newsItem) {
       newsItem.time = new Date(simTime.getTime()); // use sim time
-      setNews(prev => [newsItem, ...prev].slice(0, 50));
-      // Apply price impact
-      if (newsItem.symbol) {
-        pendingImpacts.current.set(
-          newsItem.symbol,
-          (pendingImpacts.current.get(newsItem.symbol) || 1) * newsItem.priceImpact
-        );
+      // Check coherence: don't produce contradictory news for same company
+      const sentiment = newsItem.sentiment;
+      const sym = newsItem.symbol;
+      if (sym && coherenceTracker.current.wouldContradict(sym, sentiment)) {
+        // Skip this news item — it contradicts the established sentiment for today
+      } else {
+        if (sym) {
+          coherenceTracker.current.recordSentiment(sym, sentiment);
+          coherenceTracker.current.recordHeadline(sym, newsItem.title);
+        }
+        setNews(prev => [newsItem, ...prev].slice(0, 50));
+        // Apply price impact
+        if (newsItem.symbol) {
+          pendingImpacts.current.set(
+            newsItem.symbol,
+            (pendingImpacts.current.get(newsItem.symbol) || 1) * newsItem.priceImpact
+          );
+        }
       }
     }
   }, [settings.variation, baseStocks, simTime]);
@@ -348,6 +374,20 @@ export function useSimulation(
           });
           // Clear intraday ticks for new day
           setIntradayTicks(new Map());
+          // Reset coherence tracker for new day
+          coherenceTracker.current.reset();
+          // Record day-open prices for price move detection
+          setSimStocks(prevStocks => {
+            const openPrices = new Map<string, number>();
+            prevStocks.forEach((data, sym) => openPrices.set(sym, data.price));
+            dayOpenPrices.current = openPrices;
+            return prevStocks;
+          });
+          // Trigger AI news fetch at market close (for next day)
+          if (aiNewsFetchedDay.current < dayNumber) {
+            aiNewsFetchedDay.current = dayNumber;
+            triggerAINewsFetch();
+          }
           // Reset day high/low for new day
           setSimStocks(prev => {
             const next = new Map(prev);
@@ -472,6 +512,65 @@ export function useSimulation(
     return +((stock.price - holding.avgCost) * holding.shares).toFixed(2);
   }, [holdings, simStocks]);
 
+  // ─── AI News fetch ──────────────────────────────────────────────
+  const triggerAINewsFetch = useCallback(async () => {
+    if (simStocks.size === 0) return;
+    setAiNewsLoading(true);
+    setAiNewsError(null);
+    try {
+      const stockInputs = Array.from(simStocks.values()).map(s => ({
+        symbol: s.symbol,
+        name: s.name,
+        price: s.price,
+        sector: s.sector || "Unknown",
+        marketCap: s.marketCap || 0,
+      }));
+      const items = await fetchAINews(stockInputs, settings.variation);
+
+      // Apply expectedGrowth to pending price impacts with ±20-40% random variance
+      items.forEach(item => {
+        const stock = simStocks.get(item.companyId);
+        if (!stock) return;
+        // Add variance: actual impact = expectedGrowth * (0.6 to 1.4)
+        const variance = 0.6 + Math.random() * 0.8;
+        const actualGrowthPct = item.expectedGrowth * variance;
+        const impactMultiplier = 1 + actualGrowthPct / 100;
+        pendingImpacts.current.set(
+          item.companyId,
+          (pendingImpacts.current.get(item.companyId) || 1) * impactMultiplier
+        );
+        // Track coherence for the new day
+        const sentiment = item.expectedGrowth >= 0 ? "bullish" : "bearish";
+        coherenceTracker.current.recordSentiment(item.companyId, sentiment as "bullish" | "bearish");
+        coherenceTracker.current.recordHeadline(item.companyId, item.headline);
+      });
+
+      // Also generate synthetic news for any stocks with >1.5% unexplained price moves
+      const synthetics: AINewsItem[] = [];
+      simStocks.forEach((data, sym) => {
+        const openPrice = dayOpenPrices.current.get(sym);
+        if (!openPrice) return;
+        const changePct = ((data.price - openPrice) / openPrice) * 100;
+        if (Math.abs(changePct) > 1.5) {
+          // Check if AI news already covers this stock
+          const covered = items.some(i => i.companyId === sym);
+          if (!covered) {
+            synthetics.push(
+              generateSyntheticNews(sym, data.name, data.sector || "Unknown", changePct)
+            );
+          }
+        }
+      });
+
+      setAiNews(prev => [...items, ...synthetics, ...prev].slice(0, 100));
+    } catch (err: any) {
+      console.error("AI news fetch failed:", err);
+      setAiNewsError(err.message || "Failed to fetch AI news");
+    } finally {
+      setAiNewsLoading(false);
+    }
+  }, [simStocks, settings.variation]);
+
   // Generate historical for sim
   const getSimHistorical = useCallback((symbol: string): OHLCVBar[] => {
     if (historicalCache.has(symbol)) return historicalCache.get(symbol)!;
@@ -540,5 +639,10 @@ export function useSimulation(
     getTopGainers: useCallback(() => Array.from(simStocks.values()).sort((a, b) => b.changesPercentage - a.changesPercentage).slice(0, 10), [simStocks]),
     getTopLosers: useCallback(() => Array.from(simStocks.values()).sort((a, b) => a.changesPercentage - b.changesPercentage).slice(0, 10), [simStocks]),
     getMostActive: useCallback(() => Array.from(simStocks.values()).sort((a, b) => b.volume - a.volume).slice(0, 10), [simStocks]),
+    // AI News
+    aiNews,
+    aiNewsLoading,
+    aiNewsError,
+    triggerAINewsFetch,
   };
 }

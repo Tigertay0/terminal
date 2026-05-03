@@ -1,0 +1,154 @@
+// ─── AI News Types & Service ─────────────────────────────────────
+// Client-side module for fetching Perplexity-generated news
+
+export interface AINewsItem {
+  id: string;
+  companyName: string;
+  companyId: string;
+  sector: string;
+  headline: string;
+  summary: string;
+  importance: "high" | "low";
+  expectedGrowth: number; // percentage, e.g. 4.5 or -2.1
+  generatedAt: number; // timestamp
+}
+
+export interface AINewsState {
+  items: AINewsItem[];
+  loading: boolean;
+  error: string | null;
+  lastFetchDay: number; // sim day when last fetched
+}
+
+interface StockInput {
+  symbol: string;
+  name: string;
+  price: number;
+  sector: string;
+  marketCap: number;
+}
+
+// ─── Fetch from Vercel serverless function ───────────────────────
+export async function fetchAINews(
+  stocks: StockInput[],
+  variation: string,
+): Promise<AINewsItem[]> {
+  const res = await fetch("/api/perplexity-news", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stocks, variation }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(err.error || `API returned ${res.status}`);
+  }
+
+  const raw = await res.json();
+  const now = Date.now();
+
+  return raw.map((item: any, idx: number) => ({
+    ...item,
+    id: `ai-${now}-${idx}`,
+    generatedAt: now,
+  }));
+}
+
+// ─── Synthetic news for unexplained price moves ──────────────────
+const SYNTHETIC_BULLISH = [
+  "Sector momentum lifts {sym} alongside peer gains",
+  "{sym} benefits from positive macro data and investor optimism",
+  "Institutional buying pressure drives {sym} higher",
+  "Options activity surges in {sym} suggesting bullish positioning",
+  "{sym} rallies on strong sector-wide demand trends",
+  "Technical breakout triggers algorithmic buying in {sym}",
+];
+
+const SYNTHETIC_BEARISH = [
+  "Profit-taking weighs on {sym} after extended rally",
+  "{sym} under pressure from broader market sell-off",
+  "Risk-off sentiment drags {sym} lower with sector peers",
+  "Large block trade in {sym} signals institutional repositioning",
+  "{sym} declines on light volume amid macro uncertainty",
+  "Sector rotation out of {sym}'s industry group accelerates",
+];
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+export function generateSyntheticNews(
+  symbol: string,
+  companyName: string,
+  sector: string,
+  priceChangePct: number,
+): AINewsItem {
+  const isPositive = priceChangePct > 0;
+  const templates = isPositive ? SYNTHETIC_BULLISH : SYNTHETIC_BEARISH;
+  const headline = pickRandom(templates).replace("{sym}", symbol);
+
+  return {
+    id: `syn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    companyName,
+    companyId: symbol,
+    sector,
+    headline,
+    summary: `${symbol} moved ${priceChangePct > 0 ? "+" : ""}${priceChangePct.toFixed(1)}% driven by market forces. ${
+      isPositive
+        ? "Analysts see this as part of broader sector strength."
+        : "Traders attribute the decline to sector-wide headwinds."
+    }`,
+    importance: Math.abs(priceChangePct) > 3 ? "high" : "low",
+    expectedGrowth: +priceChangePct.toFixed(1),
+    generatedAt: Date.now(),
+  };
+}
+
+// ─── Coherence tracker ───────────────────────────────────────────
+// Prevents contradictory intraday news for the same company
+export class NewsCoherenceTracker {
+  // Track the "sentiment direction" established for each company this day
+  private companySentiment = new Map<string, "bullish" | "bearish" | "neutral">();
+  private companyHeadlines = new Map<string, Set<string>>();
+
+  reset() {
+    this.companySentiment.clear();
+    this.companyHeadlines.clear();
+  }
+
+  /** Record that a company got news with this sentiment */
+  recordSentiment(companyId: string, sentiment: "bullish" | "bearish" | "neutral") {
+    // Only set if not already established (first news of the day wins)
+    if (!this.companySentiment.has(companyId)) {
+      this.companySentiment.set(companyId, sentiment);
+    }
+  }
+
+  /** Check if a news item's sentiment contradicts established direction */
+  wouldContradict(companyId: string, sentiment: "bullish" | "bearish" | "neutral"): boolean {
+    const existing = this.companySentiment.get(companyId);
+    if (!existing || existing === "neutral" || sentiment === "neutral") return false;
+    return existing !== sentiment;
+  }
+
+  /** Check if headline is too similar to existing ones */
+  isDuplicateHeadline(companyId: string, headline: string): boolean {
+    const existing = this.companyHeadlines.get(companyId);
+    if (!existing) return false;
+    // Simple similarity: check if any existing headline shares >60% words
+    const words = new Set(headline.toLowerCase().split(/\s+/));
+    for (const h of existing) {
+      const hWords = h.toLowerCase().split(/\s+/);
+      const overlap = hWords.filter((w) => words.has(w)).length;
+      if (overlap / Math.max(words.size, hWords.length) > 0.6) return true;
+    }
+    return false;
+  }
+
+  recordHeadline(companyId: string, headline: string) {
+    if (!this.companyHeadlines.has(companyId)) {
+      this.companyHeadlines.set(companyId, new Set());
+    }
+    this.companyHeadlines.get(companyId)!.add(headline);
+  }
+}

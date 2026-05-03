@@ -14,7 +14,7 @@ import { CommandBar } from "@/components/CommandBar";
 import { ModeSelect } from "@/components/ModeSelect";
 import { TimeControlBar } from "@/components/TimeControlBar";
 import { PortfolioPanel } from "@/components/PortfolioPanel";
-import { SimNewsFeed } from "@/components/SimNewsFeed";
+import { SimNewsPanel } from "@/components/SimNewsPanel";
 import { Tutorial } from "@/components/Tutorial";
 import { AuthScreen } from "@/components/AuthScreen";
 import { SaveSelect } from "@/components/SaveSelect";
@@ -364,7 +364,14 @@ function SimTerminal({
           <SectorHeatmap stocks={sim.getAllStocks()} onSelectSymbol={setSelectedSymbol} />
         </div>
         <div className="min-h-0">
-          <SimNewsFeed news={sim.news} selectedSymbol={selectedSymbol} />
+          <SimNewsPanel
+            aiNews={sim.aiNews}
+            loading={sim.aiNewsLoading}
+            error={sim.aiNewsError}
+            onRetry={sim.triggerAINewsFetch}
+            sectors={[...new Set(sim.getAllStocks().map(s => s.sector).filter(Boolean))]}
+            companies={sim.getAllStocks().map(s => ({ symbol: s.symbol, name: s.name }))}
+          />
         </div>
       </div>
       <CommandBar onCommand={handleCommand} commandHistory={commandHistory} />
@@ -610,7 +617,14 @@ function EventTerminal({
             {eventPanel === "leaderboard" ? (
               <EventLeaderboard event={event} userId={userId} />
             ) : (
-              <SimNewsFeed news={sim.news} selectedSymbol={selectedSymbol} />
+              <SimNewsPanel
+                aiNews={sim.aiNews}
+                loading={sim.aiNewsLoading}
+                error={sim.aiNewsError}
+                onRetry={sim.triggerAINewsFetch}
+                sectors={[...new Set(sim.getAllStocks().map(s => s.sector).filter(Boolean))]}
+                companies={sim.getAllStocks().map(s => ({ symbol: s.symbol, name: s.name }))}
+              />
             )}
           </div>
         </div>
