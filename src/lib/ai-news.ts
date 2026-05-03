@@ -12,6 +12,8 @@ export interface AINewsItem {
   sentiment: "bullish" | "bearish" | "neutral" | "alert";
   expectedGrowth: number; // percentage, e.g. 4.5 or -2.1
   generatedAt: number; // timestamp
+  simDay?: number; // simulation day number
+  simTimeStr?: string; // e.g. "10:35 AM"
 }
 
 export interface AINewsState {

@@ -458,6 +458,12 @@ function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?:
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase ${importanceBg}`}>
               {item.importance}
             </span>
+            {item.simDay && (
+              <span className="text-[10px] text-muted-foreground/60 ml-auto flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5" />
+                Day {item.simDay}{item.simTimeStr ? ` • ${item.simTimeStr}` : ""}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -500,7 +506,7 @@ function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?:
         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase ${importanceBg}`}>
           {item.importance}
         </span>
-        <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-sm ${growthColor} ${growthBg} ml-auto flex items-center gap-1`}>
+        <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-sm ${growthColor} ${growthBg} flex items-center gap-1`}>
           {item.expectedGrowth >= 0 ? (
             <TrendingUp className="w-3 h-3" />
           ) : (
@@ -508,6 +514,12 @@ function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?:
           )}
           {item.expectedGrowth >= 0 ? "+" : ""}{item.expectedGrowth.toFixed(1)}%
         </span>
+        {item.simDay && (
+          <span className="text-[10px] text-muted-foreground/60 ml-auto flex items-center gap-1">
+            <Clock className="w-2.5 h-2.5" />
+            Day {item.simDay}{item.simTimeStr ? ` • ${item.simTimeStr}` : ""}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -543,6 +555,11 @@ function MiniNewsCard({ item }: { item: AINewsItem }) {
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="text-[9px] font-bold text-bb-orange">{item.companyId}</span>
             <span className={`text-[8px] font-bold uppercase ${sentimentColor[sentiment]}`}>{sentiment}</span>
+            {item.simDay && (
+              <span className="text-[8px] text-muted-foreground/50">
+                D{item.simDay}{item.simTimeStr ? ` ${item.simTimeStr}` : ""}
+              </span>
+            )}
             <span className={`text-[9px] font-bold tabular-nums ${growthColor} ml-auto`}>
               {item.expectedGrowth >= 0 ? "+" : ""}{item.expectedGrowth.toFixed(1)}%
             </span>

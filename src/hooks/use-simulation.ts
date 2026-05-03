@@ -376,6 +376,9 @@ export function useSimulation(
           if (!coherenceTracker.current.wouldContradict(randomSym, templateItem.sentiment)) {
             coherenceTracker.current.recordSentiment(randomSym, templateItem.sentiment);
             coherenceTracker.current.recordHeadline(randomSym, templateItem.headline);
+            // Stamp simulation time
+            templateItem.simDay = dayNumber;
+            templateItem.simTimeStr = simTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
             setAiNews(prev => [templateItem, ...prev].slice(0, 100));
             // Apply price impact (always < 5%)
             const impactMultiplier = 1 + templateItem.expectedGrowth / 100;
@@ -505,6 +508,8 @@ export function useSimulation(
                   sentiment: "alert",
                   expectedGrowth: isBoom ? +(magnitude * 100).toFixed(1) : +(-magnitude * 100).toFixed(1),
                   generatedAt: Date.now(),
+                  simDay: dayNumber + 1,
+                  simTimeStr: "9:30 AM",
                 };
                 setAiNews(prev => [alertItem, ...prev].slice(0, 100));
 
