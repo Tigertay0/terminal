@@ -1,23 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import type { OHLCVBar, TickerData } from "@/hooks/use-finance-data";
+import type { IntradayTick } from "@/hooks/use-simulation";
 import { formatPrice, formatPercent, formatChange, getChangeColor, formatNumber, formatVolume } from "@/lib/finance-api";
 
 interface PriceChartProps {
   symbol: string;
   stock: TickerData | undefined;
   historicalData: OHLCVBar[];
+  /** Intraday price ticks for 1D/LIVE views (simulation mode only) */
+  intradayTicks?: IntradayTick[];
 }
 
-type TimeRange = "1W" | "1M" | "3M" | "6M" | "1Y";
+type TimeRange = "LIVE" | "1D" | "1W" | "1M" | "3M" | "6M" | "1Y";
 
-export function PriceChart({ symbol, stock, historicalData }: PriceChartProps) {
+export function PriceChart({ symbol, stock, historicalData, intradayTicks }: PriceChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>("3M");
   const [hoverInfo, setHoverInfo] = useState<{ x: number; price: number; date: string; vol: number } | null>(null);
 
-  // Filter data by time range
+  const isIntraday = timeRange === "1D" || timeRange === "LIVE";
+
+  // Filter data by time range (for daily bars)
   const filteredData = (() => {
+    if (isIntraday) return []; // Not used for intraday
     if (!historicalData.length) return [];
     const now = new Date();
     let daysBack = 90;
@@ -33,7 +39,20 @@ export function PriceChart({ symbol, stock, historicalData }: PriceChartProps) {
     return historicalData.filter(d => new Date(d.date) >= cutoff);
   })();
 
+  // Intraday data for 1D/LIVE views
+  const intradayData = (() => {
+    if (!isIntraday || !intradayTicks?.length) return [];
+    if (timeRange === "LIVE") {
+      // LIVE: show last 60 ticks (rolling window)
+      return intradayTicks.slice(-60);
+    }
+    // 1D: show all ticks
+    return intradayTicks;
+  })();
+
+  // ─── Draw daily chart ───────────────────────────────────────────
   useEffect(() => {
+    if (isIntraday) return; // Skip for intraday modes
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container || !filteredData.length) return;
@@ -135,7 +154,166 @@ export function PriceChart({ symbol, stock, historicalData }: PriceChartProps) {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [filteredData, timeRange]);
+  }, [filteredData, timeRange, isIntraday]);
+
+  // ─── Draw intraday chart (1D / LIVE) ────────────────────────────
+  useEffect(() => {
+    if (!isIntraday) return;
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container || !intradayData.length) return;
+
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const width = rect.width;
+    const totalHeight = rect.height;
+    const chartHeight = totalHeight - 5;
+
+    canvas.width = width * dpr;
+    canvas.height = totalHeight * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${totalHeight}px`;
+
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, totalHeight);
+
+    const prices = intradayData.map(d => d.price);
+    if (prices.length < 2) return;
+
+    const minPrice = Math.min(...prices) * 0.999;
+    const maxPrice = Math.max(...prices) * 1.001;
+    const priceRange = maxPrice - minPrice || 1;
+
+    const padding = { left: 0, right: 0, top: 6, bottom: 6 };
+    const chartW = width - padding.left - padding.right;
+    const drawH = chartHeight - padding.top - padding.bottom;
+
+    // Draw subtle grid
+    ctx.strokeStyle = "hsla(220, 10%, 20%, 0.3)";
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 4; i++) {
+      const y = padding.top + drawH * (i / 3);
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(width - padding.right, y);
+      ctx.stroke();
+
+      // Price labels on grid
+      const gridPrice = maxPrice - (priceRange * (i / 3));
+      ctx.fillStyle = "hsla(220, 10%, 50%, 0.5)";
+      ctx.font = "9px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(`$${gridPrice.toFixed(2)}`, width - 4, y - 2);
+    }
+
+    // Determine color
+    const firstPrice = prices[0];
+    const lastPrice = prices[prices.length - 1];
+    const isUp = lastPrice >= firstPrice;
+    const lineColor = isUp ? "hsl(142, 76%, 36%)" : "hsl(0, 72%, 51%)";
+    const fillColor = isUp ? "hsla(142, 76%, 36%, 0.10)" : "hsla(0, 72%, 51%, 0.10)";
+    const glowColor = isUp ? "hsla(142, 76%, 36%, 0.4)" : "hsla(0, 72%, 51%, 0.4)";
+
+    // Draw glow behind line (for LIVE effect)
+    if (timeRange === "LIVE") {
+      ctx.beginPath();
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      intradayData.forEach((d, i) => {
+        const x = padding.left + (i / (intradayData.length - 1)) * chartW;
+        const y = padding.top + (1 - (d.price - minPrice) / priceRange) * drawH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    // Draw main price line
+    ctx.beginPath();
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = "round";
+
+    intradayData.forEach((d, i) => {
+      const x = padding.left + (i / (intradayData.length - 1)) * chartW;
+      const y = padding.top + (1 - (d.price - minPrice) / priceRange) * drawH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Fill area
+    const lastX = padding.left + chartW;
+    const bottomY = chartHeight;
+    ctx.lineTo(lastX, bottomY);
+    ctx.lineTo(padding.left, bottomY);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // Draw current price dot (pulsing effect in LIVE)
+    if (timeRange === "LIVE" && intradayData.length > 0) {
+      const lastTick = intradayData[intradayData.length - 1];
+      const lx = padding.left + chartW;
+      const ly = padding.top + (1 - (lastTick.price - minPrice) / priceRange) * drawH;
+
+      // Outer glow
+      ctx.beginPath();
+      ctx.arc(lx, ly, 5, 0, Math.PI * 2);
+      ctx.fillStyle = glowColor;
+      ctx.fill();
+
+      // Inner dot
+      ctx.beginPath();
+      ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = lineColor;
+      ctx.fill();
+
+      // Current price label
+      ctx.fillStyle = lineColor;
+      ctx.font = "bold 10px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(`$${lastTick.price.toFixed(2)}`, lx - 10, ly - 8);
+    }
+
+    // Time labels at bottom
+    ctx.fillStyle = "hsla(220, 10%, 50%, 0.4)";
+    ctx.font = "8px 'JetBrains Mono', monospace";
+    ctx.textAlign = "center";
+    const labelCount = Math.min(6, intradayData.length);
+    for (let i = 0; i < labelCount; i++) {
+      const idx = Math.floor((i / (labelCount - 1)) * (intradayData.length - 1));
+      const x = padding.left + (idx / (intradayData.length - 1)) * chartW;
+      ctx.fillText(intradayData[idx].time, x, chartHeight - 1);
+    }
+
+    // Hover handling for intraday
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const idx = Math.round((mx - padding.left) / chartW * (intradayData.length - 1));
+      if (idx >= 0 && idx < intradayData.length) {
+        setHoverInfo({
+          x: mx,
+          price: intradayData[idx].price,
+          date: intradayData[idx].time,
+          vol: intradayData[idx].volume,
+        });
+      }
+    };
+
+    const handleMouseLeave = () => setHoverInfo(null);
+
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [intradayData, timeRange, isIntraday]);
 
   if (!stock) {
     return (
@@ -147,6 +325,12 @@ export function PriceChart({ symbol, stock, historicalData }: PriceChartProps) {
 
   const changeColor = getChangeColor(stock.change);
 
+  // Determine which time ranges to show
+  const hasIntraday = !!intradayTicks && intradayTicks.length > 0;
+  const timeRanges: TimeRange[] = hasIntraday
+    ? ["LIVE", "1D", "1W", "1M", "3M", "6M", "1Y"]
+    : ["1W", "1M", "3M", "6M", "1Y"];
+
   return (
     <div className="bb-panel flex flex-col h-full" data-testid="price-chart">
       {/* Header */}
@@ -155,19 +339,26 @@ export function PriceChart({ symbol, stock, historicalData }: PriceChartProps) {
           <span className="text-bb-orange font-bold text-xs">{symbol}</span>
           <span className="text-2xs text-muted-foreground truncate max-w-[160px]">{stock.name}</span>
         </div>
-        <div className="flex items-center gap-2">
-          {(["1W", "1M", "3M", "6M", "1Y"] as TimeRange[]).map(r => (
+        <div className="flex items-center gap-1">
+          {timeRanges.map(r => (
             <button
               key={r}
               onClick={() => setTimeRange(r)}
               className={`text-2xs px-1.5 py-0.5 rounded-sm font-medium transition-colors ${
                 timeRange === r
-                  ? "bg-bb-orange/20 text-bb-orange"
+                  ? r === "LIVE"
+                    ? "bg-bb-green/20 text-bb-green"
+                    : "bg-bb-orange/20 text-bb-orange"
                   : "text-muted-foreground hover:text-foreground"
               }`}
               data-testid={`button-range-${r}`}
             >
-              {r}
+              {r === "LIVE" ? (
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-bb-green animate-pulse" />
+                  LIVE
+                </span>
+              ) : r}
             </button>
           ))}
         </div>
@@ -189,20 +380,32 @@ export function PriceChart({ symbol, stock, historicalData }: PriceChartProps) {
         </div>
       </div>
 
-      {/* Chart area */}
-      <div ref={containerRef} className="flex-1 relative min-h-0 px-1 pt-1">
-        <canvas ref={canvasRef} className="w-full h-full" />
-        {hoverInfo && (
-          <div
-            className="absolute top-1 pointer-events-none bg-[hsl(220,14%,9%)]/90 border border-border rounded-sm px-2 py-1"
-            style={{ left: Math.min(hoverInfo.x + 8, (containerRef.current?.clientWidth || 300) - 120) }}
-          >
-            <div className="text-2xs text-muted-foreground">{hoverInfo.date}</div>
-            <div className="text-xs font-bold tabular-nums">${formatPrice(hoverInfo.price)}</div>
-            <div className="text-2xs text-muted-foreground tabular-nums">Vol: {formatVolume(hoverInfo.vol)}</div>
+      {/* No data message for intraday when paused/no ticks */}
+      {isIntraday && intradayData.length === 0 && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-muted-foreground text-xs">No intraday data yet</div>
+            <div className="text-muted-foreground/60 text-[10px] mt-1">Start the simulation to see live ticks</div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Chart area */}
+      {(!isIntraday || intradayData.length > 0) && (
+        <div ref={containerRef} className="flex-1 relative min-h-0 px-1 pt-1">
+          <canvas ref={canvasRef} className="w-full h-full" />
+          {hoverInfo && (
+            <div
+              className="absolute top-1 pointer-events-none bg-[hsl(220,14%,9%)]/90 border border-border rounded-sm px-2 py-1"
+              style={{ left: Math.min(hoverInfo.x + 8, (containerRef.current?.clientWidth || 300) - 120) }}
+            >
+              <div className="text-2xs text-muted-foreground">{hoverInfo.date}</div>
+              <div className="text-xs font-bold tabular-nums">${formatPrice(hoverInfo.price)}</div>
+              {!isIntraday && <div className="text-2xs text-muted-foreground tabular-nums">Vol: {formatVolume(hoverInfo.vol)}</div>}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Key stats bar */}
       <div className="flex items-center gap-3 px-3 py-1 border-t border-border text-2xs">

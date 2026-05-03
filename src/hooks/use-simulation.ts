@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { TickerData, OHLCVBar } from "./use-finance-data";
 
 // ─── Types ───────────────────────────────────────────────────────
+export interface IntradayTick {
+  time: string; // HH:MM format
+  price: number;
+  volume: number;
+}
+
 export type MarketVariation = "low" | "realistic" | "high";
 export type TimeSpeed = "paused" | "1min" | "5min" | "1hr" | "1day";
 
@@ -200,6 +206,7 @@ export function useSimulation(
   const [timeSpeed, setTimeSpeed] = useState<TimeSpeed>("paused");
   const [dailySnapshots, setDailySnapshots] = useState<number[]>([]);
   const [historicalCache, setHistoricalCache] = useState<Map<string, OHLCVBar[]>>(new Map());
+  const [intradayTicks, setIntradayTicks] = useState<Map<string, IntradayTick[]>>(new Map());
 
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const tradeIdRef = useRef(0);
@@ -251,6 +258,23 @@ export function useSimulation(
           volume: data.volume + Math.floor(Math.random() * 100000),
         });
       }
+      return next;
+    });
+
+    // Record intraday ticks for charting
+    setIntradayTicks(prev => {
+      const next = new Map(prev);
+      setSimStocks(stocks => {
+        stocks.forEach((data, sym) => {
+          const ticks = next.get(sym) ?? [];
+          const timeStr = `${String(simTime.getHours()).padStart(2, '0')}:${String(simTime.getMinutes()).padStart(2, '0')}`;
+          ticks.push({ time: timeStr, price: data.price, volume: data.volume });
+          // Keep max 500 ticks per symbol to prevent memory bloat
+          if (ticks.length > 500) ticks.shift();
+          next.set(sym, ticks);
+        });
+        return stocks; // don't actually change state, just reading
+      });
       return next;
     });
 
@@ -322,6 +346,8 @@ export function useSimulation(
             });
             return [...prev, +value.toFixed(2)];
           });
+          // Clear intraday ticks for new day
+          setIntradayTicks(new Map());
           // Reset day high/low for new day
           setSimStocks(prev => {
             const next = new Map(prev);
@@ -489,6 +515,7 @@ export function useSimulation(
     news,
     timeSpeed,
     dailySnapshots,
+    intradayTicks,
     // Actions
     setTimeSpeed,
     buyStock,
