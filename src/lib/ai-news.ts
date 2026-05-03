@@ -9,6 +9,7 @@ export interface AINewsItem {
   headline: string;
   summary: string;
   importance: "high" | "low";
+  sentiment: "bullish" | "bearish" | "neutral" | "alert";
   expectedGrowth: number; // percentage, e.g. 4.5 or -2.1
   generatedAt: number; // timestamp
 }
@@ -122,6 +123,7 @@ export function generateSyntheticNews(
         : "Traders attribute the decline to sector-wide headwinds."
     }`,
     importance: Math.abs(priceChangePct) > 3 ? "high" : "low",
+    sentiment: isPositive ? "bullish" : "bearish",
     expectedGrowth: +priceChangePct.toFixed(1),
     generatedAt: Date.now(),
   };

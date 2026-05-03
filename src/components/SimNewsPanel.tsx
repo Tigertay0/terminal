@@ -339,20 +339,40 @@ function NewsCard({ item }: { item: AINewsItem }) {
   const growthBg = item.expectedGrowth >= 0 ? "bg-bb-green/10" : "bg-bb-red/10";
   const importanceBg = item.importance === "high" ? "bg-amber-500/15 text-amber-400" : "bg-zinc-500/10 text-zinc-500";
 
+  // Sentiment badge styling
+  const sentimentStyles: Record<string, string> = {
+    bullish: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    bearish: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+    neutral: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+    alert: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  };
+  const sentimentIcons: Record<string, string> = {
+    bullish: "▲",
+    bearish: "▼",
+    neutral: "●",
+    alert: "⚠",
+  };
+  const sentiment = item.sentiment || "neutral";
+
   return (
     <div className="px-6 py-4 border-b border-border/30 hover:bg-white/[0.015] transition-colors">
-      {/* Headline */}
-      <div className="text-base font-bold text-foreground leading-snug mb-2">
-        {item.headline}
+      {/* Top row: sentiment + headline */}
+      <div className="flex items-start gap-3 mb-2">
+        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${sentimentStyles[sentiment] || sentimentStyles.neutral}`}>
+          {sentimentIcons[sentiment]} {sentiment}
+        </span>
+        <div className="text-base font-bold text-foreground leading-snug">
+          {item.headline}
+        </div>
       </div>
 
       {/* Summary / Article Body */}
-      <div className="text-xs text-muted-foreground leading-relaxed mb-3 max-w-4xl">
+      <div className="text-xs text-muted-foreground leading-relaxed mb-3 max-w-4xl ml-[72px]">
         {item.summary}
       </div>
 
       {/* Tags row */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap ml-[72px]">
         {/* Company */}
         <span className="text-xs font-bold text-bb-orange bg-bb-orange/10 px-1.5 py-0.5 rounded-sm">
           {item.companyId}
@@ -385,18 +405,33 @@ function NewsCard({ item }: { item: AINewsItem }) {
 // ─── Mini News Card (minimized view) ─────────────────────────────
 function MiniNewsCard({ item }: { item: AINewsItem }) {
   const growthColor = item.expectedGrowth >= 0 ? "text-bb-green" : "text-bb-red";
+  const sentiment = item.sentiment || "neutral";
+  const sentimentColor: Record<string, string> = {
+    bullish: "text-emerald-400",
+    bearish: "text-rose-400",
+    neutral: "text-blue-400",
+    alert: "text-amber-300",
+  };
+  const sentimentIcon: Record<string, string> = {
+    bullish: "▲",
+    bearish: "▼",
+    neutral: "●",
+    alert: "⚠",
+  };
 
   return (
     <div className="px-2 py-1.5 border-b border-border/50 hover:bg-white/[0.02] transition-colors">
       <div className="flex items-start gap-1.5">
-        <Zap className="w-2.5 h-2.5 text-amber-400 shrink-0 mt-0.5" />
+        <span className={`text-[8px] shrink-0 mt-1 ${sentimentColor[sentiment]}`}>
+          {sentimentIcon[sentiment]}
+        </span>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] text-foreground leading-snug line-clamp-2 font-medium">
             {item.headline}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="text-[9px] font-bold text-bb-orange">{item.companyId}</span>
-            <span className="text-[8px] text-muted-foreground">{item.sector}</span>
+            <span className={`text-[8px] font-bold uppercase ${sentimentColor[sentiment]}`}>{sentiment}</span>
             <span className={`text-[9px] font-bold tabular-nums ${growthColor} ml-auto`}>
               {item.expectedGrowth >= 0 ? "+" : ""}{item.expectedGrowth.toFixed(1)}%
             </span>

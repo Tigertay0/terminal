@@ -16,6 +16,7 @@ interface AINewsItem {
   headline: string;
   summary: string;
   importance: "high" | "low";
+  sentiment: "bullish" | "bearish" | "neutral" | "alert";
   expectedGrowth: number;
 }
 
@@ -58,13 +59,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? "low volatility (calm markets, mostly routine news)"
           : "realistic volatility (normal market conditions)";
 
-    const numItems = Math.min(stocks.length, 5);
+    const numItems = Math.min(stocks.length * 2, 10);
     const prompt = `Generate ${numItems} financial news items as JSON array for a stock simulation.
 
 STOCKS: ${stockList}
 
-Market: ${modeDesc}. Each item: companyName, companyId (TICKER), sector, headline (specific, not generic), summary (2-3 sentences), importance ("high"/"low", ~30% high), expectedGrowth (% number: large-cap ±1-5%, mid-cap ±3-10%, small-cap ±5-25%). Mix positive/negative. Return ONLY JSON array:
-[{"companyName":"...","companyId":"TICKER","sector":"...","headline":"...","summary":"...","importance":"high","expectedGrowth":4.5}]`;
+Market: ${modeDesc}. Each item needs: companyName, companyId (TICKER), sector, headline (specific, not generic), summary (2-3 sentences), importance ("high"/"low", ~30% high), sentiment (one of "bullish"/"bearish"/"neutral"/"alert"), expectedGrowth (% number: large-cap ±1-5%, mid-cap ±3-10%, small-cap ±5-25%). Use "alert" for urgent breaking news. Mix positive/negative. Return ONLY JSON array:
+[{"companyName":"...","companyId":"TICKER","sector":"...","headline":"...","summary":"...","importance":"high","sentiment":"bullish","expectedGrowth":4.5}]`;
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -130,6 +131,9 @@ Market: ${modeDesc}. Each item: companyName, companyId (TICKER), sector, headlin
         headline: String(item.headline),
         summary: String(item.summary || ""),
         importance: item.importance === "high" ? "high" : "low",
+        sentiment: ["bullish", "bearish", "neutral", "alert"].includes(item.sentiment)
+          ? item.sentiment
+          : item.expectedGrowth > 0 ? "bullish" : item.expectedGrowth < 0 ? "bearish" : "neutral",
         expectedGrowth: Number(item.expectedGrowth) || 0,
       }));
 
