@@ -211,9 +211,19 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const maxPrice = Math.max(...prices) * 1.001;
     const priceRange = maxPrice - minPrice || 1;
 
-    const padding = { left: 0, right: 0, top: 6, bottom: 6 };
+    const padding = { left: 4, right: 50, top: 6, bottom: 6 };
     const chartW = width - padding.left - padding.right;
     const drawH = chartHeight - padding.top - padding.bottom;
+
+    // In LIVE mode: use fixed spacing so line doesn't stretch full width
+    // In 1D mode: stretch to fill (standard behavior)
+    const tickSpacing = timeRange === "LIVE"
+      ? Math.min(chartW / (liveZoom - 1), chartW / (intradayData.length - 1 || 1))
+      : chartW / (intradayData.length - 1 || 1);
+    const dataWidth = tickSpacing * (intradayData.length - 1);
+
+    // Helper: get x position for a tick index
+    const getX = (i: number) => padding.left + i * tickSpacing;
 
     // Draw subtle grid
     ctx.strokeStyle = "hsla(220, 10%, 20%, 0.3)";
@@ -248,7 +258,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
       ctx.lineWidth = 4;
       ctx.lineJoin = "round";
       intradayData.forEach((d, i) => {
-        const x = padding.left + (i / (intradayData.length - 1)) * chartW;
+        const x = getX(i);
         const y = padding.top + (1 - (d.price - minPrice) / priceRange) * drawH;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -263,17 +273,17 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     ctx.lineJoin = "round";
 
     intradayData.forEach((d, i) => {
-      const x = padding.left + (i / (intradayData.length - 1)) * chartW;
+      const x = getX(i);
       const y = padding.top + (1 - (d.price - minPrice) / priceRange) * drawH;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     });
     ctx.stroke();
 
-    // Fill area
-    const lastX = padding.left + chartW;
+    // Fill area under the line
+    const lastDataX = getX(intradayData.length - 1);
     const bottomY = chartHeight;
-    ctx.lineTo(lastX, bottomY);
+    ctx.lineTo(lastDataX, bottomY);
     ctx.lineTo(padding.left, bottomY);
     ctx.closePath();
     ctx.fillStyle = fillColor;
@@ -282,7 +292,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     // Draw current price dot (pulsing effect in LIVE)
     if (timeRange === "LIVE" && intradayData.length > 0) {
       const lastTick = intradayData[intradayData.length - 1];
-      const lx = padding.left + chartW;
+      const lx = lastDataX;
       const ly = padding.top + (1 - (lastTick.price - minPrice) / priceRange) * drawH;
 
       // Outer glow
@@ -297,11 +307,21 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
       ctx.fillStyle = lineColor;
       ctx.fill();
 
-      // Current price label
+      // Current price label — draw to the right of the dot
       ctx.fillStyle = lineColor;
       ctx.font = "bold 10px 'JetBrains Mono', monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(`$${lastTick.price.toFixed(2)}`, lx - 10, ly - 8);
+      ctx.textAlign = "left";
+      ctx.fillText(`$${lastTick.price.toFixed(2)}`, lx + 8, ly + 3);
+
+      // Horizontal dashed line from dot to right edge
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(lx + 6, ly);
+      ctx.lineTo(width - padding.right, ly);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     // Time labels at bottom
@@ -311,7 +331,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const labelCount = Math.min(6, intradayData.length);
     for (let i = 0; i < labelCount; i++) {
       const idx = Math.floor((i / (labelCount - 1)) * (intradayData.length - 1));
-      const x = padding.left + (idx / (intradayData.length - 1)) * chartW;
+      const x = getX(idx);
       ctx.fillText(intradayData[idx].time, x, chartHeight - 1);
     }
 
@@ -319,7 +339,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
-      const idx = Math.round((mx - padding.left) / chartW * (intradayData.length - 1));
+      const idx = Math.round((mx - padding.left) / tickSpacing);
       if (idx >= 0 && idx < intradayData.length) {
         setHoverInfo({
           x: mx,
