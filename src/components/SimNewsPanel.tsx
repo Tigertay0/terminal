@@ -39,7 +39,6 @@ export function SimNewsPanel({
 }: SimNewsPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const detailsFetched = useRef(false);
 
   // Filter state
   const [selectedCompanies, setSelectedCompanies] = useState<Set<string>>(new Set());
@@ -99,15 +98,19 @@ export function SimNewsPanel({
   }, [companies, companySearch]);
 
   // ─── Fetch details on expand ──────────────────────────────────
+  const lastDetailFetchCount = useRef(0);
   useEffect(() => {
-    if (!expanded || detailsFetched.current || !stocks || !variation || !onUpdateNews) return;
-    const needsDetail = aiNews.some(i => !i.summary);
-    if (!needsDetail) return;
+    if (!expanded || !stocks || !variation || !onUpdateNews) return;
+    // Only AI items (not template) need detail fetching
+    const aiItems = aiNews.filter(i => i.id.startsWith("ai-") && !i.summary);
+    if (aiItems.length === 0) return;
+    // Don't re-fetch if we already fetched for this batch
+    if (lastDetailFetchCount.current === aiNews.length) return;
+    lastDetailFetchCount.current = aiNews.length;
 
-    detailsFetched.current = true;
     setDetailsLoading(true);
 
-    fetchAINewsDetails(aiNews, stocks, variation).then(detailMap => {
+    fetchAINewsDetails(aiItems, stocks, variation).then(detailMap => {
       if (detailMap.size > 0) {
         onUpdateNews(prev => prev.map(item => {
           const detail = detailMap.get(item.id);

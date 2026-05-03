@@ -9,6 +9,7 @@ import {
   type AINewsItem,
   type AINewsState,
 } from "@/lib/ai-news";
+import { generateTemplateNews, loadTemplateHeadlines } from "@/lib/template-news";
 
 // ─── Types ───────────────────────────────────────────────────────
 export interface IntradayTick {
@@ -241,6 +242,11 @@ export function useSimulation(
     }
   }, [baseStocks]);
 
+  // Load template headlines on mount
+  useEffect(() => {
+    loadTemplateHeadlines();
+  }, []);
+
   // The tick function — advances prices based on variation + news impacts
   // Only moves prices during market hours (9:30 AM – 4:00 PM ET)
   const tick = useCallback(() => {
@@ -300,31 +306,30 @@ export function useSimulation(
       return next;
     });
 
-    // Generate intraday news (only during market hours) — legacy system as coherent small news
-    const newsItem = generateSimNews(baseStocks, settings.variation);
-    if (newsItem) {
-      newsItem.time = new Date(simTime.getTime()); // use sim time
-      // Check coherence: don't produce contradictory news for same company
-      const sentiment = newsItem.sentiment;
-      const sym = newsItem.symbol;
-      if (sym && coherenceTracker.current.wouldContradict(sym, sentiment)) {
-        // Skip this news item — it contradicts the established sentiment for today
-      } else {
-        if (sym) {
-          coherenceTracker.current.recordSentiment(sym, sentiment);
-          coherenceTracker.current.recordHeadline(sym, newsItem.title);
-        }
-        setNews(prev => [newsItem, ...prev].slice(0, 50));
-        // Apply price impact
-        if (newsItem.symbol) {
-          pendingImpacts.current.set(
-            newsItem.symbol,
-            (pendingImpacts.current.get(newsItem.symbol) || 1) * newsItem.priceImpact
-          );
+    // Generate template news (instant, pre-written, no API call)
+    const allStockKeys = Array.from(simStocks.keys());
+    if (allStockKeys.length > 0) {
+      const randomSym = allStockKeys[Math.floor(Math.random() * allStockKeys.length)];
+      const stock = simStocks.get(randomSym);
+      if (stock) {
+        const templateItem = generateTemplateNews(randomSym, stock.name, stock.sector || "Unknown");
+        if (templateItem) {
+          // Check coherence
+          if (!coherenceTracker.current.wouldContradict(randomSym, templateItem.sentiment)) {
+            coherenceTracker.current.recordSentiment(randomSym, templateItem.sentiment);
+            coherenceTracker.current.recordHeadline(randomSym, templateItem.headline);
+            setAiNews(prev => [templateItem, ...prev].slice(0, 100));
+            // Apply price impact (always < 5%)
+            const impactMultiplier = 1 + templateItem.expectedGrowth / 100;
+            pendingImpacts.current.set(
+              randomSym,
+              (pendingImpacts.current.get(randomSym) || 1) * impactMultiplier
+            );
+          }
         }
       }
     }
-  }, [settings.variation, baseStocks, simTime]);
+  }, [settings.variation, baseStocks, simTime, simStocks]);
 
   // Time advancement engine
   useEffect(() => {

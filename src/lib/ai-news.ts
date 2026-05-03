@@ -111,40 +111,49 @@ export async function fetchAINewsDetails(
   const needsDetail = items.filter(i => !i.summary);
   if (needsDetail.length === 0) return new Map();
 
-  const headlines = needsDetail.map(i => `[${i.companyId}] ${i.headline}`);
+  // Send headlines with index markers for reliable matching
+  const headlines = needsDetail.map((i, idx) => `[${idx}] [${i.companyId}] ${i.headline}`);
 
-  try {
-    const res = await fetch("/api/perplexity-news", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        stocks: stocks.slice(0, 5),
-        variation,
-        mode: "detailed",
-        itemIds: headlines,
-      }),
-    });
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch("/api/perplexity-news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stocks: stocks.slice(0, 5),
+          variation,
+          mode: "detailed",
+          itemIds: headlines,
+        }),
+      });
 
-    if (!res.ok) return new Map();
-
-    const raw = await res.json();
-    const detailMap = new Map<string, string>();
-
-    // Match returned summaries back to original items by headline similarity
-    raw.forEach((detail: any) => {
-      const matched = needsDetail.find(i =>
-        i.headline.toLowerCase().includes(detail.headline?.toLowerCase()?.slice(0, 30) || "___nomatch")
-        || detail.headline?.toLowerCase()?.includes(i.headline.toLowerCase().slice(0, 30))
-      );
-      if (matched && detail.summary) {
-        detailMap.set(matched.id, String(detail.summary));
+      if (res.status === 504) {
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
       }
-    });
+      if (!res.ok) return new Map();
 
-    return detailMap;
-  } catch {
-    return new Map();
+      const raw = await res.json();
+      const detailMap = new Map<string, string>();
+
+      // Match by index or by company ticker
+      if (Array.isArray(raw)) {
+        raw.forEach((detail: any, idx: number) => {
+          // Try direct index mapping first
+          if (idx < needsDetail.length && detail.summary) {
+            detailMap.set(needsDetail[idx].id, String(detail.summary));
+          }
+        });
+      }
+
+      return detailMap;
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < 1) await new Promise(r => setTimeout(r, 2000));
+    }
   }
+  return new Map();
 }
 
 // ─── Synthetic news for unexplained price moves ──────────────────
