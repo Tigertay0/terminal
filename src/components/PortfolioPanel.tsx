@@ -28,6 +28,7 @@ export function PortfolioPanel({
 }: PortfolioPanelProps) {
   const [tab, setTab] = useState<Tab>("portfolio");
   const [tradeAction, setTradeAction] = useState<"BUY" | "SELL">("BUY");
+  const [inputMode, setInputMode] = useState<"shares" | "dollars">("shares");
   const [shares, setShares] = useState("");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
@@ -37,36 +38,57 @@ export function PortfolioPanel({
 
   const currentStock = getStock(selectedSymbol);
 
+  // Compute actual shares to trade based on input mode
+  const getTradeShares = useCallback((): number => {
+    const val = parseFloat(shares);
+    if (!val || val <= 0 || !currentStock) return 0;
+    if (inputMode === "dollars") {
+      // Convert dollar amount to fractional shares
+      return +(val / currentStock.price).toFixed(6);
+    }
+    return +val.toFixed(6);
+  }, [shares, inputMode, currentStock]);
+
   const handleTrade = useCallback(() => {
-    const numShares = parseInt(shares);
+    const numShares = getTradeShares();
     if (!numShares || numShares <= 0) {
-      setMessage({ text: "Enter a valid number of shares", type: "error" });
+      setMessage({ text: inputMode === "dollars" ? "Enter a valid dollar amount" : "Enter a valid number of shares", type: "error" });
       return;
     }
+    const displayShares = numShares % 1 === 0 ? numShares.toString() : numShares.toFixed(4);
     let success: boolean;
     if (tradeAction === "BUY") {
       success = onBuy(selectedSymbol, numShares);
       if (!success) {
         setMessage({ text: "Insufficient funds", type: "error" });
       } else {
-        setMessage({ text: `Bought ${numShares} ${selectedSymbol}`, type: "success" });
+        setMessage({ text: `Bought ${displayShares} ${selectedSymbol}`, type: "success" });
       }
     } else {
       success = onSell(selectedSymbol, numShares);
       if (!success) {
         setMessage({ text: "Insufficient shares", type: "error" });
       } else {
-        setMessage({ text: `Sold ${numShares} ${selectedSymbol}`, type: "success" });
+        setMessage({ text: `Sold ${displayShares} ${selectedSymbol}`, type: "success" });
       }
     }
     if (success) setShares("");
     setTimeout(() => setMessage(null), 2500);
-  }, [shares, tradeAction, selectedSymbol, onBuy, onSell]);
+  }, [shares, tradeAction, selectedSymbol, onBuy, onSell, getTradeShares, inputMode]);
 
   const holding = holdings.get(selectedSymbol);
-  const maxBuyable = currentStock ? Math.floor(cash / currentStock.price) : 0;
-  const maxSellable = holding?.shares || 0;
-  const estimatedCost = currentStock && shares ? currentStock.price * parseInt(shares || "0") : 0;
+  const maxBuyableShares = currentStock ? +(cash / currentStock.price).toFixed(6) : 0;
+  const maxBuyableDollars = cash;
+  const maxSellableShares = holding?.shares || 0;
+  const maxSellableDollars = currentStock && holding ? +(holding.shares * currentStock.price).toFixed(2) : 0;
+  const estimatedCost = currentStock && shares
+    ? inputMode === "dollars"
+      ? parseFloat(shares || "0")
+      : currentStock.price * parseFloat(shares || "0")
+    : 0;
+  const estimatedShares = currentStock && shares && inputMode === "dollars"
+    ? +(parseFloat(shares || "0") / currentStock.price).toFixed(4)
+    : null;
 
   return (
     <div className="bb-panel flex flex-col h-full" data-testid="portfolio-panel">
@@ -143,7 +165,7 @@ export function PortfolioPanel({
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[11px] font-bold text-foreground">{h.symbol}</span>
-                        <span className="text-[10px] text-muted-foreground ml-2">{h.shares} shs</span>
+                        <span className="text-[10px] text-muted-foreground ml-2">{h.shares % 1 === 0 ? h.shares : h.shares.toFixed(4)} shs</span>
                       </div>
                       <div className="text-right">
                         <div className="text-[11px] font-bold text-foreground">{formatCurrency(stock.price * h.shares)}</div>
@@ -202,37 +224,61 @@ export function PortfolioPanel({
               </button>
             </div>
 
-            {/* Shares input */}
+            {/* Shares / Dollars input */}
             <div>
-              <label className="text-[9px] text-muted-foreground mb-1 block">SHARES</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[9px] text-muted-foreground">{inputMode === "shares" ? "SHARES" : "AMOUNT ($)"}</label>
+                <button
+                  onClick={() => { setInputMode(m => m === "shares" ? "dollars" : "shares"); setShares(""); }}
+                  className="text-[9px] font-bold text-bb-cyan hover:text-bb-cyan/80 transition-colors flex items-center gap-0.5"
+                  data-testid="toggle-input-mode"
+                >
+                  <DollarSign className="w-2.5 h-2.5" />
+                  {inputMode === "shares" ? "Use $" : "Use shares"}
+                </button>
+              </div>
               <input
                 type="number"
                 value={shares}
                 onChange={e => setShares(e.target.value)}
-                placeholder="0"
-                min="1"
+                placeholder={inputMode === "shares" ? "0" : "$0.00"}
+                min="0"
+                step={inputMode === "shares" ? "0.0001" : "0.01"}
                 className="w-full bg-[hsl(220,14%,9%)] border border-border rounded-sm px-2 py-1.5 text-xs font-mono text-foreground outline-none focus:border-bb-orange"
                 data-testid="input-shares"
               />
               <div className="flex items-center justify-between mt-1">
                 <span className="text-[9px] text-muted-foreground">
-                  Max: {tradeAction === "BUY" ? maxBuyable : maxSellable} shares
+                  Max: {inputMode === "shares"
+                    ? `${tradeAction === "BUY" ? maxBuyableShares.toFixed(2) : maxSellableShares % 1 === 0 ? maxSellableShares : maxSellableShares.toFixed(4)} shares`
+                    : `${formatCurrency(tradeAction === "BUY" ? maxBuyableDollars : maxSellableDollars)}`
+                  }
                 </span>
                 {shares && estimatedCost > 0 && (
                   <span className="text-[9px] text-muted-foreground">
-                    ≈ {formatCurrency(estimatedCost)}
+                    {inputMode === "dollars" && estimatedShares
+                      ? `≈ ${estimatedShares} shs`
+                      : `≈ ${formatCurrency(estimatedCost)}`
+                    }
                   </span>
                 )}
               </div>
               {/* Quick-fill buttons */}
               <div className="flex gap-1 mt-1.5">
                 {[25, 50, 75, 100].map(pct => {
-                  const max = tradeAction === "BUY" ? maxBuyable : maxSellable;
-                  const val = Math.floor(max * pct / 100);
+                  let val: string;
+                  if (inputMode === "shares") {
+                    const max = tradeAction === "BUY" ? maxBuyableShares : maxSellableShares;
+                    const computed = +(max * pct / 100).toFixed(4);
+                    val = computed % 1 === 0 ? String(computed) : computed.toFixed(4);
+                  } else {
+                    const max = tradeAction === "BUY" ? maxBuyableDollars : maxSellableDollars;
+                    val = (+(max * pct / 100).toFixed(2)).toString();
+                  }
                   return (
                     <button
                       key={pct}
-                      onClick={() => setShares(String(val))}
+                      onClick={() => setShares(val)}
                       className="flex-1 py-0.5 text-[9px] font-bold text-muted-foreground bg-white/[0.03] rounded-sm hover:bg-white/[0.06] hover:text-foreground transition-colors border border-border/30"
                     >
                       {pct}%
@@ -245,7 +291,7 @@ export function PortfolioPanel({
             {/* Execute button */}
             <button
               onClick={handleTrade}
-              disabled={!shares || parseInt(shares) <= 0}
+              disabled={!shares || parseFloat(shares) <= 0}
               className={`w-full py-2 text-xs font-bold rounded-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
                 tradeAction === "BUY"
                   ? "bg-bb-green text-black hover:bg-bb-green/90"
@@ -289,7 +335,7 @@ export function PortfolioPanel({
                     <span className="text-[11px] font-bold text-foreground">{formatCurrency(t.price * t.shares)}</span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[9px] text-muted-foreground">{t.shares} shs @ ${formatPrice(t.price)}</span>
+                    <span className="text-[9px] text-muted-foreground">{t.shares % 1 === 0 ? t.shares : t.shares.toFixed(4)} shs @ ${formatPrice(t.price)}</span>
                     <span className="text-[9px] text-muted-foreground">
                       {t.timestamp.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                     </span>
