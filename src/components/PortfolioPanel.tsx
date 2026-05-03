@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Wallet, TrendingUp, TrendingDown, ShoppingCart, DollarSign, ArrowUpDown } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { Wallet, TrendingUp, TrendingDown, ShoppingCart, DollarSign, ArrowUpDown, BarChart3 } from "lucide-react";
 import type { TickerData } from "@/hooks/use-finance-data";
 import type { Holding, TradeRecord } from "@/hooks/use-simulation";
 import { formatPrice, formatPercent, formatCurrency } from "@/lib/finance-api";
@@ -19,7 +19,7 @@ interface PortfolioPanelProps {
   onSelectSymbol: (sym: string) => void;
 }
 
-type Tab = "portfolio" | "trade" | "history";
+type Tab = "portfolio" | "trade" | "history" | "stats";
 
 export function PortfolioPanel({
   cash, holdings, trades, startingCash,
@@ -121,7 +121,7 @@ export function PortfolioPanel({
 
       {/* Tabs */}
       <div className="flex border-b border-border shrink-0">
-        {(["portfolio", "trade", "history"] as Tab[]).map(t => (
+        {(["portfolio", "trade", "history", "stats"] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -345,6 +345,153 @@ export function PortfolioPanel({
             )}
           </div>
         )}
+
+        {tab === "stats" && (
+          <StatsView holdings={holdings} getStock={getStock} getHoldingPnL={getHoldingPnL} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stats Sub-component ─────────────────────────────────────────
+function StatsView({
+  holdings,
+  getStock,
+  getHoldingPnL,
+}: {
+  holdings: Map<string, Holding>;
+  getStock: (symbol: string) => TickerData | undefined;
+  getHoldingPnL: (symbol: string) => number;
+}) {
+  const stats = useMemo(() => {
+    const entries: { symbol: string; pnl: number; pnlPct: number; value: number }[] = [];
+    holdings.forEach((h) => {
+      const stock = getStock(h.symbol);
+      if (!stock) return;
+      const pnl = getHoldingPnL(h.symbol);
+      const pnlPct = ((stock.price - h.avgCost) / h.avgCost) * 100;
+      entries.push({ symbol: h.symbol, pnl, pnlPct, value: stock.price * h.shares });
+    });
+    // Sort for each category
+    const byDollar = [...entries].sort((a, b) => b.pnl - a.pnl);
+    const byPercent = [...entries].sort((a, b) => b.pnlPct - a.pnlPct);
+    return {
+      bestDollar: byDollar[0] ?? null,
+      worstDollar: byDollar[byDollar.length - 1] ?? null,
+      bestPercent: byPercent[0] ?? null,
+      worstPercent: byPercent[byPercent.length - 1] ?? null,
+      all: byDollar,
+    };
+  }, [holdings, getStock, getHoldingPnL]);
+
+  if (holdings.size === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+        <BarChart3 className="w-6 h-6 text-muted-foreground/30 mb-2" />
+        <div className="text-[11px] text-muted-foreground">No holdings to analyze</div>
+        <div className="text-[10px] text-muted-foreground/60 mt-1">Buy some stocks first</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-2 space-y-2">
+      {/* Best by $ */}
+      <StatHighlight
+        label="TOP GAINER ($)"
+        icon={<TrendingUp className="w-3 h-3 text-bb-green" />}
+        entry={stats.bestDollar}
+        mode="dollar"
+        positive
+      />
+      {/* Worst by $ */}
+      <StatHighlight
+        label="TOP LOSER ($)"
+        icon={<TrendingDown className="w-3 h-3 text-bb-red" />}
+        entry={stats.worstDollar}
+        mode="dollar"
+        positive={false}
+      />
+      {/* Best by % */}
+      <StatHighlight
+        label="TOP GAINER (%)"
+        icon={<TrendingUp className="w-3 h-3 text-bb-green" />}
+        entry={stats.bestPercent}
+        mode="percent"
+        positive
+      />
+      {/* Worst by % */}
+      <StatHighlight
+        label="TOP LOSER (%)"
+        icon={<TrendingDown className="w-3 h-3 text-bb-red" />}
+        entry={stats.worstPercent}
+        mode="percent"
+        positive={false}
+      />
+
+      {/* All holdings ranked */}
+      {stats.all.length > 1 && (
+        <>
+          <div className="flex items-center gap-1.5 mt-2 mb-1">
+            <BarChart3 className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[9px] font-bold text-muted-foreground tracking-wider">ALL HOLDINGS RANKED</span>
+          </div>
+          {stats.all.map((e, i) => (
+            <div key={e.symbol} className="flex items-center justify-between px-2 py-1 border-b border-border/30">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-muted-foreground w-4 text-center">#{i + 1}</span>
+                <span className="text-[11px] font-bold text-foreground">{e.symbol}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-bold tabular-nums ${e.pnl >= 0 ? "text-bb-green" : "text-bb-red"}`}>
+                  {e.pnl >= 0 ? "+" : ""}{formatCurrency(e.pnl)}
+                </span>
+                <span className={`text-[10px] tabular-nums ${e.pnlPct >= 0 ? "text-bb-green" : "text-bb-red"}`}>
+                  {e.pnlPct >= 0 ? "+" : ""}{e.pnlPct.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatHighlight({
+  label, icon, entry, mode, positive,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  entry: { symbol: string; pnl: number; pnlPct: number; value: number } | null;
+  mode: "dollar" | "percent";
+  positive: boolean;
+}) {
+  if (!entry) return null;
+  const color = positive ? (entry.pnl >= 0 ? "text-bb-green" : "text-bb-red") : (entry.pnl <= 0 ? "text-bb-red" : "text-bb-green");
+  const bgColor = positive ? (entry.pnl >= 0 ? "bg-bb-green/[0.06]" : "bg-bb-red/[0.06]") : (entry.pnl <= 0 ? "bg-bb-red/[0.06]" : "bg-bb-green/[0.06]");
+  const borderColor = positive ? (entry.pnl >= 0 ? "border-bb-green/20" : "border-bb-red/20") : (entry.pnl <= 0 ? "border-bb-red/20" : "border-bb-green/20");
+
+  return (
+    <div className={`rounded-sm border ${borderColor} ${bgColor} p-2`}>
+      <div className="flex items-center gap-1.5 mb-1">
+        {icon}
+        <span className="text-[9px] font-bold text-muted-foreground tracking-wider">{label}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-foreground">{entry.symbol}</span>
+        <div className="text-right">
+          {mode === "dollar" ? (
+            <span className={`text-xs font-bold tabular-nums ${color}`}>
+              {entry.pnl >= 0 ? "+" : ""}{formatCurrency(entry.pnl)}
+            </span>
+          ) : (
+            <span className={`text-xs font-bold tabular-nums ${color}`}>
+              {entry.pnlPct >= 0 ? "+" : ""}{entry.pnlPct.toFixed(2)}%
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
