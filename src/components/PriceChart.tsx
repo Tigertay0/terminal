@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { OHLCVBar, TickerData } from "@/hooks/use-finance-data";
 import type { IntradayTick } from "@/hooks/use-simulation";
 import { formatPrice, formatPercent, formatChange, getChangeColor, formatNumber, formatVolume } from "@/lib/finance-api";
@@ -18,7 +18,9 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
   const containerRef = useRef<HTMLDivElement>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>("3M");
   const [hoverInfo, setHoverInfo] = useState<{ x: number; price: number; date: string; vol: number } | null>(null);
+  const [liveZoom, setLiveZoom] = useState(60); // Number of ticks to show in LIVE mode
 
+  const ZOOM_STEPS = [15, 30, 60, 120, 250, 500];
   const isIntraday = timeRange === "1D" || timeRange === "LIVE";
 
   // Filter data by time range (for daily bars)
@@ -43,12 +45,36 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
   const intradayData = (() => {
     if (!isIntraday || !intradayTicks?.length) return [];
     if (timeRange === "LIVE") {
-      // LIVE: show last 60 ticks (rolling window)
-      return intradayTicks.slice(-60);
+      // LIVE: show last N ticks based on zoom level
+      return intradayTicks.slice(-liveZoom);
     }
     // 1D: show all ticks
     return intradayTicks;
   })();
+
+  // Compute time window label for LIVE zoom
+  const liveTimeWindow = (() => {
+    if (timeRange !== "LIVE" || intradayData.length < 2) return "";
+    const first = intradayData[0].time;
+    const last = intradayData[intradayData.length - 1].time;
+    return `${first} — ${last}`;
+  })();
+
+  // Zoom handler for scroll wheel on LIVE chart
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (timeRange !== "LIVE") return;
+    e.preventDefault();
+    setLiveZoom(prev => {
+      const currentIdx = ZOOM_STEPS.indexOf(prev);
+      if (e.deltaY > 0) {
+        // Scroll down = zoom out (show more ticks)
+        return ZOOM_STEPS[Math.min(currentIdx + 1, ZOOM_STEPS.length - 1)];
+      } else {
+        // Scroll up = zoom in (show fewer ticks)
+        return ZOOM_STEPS[Math.max(currentIdx - 1, 0)];
+      }
+    });
+  }, [timeRange]);
 
   // ─── Draw daily chart ───────────────────────────────────────────
   useEffect(() => {
@@ -392,7 +418,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
 
       {/* Chart area */}
       {(!isIntraday || intradayData.length > 0) && (
-        <div ref={containerRef} className="flex-1 relative min-h-0 px-1 pt-1">
+        <div ref={containerRef} className="flex-1 relative min-h-0 px-1 pt-1" onWheel={e => handleWheel(e.nativeEvent)}>
           <canvas ref={canvasRef} className="w-full h-full" />
           {hoverInfo && (
             <div
@@ -402,6 +428,38 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
               <div className="text-2xs text-muted-foreground">{hoverInfo.date}</div>
               <div className="text-xs font-bold tabular-nums">${formatPrice(hoverInfo.price)}</div>
               {!isIntraday && <div className="text-2xs text-muted-foreground tabular-nums">Vol: {formatVolume(hoverInfo.vol)}</div>}
+            </div>
+          )}
+
+          {/* LIVE zoom controls */}
+          {timeRange === "LIVE" && intradayData.length > 0 && (
+            <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between pointer-events-none">
+              {/* Time window label */}
+              <div className="bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm px-2 py-0.5">
+                <span className="text-[9px] text-muted-foreground font-mono tabular-nums">{liveTimeWindow}</span>
+              </div>
+              {/* Zoom buttons */}
+              <div className="flex items-center gap-1 pointer-events-auto">
+                <button
+                  onClick={() => setLiveZoom(prev => ZOOM_STEPS[Math.max(ZOOM_STEPS.indexOf(prev) - 1, 0)])}
+                  className="w-5 h-5 flex items-center justify-center bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-colors text-xs font-bold"
+                  title="Zoom in (fewer ticks)"
+                  data-testid="zoom-in"
+                >
+                  +
+                </button>
+                <span className="text-[8px] text-muted-foreground font-mono tabular-nums min-w-[28px] text-center bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm px-1 py-0.5">
+                  {liveZoom}t
+                </span>
+                <button
+                  onClick={() => setLiveZoom(prev => ZOOM_STEPS[Math.min(ZOOM_STEPS.indexOf(prev) + 1, ZOOM_STEPS.length - 1)])}
+                  className="w-5 h-5 flex items-center justify-center bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-colors text-xs font-bold"
+                  title="Zoom out (more ticks)"
+                  data-testid="zoom-out"
+                >
+                  −
+                </button>
+              </div>
             </div>
           )}
         </div>
