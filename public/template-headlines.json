@@ -1,1 +1,1602 @@
-[]
+[
+    {
+        "headline": "{ticker} downgraded to 'Sell' by Morgan Stanley citing margin pressure",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.8,
+            2.8
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{ticker} upgraded to 'Buy' by Goldman Sachs with raised price target",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.5,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} lays off 200 employees in restructuring of sales division",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.4,
+            2.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} CEO purchases $5M in shares on the open market",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} announces $500M share buyback program",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} CFO resigns effective end of quarter, search for replacement underway",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.5,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} names veteran industry executive as new Chief Operating Officer",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} faces class-action lawsuit over alleged deceptive marketing practices",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} settles regulatory investigation for $48M, admits no wrongdoing",
+        "sentiment": "neutral",
+        "sector": "universal",
+        "impactRange": [
+            0.2,
+            1.2
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} raises quarterly dividend by 8 cents per share",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "Insider trading probe launched into {ticker} option purchases ahead of earnings",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            1.0,
+            3.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} signs five-year strategic partnership with European logistics firm",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.6
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} board authorizes review of strategic alternatives including potential sale",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            1.5,
+            4.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} expands operations into three new international markets",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} warns of foreign exchange headwinds affecting full-year guidance",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{ticker} added to S&P 500 ESG index, effective next rebalancing",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} announces voluntary sustainability pledge to reach net-zero by 2040",
+        "sentiment": "neutral",
+        "sector": "universal",
+        "impactRange": [
+            0.1,
+            0.6
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} faces OSHA investigation following workplace safety incident at facility",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} appoints first independent board chair in company history",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{ticker} price target raised to $185 by Barclays analysts",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{ticker} price target cut to $62 by JPMorgan amid sector rotation concerns",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.4,
+            2.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} completes acquisition of mid-market competitor for $310M in cash",
+        "sentiment": "neutral",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} divests non-core business unit to private equity firm for $220M",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.4,
+            2.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} CEO sells $3.2M of personal holdings under pre-scheduled 10b5-1 plan",
+        "sentiment": "neutral",
+        "sector": "universal",
+        "impactRange": [
+            0.1,
+            0.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} employees authorize strike vote after contract talks break down",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.5,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} cuts full-year revenue guidance by 3-4%, citing softer demand",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            1.0,
+            3.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} raises full-year EPS outlook on strength of cost reduction program",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.8,
+            2.8
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} opens new regional headquarters, creating 400 jobs",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.1,
+            0.7
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{ticker} rated 'Neutral' by Citigroup analyst initiating coverage",
+        "sentiment": "neutral",
+        "sector": "universal",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} secures $1.2B revolving credit facility, improving liquidity position",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.2,
+            1.2
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} suffers data breach exposing personal information of 1.4M customers",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} launches next-generation AI-powered platform for enterprise clients",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.5,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} patent dispute with rival dismissed by federal court",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} files patent infringement lawsuit against smaller competitor",
+        "sentiment": "neutral",
+        "sector": "technology",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} reports 32% year-over-year growth in cloud services revenue",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.8,
+            3.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} announces multi-year AI infrastructure partnership with hyperscale cloud provider",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.6,
+            2.8
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} suffers major API outage affecting thousands of enterprise customers for six hours",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} developer conference draws 22,000 attendees, unveils new SDK",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} discloses critical software vulnerability in flagship product, patch issued",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} chip supply agreement with Taiwan manufacturer extended through 2027",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} warns of component shortage impacting next-quarter hardware shipments",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.6,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} antitrust inquiry opened by FTC into software bundling practices",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} monthly active users grow 18% year-over-year, beating analyst estimates",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.5,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} announces subscription pricing overhaul; legacy users to face higher fees",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.4,
+            2.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} cybersecurity division wins $85M federal government contract",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} open-sources key machine learning framework, expanding developer ecosystem",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.2,
+            1.2
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} cutting 8% of global tech workforce, consolidating engineering teams",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} hardware refresh cycle shows slower upgrade rates than prior year",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} announces pilot of AI-driven customer service platform, reducing support costs",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.2,
+            1.2
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} data center expansion delayed six months due to permitting issues",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.3,
+            1.6
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} CTO exits to join venture-backed startup after 11 years",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} announces voluntary recall of 50,000 units due to labeling error",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.3,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} closes 45 underperforming retail locations in Q3 cost reduction plan",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} enters multi-year exclusive brand partnership with major sports league",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.4,
+            2.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} supply chain disruption in Southeast Asia delays holiday inventory",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.5,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} reports same-store sales growth of 4.2% for the quarter",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} faces FDA health and safety citation at two manufacturing plants",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} launches premium product line targeting high-income demographics",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} loyalty program surpasses 50M members, up 14% year-over-year",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} recalls popular product line following reports of consumer injury",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} e-commerce sales surge 27% during annual promotional event",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} customer data leak exposes 800K accounts; breach contained within 48 hours",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} raises product prices 5-7% across key categories to offset input costs",
+        "sentiment": "neutral",
+        "sector": "consumer",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} signs licensing deal with celebrity brand for co-branded product line",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} delivery operations expand to 15 new metropolitan markets",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.2,
+            1.2
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} reports 9% decline in foot traffic at flagship retail locations",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} acquires regional grocery chain for $280M to expand distribution footprint",
+        "sentiment": "neutral",
+        "sector": "consumer",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} food safety complaint triggers state health department inspection at three sites",
+        "sentiment": "bearish",
+        "sector": "consumer",
+        "impactRange": [
+            0.3,
+            1.6
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} seasonal product launches ahead of schedule, boosting pre-order volumes",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} subscription box service reaches 2M active subscribers",
+        "sentiment": "bullish",
+        "sector": "consumer",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} advertising spend cut 20% as brand repositioning strategy takes shape",
+        "sentiment": "neutral",
+        "sector": "consumer",
+        "impactRange": [
+            0.1,
+            0.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} receives FDA fast-track designation for new oncology drug candidate",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            1.5,
+            4.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} Phase 3 clinical trial for flagship drug fails to meet primary endpoint",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            2.0,
+            4.9
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} reports successful Phase 2 results for experimental autoimmune treatment",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            1.5,
+            4.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} drug pricing under scrutiny after Senate committee subpoena issued",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} completes acquisition of regional hospital network for $1.4B",
+        "sentiment": "neutral",
+        "sector": "healthcare",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} key patent on blockbuster drug expires, opening market to generics",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            1.0,
+            3.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} medical device cleared by FDA for expanded use indication",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.8,
+            2.8
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} recalls 12,000 units of insulin delivery device due to dosage malfunction",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} announces biosimilar partnership with Indian manufacturer to cut production costs",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} presents promising early-stage trial data at international cardiology conference",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} Medicare reimbursement rate for key procedure reduced by CMS",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} receives complete response letter from FDA, requiring additional trial data",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            1.5,
+            4.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} specialty pharmacy unit expands rare disease drug distribution network",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} telehealth platform user visits up 41% year-over-year",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} genetic testing unit faces privacy investigation by FTC",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.6,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} wins $340M contract to supply vaccines to federal health agencies",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} surgical robotics system receives CE mark approval for European markets",
+        "sentiment": "bullish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} international drug distribution deal terminated due to regulatory complications",
+        "sentiment": "bearish",
+        "sector": "healthcare",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} reports net interest margin compression amid rising deposit costs",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} trading desk posts best quarterly revenue in three years",
+        "sentiment": "bullish",
+        "sector": "financial",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} increases loan loss reserves by $400M amid commercial real estate concerns",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.8,
+            2.8
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} faces OCC regulatory scrutiny over anti-money laundering compliance gaps",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} mortgage origination volumes fall 22% as housing market cools",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} wealth management assets under management reach record $2.1T",
+        "sentiment": "bullish",
+        "sector": "financial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} crypto trading exposure reduced by 60% after internal risk review",
+        "sentiment": "neutral",
+        "sector": "financial",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} credit card delinquency rate rises to 3.8%, above prior quarter",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} investment banking fee revenue climbs 18% on surge in M&A advisory mandates",
+        "sentiment": "bullish",
+        "sector": "financial",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} announces exit from retail banking in four Midwestern states",
+        "sentiment": "neutral",
+        "sector": "financial",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} insurance subsidiary reports elevated catastrophic loss ratio from storm season",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} announces digital bank launch targeting underserved small business market",
+        "sentiment": "bullish",
+        "sector": "financial",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} pension fund liability gap widens to $3.2B after actuarial update",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} stress test results show capital ratios above regulatory minimums",
+        "sentiment": "bullish",
+        "sector": "financial",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} private equity unit closes oversubscribed $4.8B fund",
+        "sentiment": "bullish",
+        "sector": "financial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} fintech payments division processes $100B in transactions for the first time",
+        "sentiment": "bullish",
+        "sector": "financial",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} CFPB consent order requires $75M in customer remediation payments",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} loan default rates in commercial real estate portfolio rise to 5.1%",
+        "sentiment": "bearish",
+        "sector": "financial",
+        "impactRange": [
+            0.6,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} offshore oil spill contained; cleanup costs estimated at $180M",
+        "sentiment": "bearish",
+        "sector": "energy",
+        "impactRange": [
+            1.0,
+            3.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} signs 20-year offshore wind power purchase agreement with utility consortium",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.6,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} drilling permit for Gulf of Mexico block approved by Bureau of Ocean Energy Management",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} refinery in Texas offline for 6-8 weeks following unplanned maintenance",
+        "sentiment": "bearish",
+        "sector": "energy",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} announces $2B investment in domestic solar panel manufacturing",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} pipeline expansion project receives final regulatory approval",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} sets new emissions reduction target of 45% by 2035 versus 2020 baseline",
+        "sentiment": "neutral",
+        "sector": "energy",
+        "impactRange": [
+            0.1,
+            0.7
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} natural gas production rises 12% quarter-over-quarter on new well completions",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} sells upstream oil assets in North Sea for $640M, focuses on downstream",
+        "sentiment": "neutral",
+        "sector": "energy",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} EV charging network expansion adds 1,200 new stations across 38 states",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} faces EPA enforcement action for excess methane emissions at three sites",
+        "sentiment": "bearish",
+        "sector": "energy",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} hydrogen fuel joint venture with industrial partner begins construction phase",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} hedging program locks in oil prices for 60% of next year's production",
+        "sentiment": "neutral",
+        "sector": "energy",
+        "impactRange": [
+            0.1,
+            0.6
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} liquefied natural gas export terminal delayed by 18 months",
+        "sentiment": "bearish",
+        "sector": "energy",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} carbon capture facility achieves first full-scale operational milestone",
+        "sentiment": "bullish",
+        "sector": "energy",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} awarded $640M defense contract for next-generation aircraft components",
+        "sentiment": "bullish",
+        "sector": "industrial",
+        "impactRange": [
+            0.6,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} factory in Ohio idle for two weeks following fire in assembly wing",
+        "sentiment": "bearish",
+        "sector": "industrial",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} union reaches tentative three-year labor agreement, averting strike",
+        "sentiment": "bullish",
+        "sector": "industrial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} steel sourcing costs rise 14% as tariffs take effect on imported materials",
+        "sentiment": "bearish",
+        "sector": "industrial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} recalls 3,500 industrial generators following overheating reports",
+        "sentiment": "bearish",
+        "sector": "industrial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} logistics automation system deployed across 14 distribution centers",
+        "sentiment": "bullish",
+        "sector": "industrial",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} loses $420M Army vehicle contract to lower-cost rival",
+        "sentiment": "bearish",
+        "sector": "industrial",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} supply chain bottleneck in rare earth components delays product deliveries",
+        "sentiment": "bearish",
+        "sector": "industrial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} wins $1.1B Navy shipbuilding contract, boosting backlog to record $8.4B",
+        "sentiment": "bullish",
+        "sector": "industrial",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} OSHA cites three safety violations at manufacturing plant; fines pending",
+        "sentiment": "bearish",
+        "sector": "industrial",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} heavy equipment order backlog grows 19% on infrastructure spending surge",
+        "sentiment": "bullish",
+        "sector": "industrial",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} robotics division secures $200M in new commercial contracts",
+        "sentiment": "bullish",
+        "sector": "industrial",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} aerospace unit wins FAA supplemental type certificate for regional jet modification",
+        "sentiment": "bullish",
+        "sector": "industrial",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} closes underutilized plant in Michigan, shifting production to Texas facility",
+        "sentiment": "neutral",
+        "sector": "industrial",
+        "impactRange": [
+            0.2,
+            1.0
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} freight rail subsidiary faces $110M class-action suit over cargo damage claims",
+        "sentiment": "bearish",
+        "sector": "industrial",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} reports net subscriber loss of 180,000 in domestic broadband segment",
+        "sentiment": "bearish",
+        "sector": "communications",
+        "impactRange": [
+            0.6,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} streaming service surpasses 85M paid subscribers globally",
+        "sentiment": "bullish",
+        "sector": "communications",
+        "impactRange": [
+            0.5,
+            2.2
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} wins spectrum auction block in key metro markets for $1.8B",
+        "sentiment": "bullish",
+        "sector": "communications",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} digital advertising revenue declines 8% year-over-year amid market slowdown",
+        "sentiment": "bearish",
+        "sector": "communications",
+        "impactRange": [
+            0.6,
+            2.5
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} content moderation policy update triggers advertiser boycott threat",
+        "sentiment": "bearish",
+        "sector": "communications",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} original programming deal with major studio valued at $600M over three years",
+        "sentiment": "bullish",
+        "sector": "communications",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} 5G network reaches 220M pops coverage ahead of year-end target",
+        "sentiment": "bullish",
+        "sector": "communications",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} average revenue per user falls for second consecutive quarter",
+        "sentiment": "bearish",
+        "sector": "communications",
+        "impactRange": [
+            0.5,
+            2.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} faces congressional hearing over platform safety and minor user protections",
+        "sentiment": "bearish",
+        "sector": "communications",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} satellite internet service launches commercial beta in 12 new countries",
+        "sentiment": "bullish",
+        "sector": "communications",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} podcast advertising revenue grows 34% year-over-year, beating internal forecast",
+        "sentiment": "bullish",
+        "sector": "communications",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} wireless churn rate improves to 0.9%, lowest in five years",
+        "sentiment": "bullish",
+        "sector": "communications",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} enterprise software renewal rate hits 94%, signaling strong customer retention",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} semiconductor supply deal with South Korean manufacturer finalized for three years",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} cloud cost optimization tool rolls out to 5,000 enterprise clients",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.2,
+            1.2
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} reports 11% decline in IT hardware sales as enterprise refresh cycle slows",
+        "sentiment": "bearish",
+        "sector": "technology",
+        "impactRange": [
+            0.4,
+            1.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} acquires AI startup for $95M to bolster natural language processing capabilities",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} healthcare analytics division wins multi-year contract with state Medicaid program",
+        "sentiment": "bullish",
+        "sector": "technology",
+        "impactRange": [
+            0.3,
+            1.4
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} board adopts poison pill defense following unsolicited acquisition approach",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.8,
+            3.0
+        ],
+        "importance": "high"
+    },
+    {
+        "headline": "{company} working capital ratio deteriorates as accounts receivable aging worsens",
+        "sentiment": "bearish",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} ranked among top 10 best places to work by industry publication",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.1,
+            0.6
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} independent audit finds no material weaknesses in internal financial controls",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.1,
+            0.8
+        ],
+        "importance": "low"
+    },
+    {
+        "headline": "{company} announces early debt repayment of $800M, reducing leverage ratio",
+        "sentiment": "bullish",
+        "sector": "universal",
+        "impactRange": [
+            0.3,
+            1.5
+        ],
+        "importance": "low"
+    }
+]
