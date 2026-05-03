@@ -133,7 +133,17 @@ Market: ${modeDesc}. Each: companyName, companyId (TICKER), sector, headline (sp
       });
     }
 
-    // Validate and sanitize
+    // For detailed mode, return the raw parsed summaries (they only have headline + summary)
+    if (fetchMode === "detailed") {
+      const detailResults = (Array.isArray(parsed) ? parsed : []).map((item: any) => ({
+        headline: String(item.headline || ""),
+        summary: String(item.summary || item.body || item.article || ""),
+      }));
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json(detailResults);
+    }
+
+    // Validate and sanitize (headlines mode)
     const validated: AINewsItem[] = parsed
       .filter(
         (item: any) =>
