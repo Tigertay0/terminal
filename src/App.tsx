@@ -369,8 +369,11 @@ function SimTerminal({
             loading={sim.aiNewsLoading}
             error={sim.aiNewsError}
             onRetry={sim.triggerAINewsFetch}
+            onUpdateNews={sim.setAiNews}
             sectors={[...new Set(sim.getAllStocks().map(s => s.sector).filter(Boolean))]}
             companies={sim.getAllStocks().map(s => ({ symbol: s.symbol, name: s.name }))}
+            stocks={sim.getAllStocks().map(s => ({ symbol: s.symbol, name: s.name, price: s.price, sector: s.sector || "Unknown", marketCap: s.marketCap || 0 }))}
+            variation={sim.simVariation}
           />
         </div>
       </div>
@@ -622,8 +625,11 @@ function EventTerminal({
                 loading={sim.aiNewsLoading}
                 error={sim.aiNewsError}
                 onRetry={sim.triggerAINewsFetch}
+                onUpdateNews={sim.setAiNews}
                 sectors={[...new Set(sim.getAllStocks().map(s => s.sector).filter(Boolean))]}
                 companies={sim.getAllStocks().map(s => ({ symbol: s.symbol, name: s.name }))}
+                stocks={sim.getAllStocks().map(s => ({ symbol: s.symbol, name: s.name, price: s.price, sector: s.sector || "Unknown", marketCap: s.marketCap || 0 }))}
+                variation={sim.simVariation}
               />
             )}
           </div>

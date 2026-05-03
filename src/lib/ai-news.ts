@@ -29,7 +29,30 @@ interface StockInput {
   marketCap: number;
 }
 
-// ─── Fetch from Vercel serverless function ───────────────────────
+// ─── localStorage persistence ────────────────────────────────────
+const NEWS_STORAGE_KEY = "bb_sim_ai_news";
+
+export function saveNewsToStorage(items: AINewsItem[]) {
+  try {
+    localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(items.slice(0, 100)));
+  } catch { /* quota exceeded — silently ignore */ }
+}
+
+export function loadNewsFromStorage(): AINewsItem[] {
+  try {
+    const raw = localStorage.getItem(NEWS_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as AINewsItem[];
+  } catch {
+    return [];
+  }
+}
+
+export function clearNewsStorage() {
+  localStorage.removeItem(NEWS_STORAGE_KEY);
+}
+
+// ─── Fetch headlines only (fast — no summaries) ──────────────────
 export async function fetchAINews(
   stocks: StockInput[],
   variation: string,
@@ -44,11 +67,10 @@ export async function fetchAINews(
       const res = await fetch("/api/perplexity-news", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stocks: topStocks, variation }),
+        body: JSON.stringify({ stocks: topStocks, variation, mode: "headlines" }),
       });
 
       if (res.status === 504) {
-        // Vercel timeout — retry after a short delay (function is now warm)
         lastError = new Error("Server timeout — retrying...");
         await new Promise(r => setTimeout(r, 2000));
         continue;
@@ -64,6 +86,7 @@ export async function fetchAINews(
 
       return raw.map((item: any, idx: number) => ({
         ...item,
+        summary: "", // no summary in headlines mode — loaded on demand
         id: `ai-${now}-${idx}`,
         generatedAt: now,
       }));
@@ -76,6 +99,52 @@ export async function fetchAINews(
   }
 
   throw lastError || new Error("Failed after 3 attempts");
+}
+
+// ─── Fetch detailed article bodies on demand ─────────────────────
+export async function fetchAINewsDetails(
+  items: AINewsItem[],
+  stocks: StockInput[],
+  variation: string,
+): Promise<Map<string, string>> {
+  // Only fetch for items that don't have summaries yet
+  const needsDetail = items.filter(i => !i.summary);
+  if (needsDetail.length === 0) return new Map();
+
+  const headlines = needsDetail.map(i => `[${i.companyId}] ${i.headline}`);
+
+  try {
+    const res = await fetch("/api/perplexity-news", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stocks: stocks.slice(0, 5),
+        variation,
+        mode: "detailed",
+        itemIds: headlines,
+      }),
+    });
+
+    if (!res.ok) return new Map();
+
+    const raw = await res.json();
+    const detailMap = new Map<string, string>();
+
+    // Match returned summaries back to original items by headline similarity
+    raw.forEach((detail: any) => {
+      const matched = needsDetail.find(i =>
+        i.headline.toLowerCase().includes(detail.headline?.toLowerCase()?.slice(0, 30) || "___nomatch")
+        || detail.headline?.toLowerCase()?.includes(i.headline.toLowerCase().slice(0, 30))
+      );
+      if (matched && detail.summary) {
+        detailMap.set(matched.id, String(detail.summary));
+      }
+    });
+
+    return detailMap;
+  } catch {
+    return new Map();
+  }
 }
 
 // ─── Synthetic news for unexplained price moves ──────────────────

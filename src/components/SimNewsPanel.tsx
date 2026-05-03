@@ -1,10 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   Newspaper, X, ChevronDown, ChevronUp, Filter,
   TrendingUp, TrendingDown, AlertTriangle, RefreshCw,
   Search, Clock, Zap
 } from "lucide-react";
 import type { AINewsItem } from "@/lib/ai-news";
+import { fetchAINewsDetails } from "@/lib/ai-news";
 
 // ─── Types ───────────────────────────────────────────────────────
 interface SimNewsPanelProps {
@@ -12,10 +13,14 @@ interface SimNewsPanelProps {
   loading: boolean;
   error: string | null;
   onRetry: () => void;
+  onUpdateNews?: (updater: (items: AINewsItem[]) => AINewsItem[]) => void;
   /** All sectors present in the simulation */
   sectors: string[];
   /** All company symbols in the simulation */
   companies: { symbol: string; name: string }[];
+  /** Stocks for detail fetch */
+  stocks?: { symbol: string; name: string; price: number; sector: string; marketCap: number }[];
+  variation?: string;
 }
 
 type ImportanceFilter = "all" | "high" | "low";
@@ -26,10 +31,15 @@ export function SimNewsPanel({
   loading,
   error,
   onRetry,
+  onUpdateNews,
   sectors,
   companies,
+  stocks,
+  variation,
 }: SimNewsPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const detailsFetched = useRef(false);
 
   // Filter state
   const [selectedCompanies, setSelectedCompanies] = useState<Set<string>>(new Set());
@@ -87,6 +97,25 @@ export function SimNewsPanel({
       c.symbol.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
     );
   }, [companies, companySearch]);
+
+  // ─── Fetch details on expand ──────────────────────────────────
+  useEffect(() => {
+    if (!expanded || detailsFetched.current || !stocks || !variation || !onUpdateNews) return;
+    const needsDetail = aiNews.some(i => !i.summary);
+    if (!needsDetail) return;
+
+    detailsFetched.current = true;
+    setDetailsLoading(true);
+
+    fetchAINewsDetails(aiNews, stocks, variation).then(detailMap => {
+      if (detailMap.size > 0) {
+        onUpdateNews(prev => prev.map(item => {
+          const detail = detailMap.get(item.id);
+          return detail ? { ...item, summary: detail } : item;
+        }));
+      }
+    }).finally(() => setDetailsLoading(false));
+  }, [expanded, aiNews, stocks, variation, onUpdateNews]);
 
   // ─── EXPANDED VIEW ─────────────────────────────────────────────
   if (expanded) {
@@ -254,9 +283,16 @@ export function SimNewsPanel({
             </div>
           )}
 
+          {detailsLoading && (
+            <div className="px-4 py-2 bg-bb-cyan/5 border-b border-bb-cyan/20 flex items-center gap-2">
+              <RefreshCw className="w-3 h-3 text-bb-cyan animate-spin" />
+              <span className="text-[10px] text-bb-cyan">Loading in-depth articles...</span>
+            </div>
+          )}
+
           {!loading &&
             filteredItems.map(item => (
-              <NewsCard key={item.id} item={item} />
+              <NewsCard key={item.id} item={item} detailsLoading={detailsLoading} />
             ))}
         </div>
       </div>
@@ -334,32 +370,88 @@ export function SimNewsPanel({
 }
 
 // ─── News Card (expanded) ────────────────────────────────────────
-function NewsCard({ item }: { item: AINewsItem }) {
+function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?: boolean }) {
   const growthColor = item.expectedGrowth >= 0 ? "text-bb-green" : "text-bb-red";
   const growthBg = item.expectedGrowth >= 0 ? "bg-bb-green/10" : "bg-bb-red/10";
   const importanceBg = item.importance === "high" ? "bg-amber-500/15 text-amber-400" : "bg-zinc-500/10 text-zinc-500";
+  const sentiment = item.sentiment || "neutral";
+  const isAlert = sentiment === "alert";
 
-  // Sentiment badge styling
+  // Sentiment badge styling (non-alert)
   const sentimentStyles: Record<string, string> = {
     bullish: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
     bearish: "bg-rose-500/15 text-rose-400 border-rose-500/30",
     neutral: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-    alert: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   };
   const sentimentIcons: Record<string, string> = {
     bullish: "▲",
     bearish: "▼",
     neutral: "●",
-    alert: "⚠",
   };
-  const sentiment = item.sentiment || "neutral";
 
+  // Alert card gets a dramatically different treatment
+  if (isAlert) {
+    return (
+      <div className="relative border-b border-border/30">
+        {/* Pulsing left stripe */}
+        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 animate-pulse" />
+
+        {/* Alert banner */}
+        <div className="ml-1.5 bg-red-500/10 border-b border-red-500/20 px-5 py-2 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-400 animate-pulse shrink-0" />
+          <span className="text-[11px] font-black text-red-400 uppercase tracking-[0.15em]">
+            ⚡ BREAKING ALERT
+          </span>
+          <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-sm ${growthColor} ${growthBg} ml-auto flex items-center gap-1`}>
+            {item.expectedGrowth >= 0 ? (
+              <TrendingUp className="w-3 h-3" />
+            ) : (
+              <TrendingDown className="w-3 h-3" />
+            )}
+            {item.expectedGrowth >= 0 ? "+" : ""}{item.expectedGrowth.toFixed(1)}%
+          </span>
+        </div>
+
+        {/* Content */}
+        <div className="ml-1.5 px-5 py-3">
+          <div className="text-base font-bold text-red-300 leading-snug mb-2">
+            {item.headline}
+          </div>
+
+          {item.summary ? (
+            <div className="text-xs text-muted-foreground leading-relaxed mb-3 max-w-4xl">
+              {item.summary}
+            </div>
+          ) : detailsLoading ? (
+            <div className="animate-pulse space-y-1.5 mb-3 max-w-4xl">
+              <div className="h-3 bg-white/[0.06] rounded w-full" />
+              <div className="h-3 bg-white/[0.04] rounded w-3/4" />
+            </div>
+          ) : null}
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-bb-orange bg-bb-orange/10 px-1.5 py-0.5 rounded-sm">
+              {item.companyId}
+            </span>
+            <span className="text-xs text-muted-foreground bg-white/[0.04] px-1.5 py-0.5 rounded-sm">
+              {item.sector}
+            </span>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase ${importanceBg}`}>
+              {item.importance}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Non-alert card (bullish/bearish/neutral)
   return (
     <div className="px-6 py-4 border-b border-border/30 hover:bg-white/[0.015] transition-colors">
-      {/* Top row: sentiment + headline */}
+      {/* Headline row */}
       <div className="flex items-start gap-3 mb-2">
         <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${sentimentStyles[sentiment] || sentimentStyles.neutral}`}>
-          {sentimentIcons[sentiment]} {sentiment}
+          {sentimentIcons[sentiment] || "●"} {sentiment}
         </span>
         <div className="text-base font-bold text-foreground leading-snug">
           {item.headline}
@@ -367,28 +459,28 @@ function NewsCard({ item }: { item: AINewsItem }) {
       </div>
 
       {/* Summary / Article Body */}
-      <div className="text-xs text-muted-foreground leading-relaxed mb-3 max-w-4xl ml-[72px]">
-        {item.summary}
-      </div>
+      {item.summary ? (
+        <div className="text-xs text-muted-foreground leading-relaxed mb-3 max-w-4xl ml-[72px]">
+          {item.summary}
+        </div>
+      ) : detailsLoading ? (
+        <div className="animate-pulse space-y-1.5 mb-3 max-w-4xl ml-[72px]">
+          <div className="h-3 bg-white/[0.06] rounded w-full" />
+          <div className="h-3 bg-white/[0.04] rounded w-3/4" />
+        </div>
+      ) : null}
 
       {/* Tags row */}
       <div className="flex items-center gap-2 flex-wrap ml-[72px]">
-        {/* Company */}
         <span className="text-xs font-bold text-bb-orange bg-bb-orange/10 px-1.5 py-0.5 rounded-sm">
           {item.companyId}
         </span>
-
-        {/* Sector */}
         <span className="text-xs text-muted-foreground bg-white/[0.04] px-1.5 py-0.5 rounded-sm">
           {item.sector}
         </span>
-
-        {/* Importance badge */}
         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase ${importanceBg}`}>
           {item.importance}
         </span>
-
-        {/* Expected growth */}
         <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-sm ${growthColor} ${growthBg} ml-auto flex items-center gap-1`}>
           {item.expectedGrowth >= 0 ? (
             <TrendingUp className="w-3 h-3" />

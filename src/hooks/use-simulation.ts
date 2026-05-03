@@ -4,6 +4,8 @@ import {
   fetchAINews,
   generateSyntheticNews,
   NewsCoherenceTracker,
+  saveNewsToStorage,
+  loadNewsFromStorage,
   type AINewsItem,
   type AINewsState,
 } from "@/lib/ai-news";
@@ -216,12 +218,17 @@ export function useSimulation(
   const [intradayTicks, setIntradayTicks] = useState<Map<string, IntradayTick[]>>(new Map());
 
   // ─── AI News state ───────────────────────────────────────────────
-  const [aiNews, setAiNews] = useState<AINewsItem[]>([]);
+  const [aiNews, setAiNews] = useState<AINewsItem[]>(() => loadNewsFromStorage());
   const [aiNewsLoading, setAiNewsLoading] = useState(false);
   const [aiNewsError, setAiNewsError] = useState<string | null>(null);
   const aiNewsFetchedDay = useRef(-1); // track which day we last fetched
   const coherenceTracker = useRef(new NewsCoherenceTracker());
   const dayOpenPrices = useRef<Map<string, number>>(new Map()); // track day-open for price move detection
+
+  // Persist news to localStorage whenever it changes
+  useEffect(() => {
+    if (aiNews.length > 0) saveNewsToStorage(aiNews);
+  }, [aiNews]);
 
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const tradeIdRef = useRef(0);
@@ -649,8 +656,10 @@ export function useSimulation(
     getMostActive: useCallback(() => Array.from(simStocks.values()).sort((a, b) => b.volume - a.volume).slice(0, 10), [simStocks]),
     // AI News
     aiNews,
+    setAiNews,
     aiNewsLoading,
     aiNewsError,
     triggerAINewsFetch,
+    simVariation: settings.variation,
   };
 }

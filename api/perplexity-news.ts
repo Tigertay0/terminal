@@ -34,10 +34,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { stocks, variation } = req.body as {
+    const { stocks, variation, mode, itemIds } = req.body as {
       stocks: StockInput[];
       variation: string;
+      mode?: "headlines" | "detailed";
+      itemIds?: string[]; // for detailed mode: which items need full articles
     };
+
+    const fetchMode = mode || "headlines";
 
     if (!stocks?.length) {
       return res.status(400).json({ error: "No stocks provided" });
@@ -60,12 +64,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : "realistic volatility (normal market conditions)";
 
     const numItems = Math.min(stocks.length * 2, 10);
-    const prompt = `Generate ${numItems} financial news items as JSON array for a stock simulation.
+
+    let prompt: string;
+    if (fetchMode === "detailed") {
+      // Detailed mode: generate full article bodies for provided headlines
+      const headlineList = (itemIds || []).join("; ");
+      prompt = `Write detailed 3-4 sentence news article bodies for these financial headlines. Return JSON array with headline and summary fields only.
+
+Headlines: ${headlineList}
+
+Return ONLY JSON array: [{"headline":"...","summary":"detailed 3-4 sentence article body..."}]`;
+    } else {
+      // Headlines mode: fast, compact, no summaries needed
+      prompt = `Generate ${numItems} financial news headlines as JSON for a stock sim.
 
 STOCKS: ${stockList}
 
-Market: ${modeDesc}. Each item needs: companyName, companyId (TICKER), sector, headline (specific, not generic), summary (2-3 sentences), importance ("high"/"low", ~30% high), sentiment (one of "bullish"/"bearish"/"neutral"/"alert"), expectedGrowth (% number: large-cap ±1-5%, mid-cap ±3-10%, small-cap ±5-25%). Use "alert" for urgent breaking news. Mix positive/negative. Return ONLY JSON array:
-[{"companyName":"...","companyId":"TICKER","sector":"...","headline":"...","summary":"...","importance":"high","sentiment":"bullish","expectedGrowth":4.5}]`;
+Market: ${modeDesc}. Each: companyName, companyId (TICKER), sector, headline (specific not generic), importance ("high"/"low", ~30% high), sentiment ("bullish"/"bearish"/"neutral"/"alert"), expectedGrowth (% number: large-cap ±1-5%, mid-cap ±3-10%, small-cap ±5-25%). Use "alert" for urgent breaking news. Mix positive/negative. Return ONLY JSON array:
+[{"companyName":"...","companyId":"TICKER","sector":"...","headline":"...","importance":"high","sentiment":"bullish","expectedGrowth":4.5}]`;
+    }
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -83,7 +100,7 @@ Market: ${modeDesc}. Each item needs: companyName, companyId (TICKER), sector, h
           },
           { role: "user", content: prompt },
         ],
-        max_tokens: 2048,
+        max_tokens: fetchMode === "detailed" ? 2048 : 1024,
         temperature: 0.7,
       }),
     });
