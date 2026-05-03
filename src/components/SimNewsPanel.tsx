@@ -59,11 +59,20 @@ export function SimNewsPanel({
       // Growth range
       if (item.expectedGrowth < growthRange[0] || item.expectedGrowth > growthRange[1]) return false;
       return true;
+    }).sort((a, b) => {
+      // Alerts always first
+      if (a.sentiment === "alert" && b.sentiment !== "alert") return -1;
+      if (b.sentiment === "alert" && a.sentiment !== "alert") return 1;
+      return 0;
     });
   }, [aiNews, selectedCompanies, selectedSector, importanceFilter, growthRange]);
 
   const [showAll, setShowAll] = useState(false);
-  const highItems = useMemo(() => aiNews.filter(i => i.importance === "high"), [aiNews]);
+  const highItems = useMemo(() => {
+    const items = aiNews.filter(i => i.importance === "high");
+    // Sort alerts to the top
+    return items.sort((a, b) => (a.sentiment === "alert" ? -1 : 0) - (b.sentiment === "alert" ? -1 : 0));
+  }, [aiNews]);
   const displayedMinimized = showAll ? aiNews.slice(0, 20) : highItems.slice(0, 5);
   const moreCount = aiNews.length - displayedMinimized.length;
 

@@ -73,11 +73,48 @@ export interface SimInitialState {
 }
 
 // ─── Variation multipliers ───────────────────────────────────────
-const VARIATION_CONFIGS: Record<MarketVariation, { tickVol: number; newsFreq: number; bigEventChance: number }> = {
-  low:       { tickVol: 0.04, newsFreq: 0.08, bigEventChance: 0.01 },
-  realistic: { tickVol: 0.12, newsFreq: 0.15, bigEventChance: 0.03 },
-  high:      { tickVol: 0.35, newsFreq: 0.25, bigEventChance: 0.08 },
+const VARIATION_CONFIGS: Record<MarketVariation, {
+  tickVol: number; newsFreq: number; bigEventChance: number;
+  rareEventDayChance: number; // chance per day of a boom/crash
+}> = {
+  low:       { tickVol: 0.04, newsFreq: 0.08, bigEventChance: 0.01, rareEventDayChance: 0.005 },
+  realistic: { tickVol: 0.12, newsFreq: 0.15, bigEventChance: 0.03, rareEventDayChance: 0.01 },  // ~1 per 100 days
+  high:      { tickVol: 0.35, newsFreq: 0.25, bigEventChance: 0.08, rareEventDayChance: 0.04 },  // ~1 per 25 days
 };
+
+// ETFs get reduced volatility
+const ETF_SYMBOLS = new Set(["SPY", "QQQ", "VOO", "DIA", "IWM", "VTI", "ARKK", "VGT", "XLF", "XLE", "XLK", "SCHD"]);
+const ETF_VOL_MULTIPLIER = 0.3;
+
+// Daily price change cap (circuit breaker)
+const DAILY_CHANGE_CAP = 0.15; // ±15% max per day
+
+// Mean-reversion threshold (only for stocks > $350)
+const MEAN_REVERSION_THRESHOLD = 0.30; // ±30% from start
+const MEAN_REVERSION_STRENGTH = 0.002; // gentle pull back
+const MEAN_REVERSION_PRICE_FLOOR = 350; // only applies to stocks above this price
+
+// Rare event templates (booms & crashes)
+const RARE_BOOM_HEADLINES = [
+  "{company} receives surprise regulatory approval, opening $50B market",
+  "{company} awarded transformative government contract worth $8B",
+  "{company} unveils breakthrough technology, analysts call it 'game-changing'",
+  "Activist investor takes 9% stake in {company}, pushes for strategic review",
+  "{company} merger agreement sends stock soaring in pre-market",
+  "{company} quarterly earnings shatter expectations, revenue up 45%",
+  "{company} announces surprise dividend hike and $10B buyback",
+  "Major hedge fund reveals massive new position in {ticker}",
+];
+const RARE_CRASH_HEADLINES = [
+  "{company} CEO arrested on federal fraud charges, trading halted",
+  "{company} issues profit warning, slashes full-year outlook by 40%",
+  "FDA rejects {company}'s flagship drug application, shares plunge",
+  "{company} accounting scandal revealed by whistleblower report",
+  "Major customer terminates contract with {company}, revenue at risk",
+  "{company} faces emergency product recall after safety incidents",
+  "Short-seller alleges systematic fraud at {company} in 80-page report",
+  "{company} CFO and COO resign simultaneously, board launches review",
+];
 
 // ─── News templates ──────────────────────────────────────────────
 const BULLISH_TEMPLATES: { title: string; symbols?: string[]; sector?: string }[] = [
@@ -264,17 +301,37 @@ export function useSimulation(
     setSimStocks(prev => {
       const next = new Map(prev);
       const symbols = Array.from(next.keys());
-      // Update all stocks each tick
       for (const sym of symbols) {
         const data = next.get(sym)!;
-        // Base random walk
-        const pct = (Math.random() - 0.48) * 2 * (config.tickVol / 100);
+        const isETF = ETF_SYMBOLS.has(sym);
+        const vol = isETF ? config.tickVol * ETF_VOL_MULTIPLIER : config.tickVol;
+
+        // Unbiased random walk (0.5 center = no drift)
+        let pct = (Math.random() - 0.5) * 2 * (vol / 100);
+
+        // Mean-reversion for expensive stocks (>$350): pull back if drifted >±30%
+        if (data.previousClose >= MEAN_REVERSION_PRICE_FLOOR && !isETF) {
+          const driftPct = (data.price - data.previousClose) / data.previousClose;
+          if (Math.abs(driftPct) > MEAN_REVERSION_THRESHOLD) {
+            pct -= driftPct * MEAN_REVERSION_STRENGTH;
+          }
+        }
+
         // Apply pending news impact
         const impactMul = pendingImpacts.current.get(sym) || 1;
         if (impactMul !== 1) {
           pendingImpacts.current.delete(sym);
         }
-        const newPrice = +(data.price * (1 + pct) * impactMul).toFixed(2);
+
+        let newPrice = +(data.price * (1 + pct) * impactMul).toFixed(2);
+
+        // Daily circuit breaker: cap at ±15% from previousClose
+        const maxPrice = +(data.previousClose * (1 + DAILY_CHANGE_CAP)).toFixed(2);
+        const minPrice = +(data.previousClose * (1 - DAILY_CHANGE_CAP)).toFixed(2);
+        newPrice = Math.max(minPrice, Math.min(maxPrice, newPrice));
+        // Floor at $0.01
+        newPrice = Math.max(0.01, newPrice);
+
         const change = +(newPrice - data.previousClose).toFixed(2);
         const changePct = +((change / data.previousClose) * 100).toFixed(2);
         next.set(sym, {
@@ -307,10 +364,10 @@ export function useSimulation(
       return next;
     });
 
-    // Generate template news (instant, pre-written, no API call)
-    const allStockKeys = Array.from(simStocks.keys());
-    if (allStockKeys.length > 0) {
-      const randomSym = allStockKeys[Math.floor(Math.random() * allStockKeys.length)];
+    // Generate template news (instant, pre-written, no API call) — skip ETFs
+    const nonEtfKeys = Array.from(simStocks.keys()).filter(s => !ETF_SYMBOLS.has(s));
+    if (nonEtfKeys.length > 0) {
+      const randomSym = nonEtfKeys[Math.floor(Math.random() * nonEtfKeys.length)];
       const stock = simStocks.get(randomSym);
       if (stock) {
         const templateItem = generateTemplateNews(randomSym, stock.name, stock.sector || "Unknown");
@@ -418,6 +475,45 @@ export function useSimulation(
             });
             return next;
           });
+
+          // ─── Rare boom/crash event check ────────────────
+          const rareConfig = VARIATION_CONFIGS[settings.variation];
+          if (Math.random() < rareConfig.rareEventDayChance) {
+            // Pick a random non-ETF stock for the event
+            const eligibleSymbols = Array.from(simStocks.keys()).filter(s => !ETF_SYMBOLS.has(s));
+            if (eligibleSymbols.length > 0) {
+              const eventSym = eligibleSymbols[Math.floor(Math.random() * eligibleSymbols.length)];
+              const eventStock = simStocks.get(eventSym);
+              if (eventStock) {
+                const isBoom = Math.random() < 0.5;
+                const magnitude = 0.08 + Math.random() * 0.17; // 8% to 25%
+                const impactMultiplier = isBoom ? 1 + magnitude : 1 - magnitude;
+                const headlines = isBoom ? RARE_BOOM_HEADLINES : RARE_CRASH_HEADLINES;
+                const headline = headlines[Math.floor(Math.random() * headlines.length)]
+                  .replace(/\{company\}/g, eventStock.name)
+                  .replace(/\{ticker\}/g, eventSym);
+
+                // Generate alert news item FIRST (before impact)
+                const alertItem: AINewsItem = {
+                  id: `rare-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  companyName: eventStock.name,
+                  companyId: eventSym,
+                  sector: eventStock.sector || "Unknown",
+                  headline,
+                  summary: "",
+                  importance: "high",
+                  sentiment: "alert",
+                  expectedGrowth: isBoom ? +(magnitude * 100).toFixed(1) : +(-magnitude * 100).toFixed(1),
+                  generatedAt: Date.now(),
+                };
+                setAiNews(prev => [alertItem, ...prev].slice(0, 100));
+
+                // Schedule the impact (spread over next few ticks)
+                pendingImpacts.current.set(eventSym, impactMultiplier);
+              }
+            }
+          }
+
           return nextDay;
         }
         return next;
