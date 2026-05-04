@@ -50,7 +50,15 @@ function serializePortfolio(cash: number, holdings: Map<string, Holding>, trades
   };
 }
 
-function deserializePortfolio(portfolio: any): { cash: number; holdings: Map<string, Holding>; trades: TradeRecord[] } {
+function deserializePortfolio(rawPortfolio: any): { cash: number; holdings: Map<string, Holding>; trades: TradeRecord[] } {
+  let portfolio = rawPortfolio;
+  if (typeof portfolio === 'string') {
+    try {
+      portfolio = JSON.parse(portfolio);
+    } catch {
+      portfolio = {};
+    }
+  }
   const cash = typeof portfolio?.cash === "number" ? portfolio.cash : 0;
   const holdings = new Map<string, Holding>(portfolio?.holdings ?? []);
   const trades: TradeRecord[] = (portfolio?.trades ?? []).map((t: any) => ({
@@ -407,14 +415,9 @@ function EventTerminal({
   };
 
   // Build initial state from participant if resuming
-  const initialState: SimInitialState | undefined = participant.current_day > 1 && participant.portfolio
+  const initialState: SimInitialState | undefined = participant.portfolio
     ? {
-        cash: participant.portfolio.cash ?? event.startingCash,
-        holdings: new Map<string, Holding>(participant.portfolio.holdings ?? []),
-        trades: (participant.portfolio.trades ?? []).map((t: any) => ({
-          ...t,
-          timestamp: new Date(t.timestamp),
-        })),
+        ...deserializePortfolio(participant.portfolio),
         dayNumber: participant.current_day,
         simTime: (() => {
           const d = new Date();
