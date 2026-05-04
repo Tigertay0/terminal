@@ -41,16 +41,17 @@ const DEFAULT_WATCHLIST = [
 type AppMode = "auth" | "select" | "save-select" | "sim-settings" | "real" | "sim" | "event";
 
 // ─── Helpers: Serialize / Deserialize portfolio ──────────────────
-function serializePortfolio(cash: number, holdings: Map<string, Holding>, trades: TradeRecord[]) {
+function serializePortfolio(cash: number, holdings: Map<string, Holding>, trades: TradeRecord[], simStocks?: Map<string, TickerData>) {
   return {
     version: 1,
     cash,
     holdings: Array.from(holdings.entries()), // [[symbol, Holding], ...]
-    trades: trades.map(t => ({ ...t, timestamp: t.timestamp.toISOString() })),
+    trades,
+    simStocks: simStocks ? Array.from(simStocks.entries()) : undefined,
   };
 }
 
-function deserializePortfolio(rawPortfolio: any): { cash: number; holdings: Map<string, Holding>; trades: TradeRecord[] } {
+function deserializePortfolio(rawPortfolio: any): { cash: number; holdings: Map<string, Holding>; trades: TradeRecord[]; simStocks?: Map<string, TickerData> } {
   let portfolio = rawPortfolio;
   if (typeof portfolio === 'string') {
     try {
@@ -65,17 +66,19 @@ function deserializePortfolio(rawPortfolio: any): { cash: number; holdings: Map<
     ...t,
     timestamp: new Date(t.timestamp),
   }));
-  return { cash, holdings, trades };
+  const simStocks = portfolio?.simStocks ? new Map<string, TickerData>(portfolio.simStocks) : undefined;
+  return { cash, holdings, trades, simStocks };
 }
 
 function deserializeSaveToInitialState(save: SimSaveRow): SimInitialState {
-  const { cash, holdings, trades } = deserializePortfolio(save.portfolio);
+  const { cash, holdings, trades, simStocks } = deserializePortfolio(save.portfolio);
   return {
     cash,
     holdings,
     trades,
     dayNumber: save.day_number,
     simTime: new Date(save.sim_time),
+    simStocks,
   };
 }
 
@@ -245,7 +248,7 @@ function SimTerminal({
   const performSave = useCallback(async () => {
     if (!userId || baseData.loading) return;
     setSaveStatus("saving");
-    const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades);
+    const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks);
     try {
       const newId = await upsertSimSave(userId, {
         id: saveId,
@@ -463,7 +466,7 @@ function EventTerminal({
     lastSyncedDay.current = sim.dayNumber;
 
     const profit = +(sim.getPortfolioValue() - event.startingCash).toFixed(2);
-    const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades);
+    const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks);
 
     if (showComplete) {
       // Compute final stats
@@ -493,7 +496,7 @@ function EventTerminal({
     const interval = setInterval(() => {
       if (sim.timeSpeed === "paused") return;
       const profit = +(sim.getPortfolioValue() - event.startingCash).toFixed(2);
-      const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades);
+      const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks);
       updateEventProgress(participant.id, sim.dayNumber, profit, portfolio);
     }, 15_000);
     return () => clearInterval(interval);

@@ -70,6 +70,7 @@ export interface SimInitialState {
   trades: TradeRecord[];
   dayNumber: number;
   simTime: Date;
+  simStocks?: Map<string, TickerData>;
 }
 
 // ─── Variation multipliers ───────────────────────────────────────
@@ -237,7 +238,9 @@ export function useSimulation(
   onDayCapReached?: () => void,
   saveId?: string | null,
 ) {
-  const [simStocks, setSimStocks] = useState<Map<string, TickerData>>(new Map());
+  const [simStocks, setSimStocks] = useState<Map<string, TickerData>>(
+    () => initialState?.simStocks ?? new Map()
+  );
   const [cash, setCash] = useState(() => initialState?.cash ?? settings.startingCash);
   const [holdings, setHoldings] = useState<Map<string, Holding>>(
     () => initialState?.holdings ?? new Map()
