@@ -23,7 +23,7 @@ export interface EventDefinition {
 
 // ─── Launch Event ────────────────────────────────────────────────
 const LAUNCH_START = new Date("2026-04-30T00:00:00-04:00");
-const LAUNCH_END = new Date("2026-05-05T23:59:59-04:00");
+const LAUNCH_END = new Date("2026-05-06T11:59:59-04:00");
 
 const LAUNCH_EVENT: Omit<EventDefinition, "eventKey" | "startsAt" | "endsAt"> = {
   name: "The Grand Opening",
