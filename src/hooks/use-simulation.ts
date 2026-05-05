@@ -79,8 +79,8 @@ const VARIATION_CONFIGS: Record<MarketVariation, {
   rareEventDayChance: number; // chance per day of a boom/crash
 }> = {
   low:       { tickVol: 0.04, newsFreq: 0.08, bigEventChance: 0.01, rareEventDayChance: 0.005 },
-  realistic: { tickVol: 0.12, newsFreq: 0.15, bigEventChance: 0.03, rareEventDayChance: 0.01 },  // ~1 per 100 days
-  high:      { tickVol: 0.35, newsFreq: 0.25, bigEventChance: 0.08, rareEventDayChance: 0.04 },  // ~1 per 25 days
+  realistic: { tickVol: 0.12, newsFreq: 0.15, bigEventChance: 0.03, rareEventDayChance: 0.02 },
+  high:      { tickVol: 0.35, newsFreq: 0.25, bigEventChance: 0.08, rareEventDayChance: 0.10 },
 };
 
 // ETFs get reduced volatility
@@ -312,6 +312,11 @@ export function useSimulation(
         // Unbiased random walk (0.5 center = no drift)
         let pct = (Math.random() - 0.5) * 2 * (vol / 100);
 
+        // Fat-tail downward swings for realism (occasional sharp drops)
+        if (Math.random() < 0.03) {
+          pct -= Math.random() * (vol / 100) * (settings.variation === "high" ? 4 : 2);
+        }
+
         // Mean-reversion for expensive stocks (>$350): pull back if drifted >±30%
         if (data.previousClose >= MEAN_REVERSION_PRICE_FLOOR && !isETF) {
           const driftPct = (data.price - data.previousClose) / data.previousClose;
@@ -491,8 +496,10 @@ export function useSimulation(
               const eventSym = eligibleSymbols[Math.floor(Math.random() * eligibleSymbols.length)];
               const eventStock = simStocks.get(eventSym);
               if (eventStock) {
-                const isBoom = Math.random() < 0.5;
-                const magnitude = 0.08 + Math.random() * 0.17; // 8% to 25%
+                const isBoom = Math.random() < 0.35; // 65% chance of crash
+                const magnitude = isBoom 
+                  ? (0.08 + Math.random() * 0.17) // 8% to 25% for boom
+                  : (0.12 + Math.random() * 0.25); // 12% to 37% for crash
                 const impactMultiplier = isBoom ? 1 + magnitude : 1 - magnitude;
                 const headlines = isBoom ? RARE_BOOM_HEADLINES : RARE_CRASH_HEADLINES;
                 const headline = headlines[Math.floor(Math.random() * headlines.length)]
@@ -668,7 +675,7 @@ export function useSimulation(
         const openPrice = dayOpenPrices.current.get(sym);
         if (!openPrice) return;
         const changePct = ((data.price - openPrice) / openPrice) * 100;
-        if (Math.abs(changePct) > 1.5) {
+        if (Math.abs(changePct) > 1.0) {
           // Check if AI news already covers this stock
           const covered = items.some(i => i.companyId === sym);
           if (!covered) {

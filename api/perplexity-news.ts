@@ -80,7 +80,10 @@ Return ONLY JSON array: [{"headline":"...","summary":"detailed 3-4 sentence arti
 
 STOCKS: ${stockList}
 
-Market: ${modeDesc}. Each: companyName, companyId (TICKER), sector, headline (specific not generic), importance ("high"/"low", ~30% high), sentiment ("bullish"/"bearish"/"neutral"/"alert"), expectedGrowth (% number: large-cap ±1-5%, mid-cap ±3-10%, small-cap ±5-25%). Use "alert" for urgent breaking news. Mix positive/negative. Return ONLY JSON array:
+Market: ${modeDesc}. Each: companyName, companyId (TICKER), sector, headline (specific not generic), importance ("high"/"low", ~30% high), sentiment ("bullish"/"bearish"/"neutral"/"alert"), expectedGrowth (% number: large-cap ±1-5%, mid-cap ±3-10%, small-cap ±5-25%). Use "alert" for urgent breaking news.
+CRITICAL: If sentiment is bearish or alert-negative, expectedGrowth MUST be a negative number (e.g. -5.2)! If bullish, it MUST be positive!
+Ensure a realistic mix of positive and negative news. In high volatility, include frequent sharp negative drops (-10% to -25%).
+Return ONLY JSON array:
 [{"companyName":"...","companyId":"TICKER","sector":"...","headline":"...","importance":"high","sentiment":"bullish","expectedGrowth":4.5}]`;
     }
 
