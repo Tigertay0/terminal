@@ -1,13 +1,14 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { searchStocks } from "../_lib/yahoo.js";
-import { corsHeaders } from "../_lib/cors.js";
+import { applyCors } from "../_lib/cors.js";
+
+const MAX_QUERY_LENGTH = 64;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(200).json({});
-  Object.entries(corsHeaders()).forEach(([k, v]) => res.setHeader(k, v));
+  if (applyCors(req, res)) return;
 
   try {
-    const q = ((req.query.q as string) || "").trim();
+    const q = String(req.query.q || "").trim().slice(0, MAX_QUERY_LENGTH);
     if (!q) return res.json([]);
 
     const data = await searchStocks(q);
@@ -15,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
     return res.status(200).json(data);
   } catch (err: any) {
-    console.error("Search error:", err.message);
-    return res.status(500).json({ error: err.message });
+    console.error("Search error:", err?.message || err);
+    return res.status(502).json({ error: "Search failed" });
   }
 }

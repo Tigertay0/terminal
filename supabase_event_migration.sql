@@ -1,9 +1,10 @@
 -- ============================================================
 -- EVENT PARTICIPANTS TABLE — Run this in Supabase SQL Editor
+-- Safe to re-run: every statement is idempotent.
 -- ============================================================
 
 -- 1. Create the table
-CREATE TABLE event_participants (
+CREATE TABLE IF NOT EXISTS event_participants (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   event_key TEXT NOT NULL,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -24,29 +25,46 @@ ALTER TABLE event_participants ENABLE ROW LEVEL SECURITY;
 
 -- 3. RLS Policies
 -- Anyone authenticated can read the leaderboard
+DROP POLICY IF EXISTS "Anyone can view leaderboard" ON event_participants;
 CREATE POLICY "Anyone can view leaderboard"
   ON event_participants FOR SELECT
+  TO authenticated
   USING (true);
 
 -- Users can only insert their own row
+DROP POLICY IF EXISTS "Users insert own entry" ON event_participants;
 CREATE POLICY "Users insert own entry"
   ON event_participants FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- Users can only update their own row
+-- Users can only update their own row, and only while the event is still active,
+-- so a finished result can't be edited afterwards.
+DROP POLICY IF EXISTS "Users update own entry" ON event_participants;
 CREATE POLICY "Users update own entry"
   ON event_participants FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id AND status = 'active')
+  WITH CHECK (auth.uid() = user_id);
 
 -- Users can delete their own completed events (cleanup)
+DROP POLICY IF EXISTS "Users delete own entry" ON event_participants;
 CREATE POLICY "Users delete own entry"
   ON event_participants FOR DELETE
   USING (auth.uid() = user_id);
 
 -- 4. Enable Realtime on this table
-ALTER PUBLICATION supabase_realtime ADD TABLE event_participants;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'event_participants'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE event_participants;
+  END IF;
+END $$;
 
--- 5. Index for fast leaderboard queries
-CREATE INDEX idx_event_participants_event_key ON event_participants(event_key);
-CREATE INDEX idx_event_participants_user_id ON event_participants(user_id);
-CREATE INDEX idx_event_participants_profit ON event_participants(event_key, profit DESC);
+-- 5. Indexes for leaderboard and completed-events queries
+CREATE INDEX IF NOT EXISTS idx_event_participants_event_key ON event_participants(event_key);
+CREATE INDEX IF NOT EXISTS idx_event_participants_user_id ON event_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_event_participants_profit ON event_participants(event_key, profit DESC);
+CREATE INDEX IF NOT EXISTS idx_event_participants_user_status
+  ON event_participants(user_id, status, updated_at DESC);

@@ -11,6 +11,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   },
 });
 
+function throwDbError(operation: string, error: { message: string }): never {
+  console.error(`${operation} error`, error);
+  throw new Error(`${operation} failed: ${error.message}`);
+}
+
 // ─── Watchlist ──────────────────────────────────────────────────
 export async function getWatchlist(userId: string): Promise<string[] | null> {
   const { data, error } = await supabase
@@ -18,10 +23,7 @@ export async function getWatchlist(userId: string): Promise<string[] | null> {
     .select("symbols")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) {
-    console.error("getWatchlist error", error);
-    return null;
-  }
+  if (error) throwDbError("getWatchlist", error);
   return data?.symbols ?? null;
 }
 
@@ -29,7 +31,7 @@ export async function saveWatchlist(userId: string, symbols: string[]): Promise<
   const { error } = await supabase
     .from("watchlists")
     .upsert({ user_id: userId, symbols, updated_at: new Date().toISOString() });
-  if (error) console.error("saveWatchlist error", error);
+  if (error) throwDbError("saveWatchlist", error);
 }
 
 // ─── Sim Saves ──────────────────────────────────────────────────
@@ -61,7 +63,7 @@ export async function listSimSaves(userId: string): Promise<SimSaveRow[]> {
     .select("*")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
-  if (error) console.error("listSimSaves error", error);
+  if (error) throwDbError("listSimSaves", error);
   return data ?? [];
 }
 
@@ -85,10 +87,7 @@ export async function upsertSimSave(userId: string, payload: SimSavePayload): Pr
       .eq("user_id", userId)
       .select("id")
       .maybeSingle();
-    if (error) {
-      console.error("upsertSimSave update error", error);
-      return null;
-    }
+    if (error) throwDbError("upsertSimSave update", error);
     return data?.id ?? null;
   } else {
     const { data, error } = await supabase
@@ -96,10 +95,7 @@ export async function upsertSimSave(userId: string, payload: SimSavePayload): Pr
       .insert(row)
       .select("id")
       .single();
-    if (error) {
-      console.error("upsertSimSave insert error", error);
-      return null;
-    }
+    if (error) throwDbError("upsertSimSave insert", error);
     return data?.id ?? null;
   }
 }
@@ -110,7 +106,7 @@ export async function deleteSimSave(userId: string, id: string) {
     .delete()
     .eq("id", id)
     .eq("user_id", userId);
-  if (error) console.error("deleteSimSave error", error);
+  if (error) throwDbError("deleteSimSave", error);
 }
 
 // ─── Event Participants ─────────────────────────────────────────
@@ -140,7 +136,7 @@ export async function getEventParticipant(
     .eq("event_key", eventKey)
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) console.error("getEventParticipant error", error);
+  if (error) throwDbError("getEventParticipant", error);
   return data ?? null;
 }
 
@@ -164,10 +160,7 @@ export async function joinEvent(
     })
     .select("*")
     .single();
-  if (error) {
-    console.error("joinEvent error", error);
-    return null;
-  }
+  if (error) throwDbError("joinEvent", error);
   return data;
 }
 
@@ -187,7 +180,7 @@ export async function updateEventProgress(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
-  if (error) console.error("updateEventProgress error", error);
+  if (error) throwDbError("updateEventProgress", error);
 }
 
 /** Mark event as completed with final stats */
@@ -209,34 +202,43 @@ export async function completeEvent(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
-  if (error) console.error("completeEvent error", error);
+  if (error) throwDbError("completeEvent", error);
 }
+
+export type LeaderboardEntry = Pick<
+  EventParticipantRow,
+  "id" | "user_id" | "display_name" | "current_day" | "profit" | "status"
+>;
 
 /** Fetch leaderboard for an event — ordered by profit desc */
 export async function getEventLeaderboard(
   eventKey: string,
-): Promise<EventParticipantRow[]> {
+): Promise<LeaderboardEntry[]> {
+  // Only the columns the leaderboard shows; other players' portfolios and settings stay out of the response.
   const { data, error } = await supabase
     .from("event_participants")
-    .select("*")
+    .select("id, user_id, display_name, current_day, profit, status")
     .eq("event_key", eventKey)
     .order("profit", { ascending: false });
-  if (error) console.error("getEventLeaderboard error", error);
+  if (error) throwDbError("getEventLeaderboard", error);
   return data ?? [];
 }
 
 /** Subscribe to realtime leaderboard changes + polling fallback */
 export function subscribeToLeaderboard(
   eventKey: string,
-  callback: (participants: EventParticipantRow[]) => void,
+  callback: (participants: LeaderboardEntry[]) => void,
 ) {
+  // Errors are already logged by getEventLeaderboard; keep the last good data on failure.
+  const refresh = () => {
+    getEventLeaderboard(eventKey).then(callback).catch(() => {});
+  };
+
   // Initial fetch
-  getEventLeaderboard(eventKey).then(callback);
+  refresh();
 
   // Polling fallback — refresh every 30s regardless of realtime
-  const pollInterval = setInterval(() => {
-    getEventLeaderboard(eventKey).then(callback);
-  }, 30_000);
+  const pollInterval = setInterval(refresh, 30_000);
 
   // Realtime subscription (fires on any INSERT/UPDATE/DELETE)
   const channel = supabase
@@ -249,9 +251,7 @@ export function subscribeToLeaderboard(
         table: "event_participants",
         filter: `event_key=eq.${eventKey}`,
       },
-      () => {
-        getEventLeaderboard(eventKey).then(callback);
-      },
+      refresh,
     )
     .subscribe();
 
@@ -272,6 +272,6 @@ export async function getCompletedEvents(
     .eq("user_id", userId)
     .eq("status", "completed")
     .order("updated_at", { ascending: false });
-  if (error) console.error("getCompletedEvents error", error);
+  if (error) throwDbError("getCompletedEvents", error);
   return data ?? [];
 }

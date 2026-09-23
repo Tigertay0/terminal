@@ -8,19 +8,22 @@ interface IndexTickerProps {
 
 export function IndexTicker({ indices }: IndexTickerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Kept across effect restarts so a data refresh doesn't jump the ticker back to the start.
+  const posRef = useRef(0);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    let pos = 0;
     const speed = 0.5;
+    let raf = 0;
     const animate = () => {
-      pos += speed;
-      if (pos >= el.scrollWidth / 2) pos = 0;
-      el.scrollLeft = pos;
-      requestAnimationFrame(animate);
+      posRef.current += speed;
+      if (posRef.current >= el.scrollWidth / 2) posRef.current = 0;
+      el.scrollLeft = posRef.current;
+      // Track the latest frame id so cleanup cancels the running loop, not just its first frame.
+      raf = requestAnimationFrame(animate);
     };
-    const raf = requestAnimationFrame(animate);
+    raf = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(raf);
   }, [indices]);
 

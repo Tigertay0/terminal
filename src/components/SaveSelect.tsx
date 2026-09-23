@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Play, Trash2, Plus, ArrowLeft, Save, Clock, Calendar, DollarSign, TrendingUp, TrendingDown, Trophy } from "lucide-react";
 import type { SimSaveRow } from "@/lib/supabase";
+import { formatWholeDollars as formatCurrency } from "@/lib/finance-api";
 import type { EventParticipantRow } from "@/lib/supabase";
 import {
   AlertDialog,
@@ -36,10 +37,6 @@ function formatRelativeTime(dateStr: string): string {
   const diffDay = Math.floor(diffHr / 24);
   if (diffDay < 30) return `${diffDay}d ago`;
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function formatCurrency(val: number): string {
-  return val.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
 export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack, completedEvents }: SaveSelectProps) {

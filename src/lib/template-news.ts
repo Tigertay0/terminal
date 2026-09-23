@@ -4,6 +4,7 @@
 // Impact is always < 5%.
 
 import type { AINewsItem } from "./ai-news";
+import { pickRandom } from "./utils";
 
 // ─── Template headline format (loaded from JSON) ─────────────────
 export interface TemplateHeadline {
@@ -52,16 +53,11 @@ function getTemplates(): TemplateHeadline[] {
   return loadedTemplates.length > 0 ? loadedTemplates : FALLBACK_TEMPLATES;
 }
 
-// ─── Pick random template for a stock ────────────────────────────
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
 export function generateTemplateNews(
   symbol: string,
   companyName: string,
   sector: string,
-): AINewsItem | null {
+): (AINewsItem & { sentiment: TemplateHeadline["sentiment"] }) | null {
   // Only generate ~15% of the time per tick (keeps it rare enough to feel natural)
   if (Math.random() > 0.15) return null;
 

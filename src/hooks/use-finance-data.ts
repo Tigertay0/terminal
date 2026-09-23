@@ -199,7 +199,7 @@ export function useFinanceData() {
     if (historicalCache.has(cacheKey)) return historicalCache.get(cacheKey)!;
 
     try {
-      const data = await fetchJSON<OHLCVBar[]>(`/api/yf/chart?symbol=${symbol}&range=${range}&interval=1d`);
+      const data = await fetchJSON<OHLCVBar[]>(`/api/yf/chart?symbol=${encodeURIComponent(symbol)}&range=${range}&interval=1d`);
       setHistoricalCache(prev => {
         const next = new Map(prev);
         next.set(cacheKey, data);
@@ -268,5 +268,3 @@ export function useFinanceData() {
     searchSymbols,
   };
 }
-
-export type { TickerData, IndexData, OHLCVBar };

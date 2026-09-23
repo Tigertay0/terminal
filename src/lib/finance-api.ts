@@ -6,16 +6,6 @@ export async function fetchJSON<T>(url: string): Promise<T> {
   return res.json();
 }
 
-export async function postJSON<T>(url: string, body: any): Promise<T> {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-  return res.json();
-}
-
 // Format large numbers compactly
 export function formatNumber(n: number | undefined | null): string {
   if (n == null) return "—";
@@ -37,6 +27,11 @@ export function formatCurrency(n: number | undefined | null): string {
   const sign = n < 0 ? "-" : "";
   if (abs >= 1e6) return sign + "$" + (abs / 1e6).toFixed(2) + "M";
   return sign + "$" + abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Whole-dollar currency, e.g. "$12,345" or "-$1,200"
+export function formatWholeDollars(val: number): string {
+  return val.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
 export function formatPercent(n: number | undefined | null): string {
@@ -62,34 +57,4 @@ export function formatVolume(n: number | undefined | null): string {
 export function getChangeColor(change: number | undefined | null): string {
   if (change == null || change === 0) return "text-muted-foreground";
   return change > 0 ? "text-bb-green" : "text-bb-red";
-}
-
-export function parseCSV(csv: string): Record<string, string>[] {
-  const lines = csv.trim().split("\n");
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map(h => h.trim());
-  return lines.slice(1).map(line => {
-    const values = line.split(",").map(v => v.trim());
-    const obj: Record<string, string> = {};
-    headers.forEach((h, i) => { obj[h] = values[i] || ""; });
-    return obj;
-  });
-}
-
-export function getCurrentDate(): string {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-export function getCurrentTime(): string {
-  return new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
 }

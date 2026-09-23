@@ -1,5 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { corsHeaders } from "./_lib/cors.js";
+
+// Limits on request input: every call spends Perplexity credits, so keep prompts small.
+const MAX_STOCKS = 10;
+const MAX_ITEM_IDS = 50;
+const MAX_FIELD_LENGTH = 100;
+const MAX_HEADLINE_LENGTH = 300;
 
 interface StockInput {
   symbol: string;
@@ -20,30 +25,49 @@ interface AINewsItem {
   expectedGrowth: number;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(200).json({});
-  Object.entries(corsHeaders()).forEach(([k, v]) => res.setHeader(k, v));
+function cleanText(value: unknown, maxLength: number): string {
+  return String(value ?? "").replace(/[\r\n]+/g, " ").slice(0, maxLength);
+}
 
+function parseStocks(raw: unknown): StockInput[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, MAX_STOCKS).flatMap((s: any) => {
+    const price = Number(s?.price);
+    const symbol = cleanText(s?.symbol, 15).trim();
+    if (!symbol || !Number.isFinite(price)) return [];
+    return [{
+      symbol,
+      name: cleanText(s?.name, MAX_FIELD_LENGTH),
+      price,
+      sector: cleanText(s?.sector, MAX_FIELD_LENGTH),
+      marketCap: Number(s?.marketCap) || 0,
+    }];
+  });
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Same-origin only: no CORS headers, so other sites cannot spend the API key.
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only" });
   }
 
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "PERPLEXITY_API_KEY not configured" });
+    console.error("PERPLEXITY_API_KEY not configured");
+    return res.status(500).json({ error: "News service not configured" });
   }
 
   try {
-    const { stocks, variation, mode, itemIds } = req.body as {
-      stocks: StockInput[];
-      variation: string;
-      mode?: "headlines" | "detailed";
-      itemIds?: string[]; // for detailed mode: which items need full articles
-    };
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const stocks = parseStocks(body.stocks);
+    const variation = String(body.variation ?? "");
+    const fetchMode = body.mode === "detailed" ? "detailed" : "headlines";
+    // for detailed mode: which items need full articles
+    const itemIds = Array.isArray(body.itemIds)
+      ? body.itemIds.slice(0, MAX_ITEM_IDS).map((id) => cleanText(id, MAX_HEADLINE_LENGTH))
+      : [];
 
-    const fetchMode = mode || "headlines";
-
-    if (!stocks?.length) {
+    if (!stocks.length) {
       return res.status(400).json({ error: "No stocks provided" });
     }
 
@@ -68,7 +92,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let prompt: string;
     if (fetchMode === "detailed") {
       // Detailed mode: generate full article bodies for provided headlines
-      const headlineList = (itemIds || []).join("; ");
+      const headlineList = itemIds.join("; ");
       prompt = `Write detailed 3-4 sentence news article bodies for these financial headlines. Return JSON array with headline and summary fields only.
 
 Headlines: ${headlineList}
@@ -110,11 +134,8 @@ Return ONLY JSON array:
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Perplexity API error:", response.status, errText);
-      return res.status(502).json({
-        error: `Perplexity API returned ${response.status}`,
-        detail: errText.slice(0, 200),
-      });
+      console.error("Perplexity API error:", response.status, errText.slice(0, 500));
+      return res.status(502).json({ error: `News provider returned ${response.status}` });
     }
 
     const data = await response.json();
@@ -127,18 +148,17 @@ Return ONLY JSON array:
         .replace(/^```(?:json)?\s*/i, "")
         .replace(/```\s*$/, "")
         .trim();
-      parsed = JSON.parse(cleaned);
-    } catch (parseErr) {
-      console.error("Failed to parse Perplexity response:", content.slice(0, 500));
-      return res.status(502).json({
-        error: "Failed to parse AI response as JSON",
-        raw: content.slice(0, 300),
-      });
+      const json = JSON.parse(cleaned);
+      if (!Array.isArray(json)) throw new Error("AI response is not a JSON array");
+      parsed = json;
+    } catch (parseErr: any) {
+      console.error("Failed to parse Perplexity response:", parseErr?.message, content.slice(0, 500));
+      return res.status(502).json({ error: "Failed to parse AI response as JSON" });
     }
 
     // For detailed mode, return the raw parsed summaries (they only have headline + summary)
     if (fetchMode === "detailed") {
-      const detailResults = (Array.isArray(parsed) ? parsed : []).map((item: any) => ({
+      const detailResults = parsed.map((item: any) => ({
         headline: String(item.headline || ""),
         summary: String(item.summary || item.body || item.article || ""),
       }));
@@ -150,6 +170,7 @@ Return ONLY JSON array:
     const validated: AINewsItem[] = parsed
       .filter(
         (item: any) =>
+          item &&
           item.companyId &&
           item.headline &&
           typeof item.expectedGrowth === "number"
@@ -170,8 +191,8 @@ Return ONLY JSON array:
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).json(validated);
   } catch (err: any) {
-    console.error("Perplexity news error:", err.message);
-    return res.status(500).json({ error: err.message });
+    console.error("Perplexity news error:", err?.message || err);
+    return res.status(500).json({ error: "Failed to generate news" });
   }
 }
 
