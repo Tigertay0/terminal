@@ -21,7 +21,7 @@ import { SaveSelect } from "@/components/SaveSelect";
 import { EventLeaderboard } from "@/components/EventLeaderboard";
 import { EventComplete } from "@/components/EventComplete";
 
-import { useFinanceData } from "@/hooks/use-finance-data";
+import { useFinanceData, type TickerData } from "@/hooks/use-finance-data";
 import { useSimulation, type SimSettings, type SimInitialState, type Holding, type TradeRecord } from "@/hooks/use-simulation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -244,31 +244,47 @@ function SimTerminal({
     hasMountedRef.current = true;
   }, []);
 
+  // Saves run one at a time, and the id lives in a ref, so an auto-save and a manual
+  // save that overlap on a new game update one row instead of inserting two.
+  const saveIdRef = useRef<string | null>(initialSave?.id ?? null);
+  const saveQueueRef = useRef<Promise<boolean>>(Promise.resolve(true));
+
   // ─── Perform a save (shared between auto-save and manual) ─────
-  const performSave = useCallback(async () => {
-    if (!userId || baseData.loading) return;
-    setSaveStatus("saving");
-    const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks);
-    try {
-      const newId = await upsertSimSave(userId, {
-        id: saveId,
-        name: saveName || "Untitled",
-        settings: effectiveSettings,
-        portfolio,
-        watchlist,
-        day_number: sim.dayNumber,
-        sim_time: sim.simTime.toISOString(),
-      });
-      if (newId && !saveId) setSaveId(newId);
-      setLastSavedAt(new Date());
-      setSaveStatus("saved");
-      // Reset back to idle after 2s
-      setTimeout(() => setSaveStatus(prev => prev === "saved" ? "idle" : prev), 2000);
-    } catch {
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus(prev => prev === "error" ? "idle" : prev), 3000);
-    }
-  }, [userId, baseData.loading, sim.cash, sim.holdings, sim.trades, sim.dayNumber, sim.simTime, saveId, saveName, effectiveSettings, watchlist]);
+  // Resolves to true when the save was written (or there was nothing to save).
+  const performSave = useCallback((): Promise<boolean> => {
+    if (!userId || baseData.loading) return Promise.resolve(true);
+    const payload = {
+      name: saveName || "Untitled",
+      settings: effectiveSettings,
+      portfolio: serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks),
+      watchlist,
+      day_number: sim.dayNumber,
+      sim_time: sim.simTime.toISOString(),
+    };
+    const runSave = async (): Promise<boolean> => {
+      setSaveStatus("saving");
+      try {
+        const newId = await upsertSimSave(userId, { id: saveIdRef.current, ...payload });
+        if (newId && !saveIdRef.current) {
+          saveIdRef.current = newId;
+          setSaveId(newId);
+        }
+        setLastSavedAt(new Date());
+        setSaveStatus("saved");
+        // Reset back to idle after 2s
+        setTimeout(() => setSaveStatus(prev => prev === "saved" ? "idle" : prev), 2000);
+        return true;
+      } catch (err) {
+        console.error("Simulation save failed:", err);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus(prev => prev === "error" ? "idle" : prev), 3000);
+        return false;
+      }
+    };
+    const queued = saveQueueRef.current.then(runSave);
+    saveQueueRef.current = queued;
+    return queued;
+  }, [userId, baseData.loading, sim.cash, sim.holdings, sim.trades, sim.simStocks, sim.dayNumber, sim.simTime, saveName, effectiveSettings, watchlist]);
 
   // ─── Debounced auto-save (2s debounce on state change) ────────
   useEffect(() => {
@@ -300,8 +316,9 @@ function SimTerminal({
   const handleCommand = useCallback(async (cmd: string) => {
     setCommandHistory(prev => [...prev, cmd]);
     if (cmd === "EXIT" || cmd === "QUIT") {
-      // Save before exiting
-      await performSave();
+      // Save before exiting; don't drop unsaved progress without asking
+      const saved = await performSave();
+      if (!saved && !window.confirm("Saving failed. Exit anyway and lose unsaved progress?")) return;
       onExit();
       return;
     }
@@ -442,6 +459,7 @@ function EventTerminal({
   const [leaderboardRank, setLeaderboardRank] = useState(0);
   const [totalParticipants, setTotalParticipants] = useState(0);
   const [eventPanel, setEventPanel] = useState<"leaderboard" | "news">("leaderboard");
+  const { toast } = useToast();
 
   const baseData = useFinanceData();
 
@@ -458,6 +476,19 @@ function EventTerminal({
     `event_${participant.id}`,
   );
 
+  // Latest sim state for the interval below, which would otherwise keep the snapshot
+  // from when it was created and overwrite newer progress with it.
+  const simRef = useRef(sim);
+  simRef.current = sim;
+
+  const syncProgress = useCallback(() => {
+    const s = simRef.current;
+    const profit = +(s.getPortfolioValue() - event.startingCash).toFixed(2);
+    const portfolio = serializePortfolio(s.cash, s.holdings, s.trades, s.simStocks);
+    // A failed sync is retried by the next day change or 15s tick; the helper logs the error.
+    updateEventProgress(participant.id, s.dayNumber, profit, portfolio).catch(() => {});
+  }, [event.startingCash, participant.id]);
+
   // ─── Sync progress to Supabase ────────────────────────────────
   const lastSyncedDay = useRef(participant.current_day);
   useEffect(() => {
@@ -465,43 +496,44 @@ function EventTerminal({
     if (sim.dayNumber === lastSyncedDay.current && !showComplete) return;
     lastSyncedDay.current = sim.dayNumber;
 
+    if (!showComplete) {
+      syncProgress();
+      return;
+    }
+
     const profit = +(sim.getPortfolioValue() - event.startingCash).toFixed(2);
     const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks);
-
-    if (showComplete) {
-      // Compute final stats
-      const finalStats = {
-        portfolioValue: sim.getPortfolioValue(),
-        profit,
-        totalTrades: sim.trades.length,
-        dailySnapshots: sim.dailySnapshots,
-      };
-      completeEventApi(participant.id, profit, portfolio, sim.dayNumber, finalStats).then(() => {
-        // Fetch rank after completing
-        getEventLeaderboard(event.eventKey).then(lb => {
-          const rank = lb.findIndex(p => p.user_id === userId) + 1;
-          setLeaderboardRank(rank || lb.length);
-          setTotalParticipants(lb.length);
+    const finalStats = {
+      portfolioValue: sim.getPortfolioValue(),
+      profit,
+      totalTrades: sim.trades.length,
+      dailySnapshots: sim.dailySnapshots,
+    };
+    completeEventApi(participant.id, profit, portfolio, sim.dayNumber, finalStats)
+      // Fetch rank after completing
+      .then(() => getEventLeaderboard(event.eventKey))
+      .then(lb => {
+        const rank = lb.findIndex(p => p.user_id === userId) + 1;
+        setLeaderboardRank(rank || lb.length);
+        setTotalParticipants(lb.length);
+      })
+      .catch(err => {
+        console.error("Failed to record event result:", err);
+        toast({
+          title: "Could not record your final result",
+          description: "Your score may not appear on the leaderboard. Check your connection.",
+          variant: "destructive",
         });
       });
-    } else {
-      updateEventProgress(participant.id, sim.dayNumber, profit, portfolio);
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sim.dayNumber, showComplete]);
 
   // ─── Periodic profit sync (every 15s while running) ────────────
   useEffect(() => {
-    if (baseData.loading || showComplete) return;
-    const interval = setInterval(() => {
-      if (sim.timeSpeed === "paused") return;
-      const profit = +(sim.getPortfolioValue() - event.startingCash).toFixed(2);
-      const portfolio = serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks);
-      updateEventProgress(participant.id, sim.dayNumber, profit, portfolio);
-    }, 15_000);
+    if (baseData.loading || showComplete || sim.timeSpeed === "paused") return;
+    const interval = setInterval(syncProgress, 15_000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseData.loading, showComplete, sim.timeSpeed]);
+  }, [baseData.loading, showComplete, sim.timeSpeed, syncProgress]);
 
   const handleSearch = useCallback(async (query: string) => {
     const upper = query.toUpperCase();
@@ -700,52 +732,6 @@ export default function App() {
     }
   }, [auth.isAuthenticated, auth.userId, auth.loading]); // Removed mode from deps to avoid re-triggering
 
-  // ─── Fetch simulation saves ───────────────────────────────────
-  const fetchSaves = useCallback(async () => {
-    if (!auth.userId) return;
-    setSavesLoading(true);
-    try {
-      const saves = await listSimSaves(auth.userId);
-      setSavesList(saves);
-    } catch (err) {
-      console.error("Failed to load saves:", err);
-      toast({
-        title: "Failed to load saves",
-        description: "Could not fetch your simulation saves.",
-        variant: "destructive",
-      });
-    } finally {
-      setSavesLoading(false);
-    }
-  }, [auth.userId, toast]);
-
-  // Handler: user clicks "Simulation" on mode select
-  const handleSimClick = useCallback(async () => {
-    if (!auth.userId) {
-      // Not logged in — go straight to settings (no saves)
-      setActiveSave(null);
-      // Show ModeSelect in settings phase directly (we set mode to select and let ModeSelect handle it)
-      // Actually, we need to go to ModeSelect settings phase. Since ModeSelect manages its own phase,
-      // we just rely on ModeSelect's internal click handler. But we need to intercept the simulation button.
-      return;
-    }
-    // Logged in — fetch saves and decide routing
-    setSavesLoading(true);
-    try {
-      const saves = await listSimSaves(auth.userId);
-      setSavesList(saves);
-      if (saves.length === 0) {
-        // No saves — skip save picker, go straight to settings
-        return; // Let ModeSelect handle the click normally
-      }
-      // Has saves — show save picker
-      setMode("save-select");
-    } catch {
-      // On error, fall through to settings
-    } finally {
-      setSavesLoading(false);
-    }
-  }, [auth.userId]);
 
   const handleDeleteSave = useCallback(async (id: string) => {
     if (!auth.userId) return;
@@ -861,8 +847,14 @@ export default function App() {
                 const saves = await listSimSaves(auth.userId);
                 setSavesList(saves);
                 await loadCompletedEvents();
-              } catch {
+              } catch (err) {
+                console.error("Failed to load saves:", err);
                 setSavesList([]);
+                toast({
+                  title: "Failed to load saves",
+                  description: "Your saves still exist. Go back and try again.",
+                  variant: "destructive",
+                });
               } finally {
                 setSavesLoading(false);
               }

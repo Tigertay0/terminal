@@ -161,7 +161,3 @@ export function getEventTimeRemaining(event: EventDefinition, now: Date = new Da
   const mins = Math.floor(ms / (1000 * 60));
   return `${mins}m`;
 }
-
-export function isEventExpired(event: EventDefinition, now: Date = new Date()): boolean {
-  return now > event.endsAt;
-}

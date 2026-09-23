@@ -14,6 +14,22 @@ const SEARCH_TTL = 300_000;
 const chartCacheMap = new Map<string, { data: any; ts: number }>();
 const CHART_TTL = 60_000;
 
+// Keys come from request input, so cap each cache to keep a warm instance's memory bounded.
+const MAX_CACHE_ENTRIES = 500;
+
+function setCached(cache: Map<string, { data: any; ts: number }>, key: string, data: any) {
+  cache.delete(key);
+  if (cache.size >= MAX_CACHE_ENTRIES) {
+    // Maps iterate in insertion order, so the first key is the oldest entry.
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, { data, ts: Date.now() });
+}
+
+export const CHART_RANGES = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y"] as const;
+export const CHART_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "1d", "1wk", "1mo"] as const;
+
 export function mapQuote(q: any) {
   return {
     symbol: q.symbol || "",
@@ -27,7 +43,7 @@ export function mapQuote(q: any) {
     dayHigh: q.regularMarketDayHigh ?? 0,
     dayLow: q.regularMarketDayLow ?? 0,
     open: q.regularMarketOpen ?? 0,
-    previousClose: q.regularMarketPreviousClose ?? 0,
+    previousClose: q.regularMarketPreviousClose ?? q.regularMarketPrice ?? 0,
     yearHigh: q.fiftyTwoWeekHigh ?? 0,
     yearLow: q.fiftyTwoWeekLow ?? 0,
     eps: q.epsTrailingTwelveMonths ?? null,
@@ -85,7 +101,7 @@ export async function fetchQuotes(symbols: string[]) {
       const result = fetched[i];
       if (result.status === "fulfilled" && result.value) {
         const mapped = mapQuote(result.value);
-        quoteCache.set(toFetch[i], { data: mapped, ts: Date.now() });
+        setCached(quoteCache, toFetch[i], mapped);
         results.push(mapped);
       } else if (result.status === "rejected") {
         console.warn("Quote rejected for", toFetch[i], result.reason?.message || result.reason);
@@ -113,7 +129,7 @@ export async function searchStocks(query: string) {
       exchange: r.exchDisp || r.exchange,
     }));
 
-  searchCacheMap.set(cacheKey, { data: mapped, ts: Date.now() });
+  setCached(searchCacheMap, cacheKey, mapped);
   return mapped;
 }
 
@@ -138,6 +154,6 @@ export async function fetchChart(symbol: string, range = "6mo", interval = "1d")
     }))
     .filter((b: any) => b.close != null);
 
-  chartCacheMap.set(cacheKey, { data: bars, ts: Date.now() });
+  setCached(chartCacheMap, cacheKey, bars);
   return bars;
 }

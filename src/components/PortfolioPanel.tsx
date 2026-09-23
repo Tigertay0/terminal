@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Wallet, TrendingUp, TrendingDown, ShoppingCart, DollarSign, ArrowUpDown, BarChart3 } from "lucide-react";
 import type { TickerData } from "@/hooks/use-finance-data";
 import type { Holding, TradeRecord } from "@/hooks/use-simulation";
@@ -31,6 +31,8 @@ export function PortfolioPanel({
   const [inputMode, setInputMode] = useState<"shares" | "dollars">("shares");
   const [shares, setShares] = useState("");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const messageTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(messageTimeoutRef.current), []);
 
   const portfolioValue = getPortfolioValue();
   const totalPnL = getTotalPnL();
@@ -73,7 +75,9 @@ export function PortfolioPanel({
       }
     }
     if (success) setShares("");
-    setTimeout(() => setMessage(null), 2500);
+    // Restart the timer so an earlier trade's timeout doesn't clear this message early
+    clearTimeout(messageTimeoutRef.current);
+    messageTimeoutRef.current = setTimeout(() => setMessage(null), 2500);
   }, [shares, tradeAction, selectedSymbol, onBuy, onSell, getTradeShares, inputMode]);
 
   const holding = holdings.get(selectedSymbol);

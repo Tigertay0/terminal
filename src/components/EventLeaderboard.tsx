@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Trophy, Clock, TrendingUp, TrendingDown, Minus, Users } from "lucide-react";
-import { subscribeToLeaderboard, type EventParticipantRow } from "@/lib/supabase";
+import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/supabase";
 import { getEventTimeRemaining, type EventDefinition } from "@/lib/events";
 
 interface EventLeaderboardProps {
@@ -21,7 +21,7 @@ function getRankBadge(rank: number) {
 }
 
 export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
-  const [participants, setParticipants] = useState<EventParticipantRow[]>([]);
+  const [participants, setParticipants] = useState<LeaderboardEntry[]>([]);
   const [timeLeft, setTimeLeft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 

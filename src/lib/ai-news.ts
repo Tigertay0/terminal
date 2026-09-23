@@ -1,6 +1,8 @@
 // ─── AI News Types & Service ─────────────────────────────────────
 // Client-side module for fetching Perplexity-generated news
 
+import { pickRandom } from "./utils";
+
 export interface AINewsItem {
   id: string;
   companyName: string;
@@ -14,13 +16,6 @@ export interface AINewsItem {
   generatedAt: number; // timestamp
   simDay?: number; // simulation day number
   simTimeStr?: string; // e.g. "10:35 AM"
-}
-
-export interface AINewsState {
-  items: AINewsItem[];
-  loading: boolean;
-  error: string | null;
-  lastFetchDay: number; // sim day when last fetched
 }
 
 interface StockInput {
@@ -52,10 +47,6 @@ export function loadNewsFromStorage(saveId?: string | null): AINewsItem[] {
   } catch {
     return [];
   }
-}
-
-export function clearNewsStorage(saveId?: string | null) {
-  localStorage.removeItem(newsKey(saveId));
 }
 
 // ─── Fetch headlines only (fast — no summaries) ──────────────────
@@ -180,10 +171,6 @@ const SYNTHETIC_BEARISH = [
   "{sym} declines on light volume amid macro uncertainty",
   "Sector rotation out of {sym}'s industry group accelerates",
 ];
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
 
 export function generateSyntheticNews(
   symbol: string,

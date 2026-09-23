@@ -7,7 +7,6 @@ import {
   saveNewsToStorage,
   loadNewsFromStorage,
   type AINewsItem,
-  type AINewsState,
 } from "@/lib/ai-news";
 import { generateTemplateNews, loadTemplateHeadlines } from "@/lib/template-news";
 
@@ -39,29 +38,6 @@ export interface TradeRecord {
   shares: number;
   price: number;
   timestamp: Date;
-}
-
-export interface SimNewsItem {
-  id: number;
-  title: string;
-  source: string;
-  time: Date;
-  category: string;
-  symbol?: string;
-  sentiment: "bullish" | "bearish" | "neutral";
-  isBreaking?: boolean;
-  priceImpact: number; // multiplier, e.g. 1.02 = +2%
-}
-
-export interface SimState {
-  cash: number;
-  holdings: Map<string, Holding>;
-  trades: TradeRecord[];
-  simTime: Date;
-  dayNumber: number;
-  news: SimNewsItem[];
-  totalPnL: number;
-  portfolioValue: number;
 }
 
 export interface SimInitialState {
@@ -117,118 +93,6 @@ const RARE_CRASH_HEADLINES = [
   "{company} CFO and COO resign simultaneously, board launches review",
 ];
 
-// ─── News templates ──────────────────────────────────────────────
-const BULLISH_TEMPLATES: { title: string; symbols?: string[]; sector?: string }[] = [
-  { title: "{sym} Signs Major Government Contract Worth $2.4B", symbols: ["AAPL","MSFT","GOOGL","META","NVDA"] },
-  { title: "{sym} Beats Earnings Estimates by 18%, Revenue Up 23%", },
-  { title: "{sym} Announces Strategic Acquisition to Expand AI Division", symbols: ["MSFT","GOOGL","META","AMZN"] },
-  { title: "{sym} Receives FDA Fast-Track Approval for New Drug", symbols: ["PFE","ABBV","MRK","JNJ","UNH"] },
-  { title: "{sym} Reports Record Quarterly Revenue, Raises Guidance", },
-  { title: "{sym} Partners with Leading Tech Firm on Cloud Infrastructure", symbols: ["AMZN","MSFT","GOOGL"] },
-  { title: "{sym} Announces $5B Share Buyback Program", },
-  { title: "{sym} CEO Unveils Revolutionary Product at Annual Conference", symbols: ["AAPL","TSLA","NVDA"] },
-  { title: "Analysts Upgrade {sym} to Strong Buy, Raise PT 25%", },
-  { title: "{sym} Secures Exclusive Deal with Major Retailer", symbols: ["NKE","PG","WMT"] },
-  { title: "{sym} Data Center Revenue Doubles Year-Over-Year", symbols: ["NVDA","MSFT","AMZN","GOOGL"] },
-  { title: "{sym} Enters New Market with $1B Investment", },
-  { title: "Warren Buffett's Berkshire Reveals Major Stake in {sym}", },
-  { title: "{sym} Wins Landmark Patent Case, Stock Soars", },
-  { title: "{sym} Reports 40% Surge in International Sales", },
-];
-
-const BEARISH_TEMPLATES: { title: string; symbols?: string[]; sector?: string }[] = [
-  { title: "{sym} Misses Revenue Estimates, Cuts Forward Guidance", },
-  { title: "SEC Opens Investigation Into {sym} Accounting Practices", },
-  { title: "{sym} Faces Major Product Recall Affecting Millions", symbols: ["AAPL","TSLA","JNJ","PG"] },
-  { title: "{sym} CFO Resigns Amid Internal Review, Shares Plunge", },
-  { title: "Major Analyst Downgrades {sym} to Sell, Cites Headwinds", },
-  { title: "{sym} Reports Significant Data Breach Affecting Users", symbols: ["META","GOOGL","MSFT","AMZN"] },
-  { title: "{sym} Factory Fire Disrupts Supply Chain for Months", },
-  { title: "{sym} Loses Key Contract to Competitor, Revenue at Risk", },
-  { title: "{sym} Announces Layoffs of 12,000 Employees", symbols: ["META","MSFT","GOOGL","AMZN"] },
-  { title: "Short Seller Publishes Damaging Report on {sym}", },
-  { title: "{sym} Faces Class Action Lawsuit Over Product Defects", },
-  { title: "Insider Selling Surges at {sym}, Executives Dump Shares", },
-];
-
-const NEUTRAL_TEMPLATES: { title: string; symbols?: string[] }[] = [
-  { title: "Fed Holds Rates Steady, Signals Data-Dependent Approach", },
-  { title: "Treasury Yields Stabilize After Week of Volatility", },
-  { title: "Oil Prices Flat as OPEC Meetings Continue", },
-  { title: "Consumer Confidence Index Meets Expectations", },
-  { title: "Unemployment Claims Match Consensus at 215K", },
-  { title: "Manufacturing PMI Comes In Line at 50.2", },
-  { title: "European Markets Close Mixed on ECB Policy Uncertainty", },
-  { title: "Dollar Index Holds Steady Ahead of Jobs Report", },
-  { title: "Retail Sales Data Shows Modest Growth of 0.3%", },
-  { title: "Housing Starts Match Analyst Forecasts", },
-];
-
-const NEWS_SOURCES = ["Bloomberg", "Reuters", "CNBC", "WSJ", "FT", "Barrons", "MarketWatch"];
-
-// ─── Helper ──────────────────────────────────────────────────────
-let newsIdCounter = 0;
-function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
-
-function generateSimNews(
-  stocks: Map<string, TickerData>,
-  variation: MarketVariation,
-): SimNewsItem | null {
-  const config = VARIATION_CONFIGS[variation];
-  if (Math.random() > config.newsFreq) return null;
-
-  const allSymbols = Array.from(stocks.keys());
-  const isBigEvent = Math.random() < config.bigEventChance;
-  const rand = Math.random();
-
-  let template: { title: string; symbols?: string[]; sector?: string };
-  let sentiment: "bullish" | "bearish" | "neutral";
-  let impact: number;
-
-  if (rand < 0.40) {
-    template = pickRandom(BULLISH_TEMPLATES);
-    sentiment = "bullish";
-    impact = isBigEvent ? 1.03 + Math.random() * 0.05 : 1.005 + Math.random() * 0.015;
-  } else if (rand < 0.70) {
-    template = pickRandom(BEARISH_TEMPLATES);
-    sentiment = "bearish";
-    impact = isBigEvent ? 0.93 + Math.random() * 0.04 : 0.985 - Math.random() * 0.01;
-  } else {
-    template = pickRandom(NEUTRAL_TEMPLATES);
-    sentiment = "neutral";
-    impact = 0.998 + Math.random() * 0.004;
-  }
-
-  // Symbol-specific templates: pick from intersection of template's symbols and what's loaded
-  // so we never produce "undefined" titles.
-  let possibleSymbols: string[];
-  if (template.symbols && template.symbols.length > 0) {
-    const loaded = template.symbols.filter((s) => allSymbols.includes(s));
-    possibleSymbols = loaded.length > 0 ? loaded : (allSymbols.length > 0 ? allSymbols : []);
-  } else {
-    possibleSymbols = allSymbols;
-  }
-
-  // For non-neutral templates that need a {sym}, abort if no symbols are available.
-  const needsSymbol = template.title.includes("{sym}");
-  if (needsSymbol && possibleSymbols.length === 0) return null;
-
-  const sym = needsSymbol ? pickRandom(possibleSymbols) : undefined;
-  const title = needsSymbol && sym ? template.title.replace("{sym}", sym) : template.title;
-
-  return {
-    id: ++newsIdCounter,
-    title,
-    source: pickRandom(NEWS_SOURCES),
-    time: new Date(),
-    category: sentiment === "neutral" || !sym ? "MACRO" : sym,
-    symbol: sentiment !== "neutral" ? sym : undefined,
-    sentiment,
-    isBreaking: isBigEvent,
-    priceImpact: impact,
-  };
-}
-
 // ─── Main Hook ───────────────────────────────────────────────────
 export function useSimulation(
   settings: SimSettings,
@@ -253,7 +117,6 @@ export function useSimulation(
     return d;
   });
   const [dayNumber, setDayNumber] = useState(() => initialState?.dayNumber ?? 1);
-  const [news, setNews] = useState<SimNewsItem[]>([]);
   const [timeSpeed, setTimeSpeed] = useState<TimeSpeed>("paused");
   const [dailySnapshots, setDailySnapshots] = useState<number[]>([]);
   const [historicalCache, setHistoricalCache] = useState<Map<string, OHLCVBar[]>>(new Map());
@@ -264,6 +127,7 @@ export function useSimulation(
   const [aiNewsLoading, setAiNewsLoading] = useState(false);
   const [aiNewsError, setAiNewsError] = useState<string | null>(null);
   const aiNewsFetchedDay = useRef(-1); // track which day we last fetched
+  const aiNewsInFlight = useRef(false);
   const coherenceTracker = useRef(new NewsCoherenceTracker());
   const dayOpenPrices = useRef<Map<string, number>>(new Map()); // track day-open for price move detection
 
@@ -333,15 +197,19 @@ export function useSimulation(
 
         let newPrice = +(data.price * (1 + pct) * impactMul).toFixed(2);
 
+        // Yahoo omits previousClose for some tickers (it arrives as 0); fall back to the
+        // current price so the breaker doesn't pin the stock at $0.01 and % change isn't Infinity.
+        const refClose = data.previousClose > 0 ? data.previousClose : data.price;
+
         // Daily circuit breaker: cap at ±15% from previousClose
-        const maxPrice = +(data.previousClose * (1 + DAILY_CHANGE_CAP)).toFixed(2);
-        const minPrice = +(data.previousClose * (1 - DAILY_CHANGE_CAP)).toFixed(2);
+        const maxPrice = +(refClose * (1 + DAILY_CHANGE_CAP)).toFixed(2);
+        const minPrice = +(refClose * (1 - DAILY_CHANGE_CAP)).toFixed(2);
         newPrice = Math.max(minPrice, Math.min(maxPrice, newPrice));
         // Floor at $0.01
         newPrice = Math.max(0.01, newPrice);
 
-        const change = +(newPrice - data.previousClose).toFixed(2);
-        const changePct = +((change / data.previousClose) * 100).toFixed(2);
+        const change = +(newPrice - refClose).toFixed(2);
+        const changePct = refClose > 0 ? +((change / refClose) * 100).toFixed(2) : 0;
         next.set(sym, {
           ...data,
           price: newPrice,
@@ -552,6 +420,8 @@ export function useSimulation(
 
   // ─── Trading actions ───────────────────────────────────────────
   const buyStock = useCallback((symbol: string, shares: number): boolean => {
+    // A negative count would make the cost negative and add cash
+    if (!Number.isFinite(shares) || shares <= 0) return false;
     const stock = simStocks.get(symbol);
     if (!stock) return false;
     const cost = stock.price * shares;
@@ -586,6 +456,7 @@ export function useSimulation(
   }, [simStocks, cash, simTime]);
 
   const sellStock = useCallback((symbol: string, shares: number): boolean => {
+    if (!Number.isFinite(shares) || shares <= 0) return false;
     const holding = holdings.get(symbol);
     if (!holding || holding.shares < shares) return false;
     const stock = simStocks.get(symbol);
@@ -638,7 +509,9 @@ export function useSimulation(
 
   // ─── AI News fetch ──────────────────────────────────────────────
   const triggerAINewsFetch = useCallback(async () => {
-    if (simStocks.size === 0) return;
+    // Overlapping fetches (day rollover + manual retry) would compound the same price impacts
+    if (simStocks.size === 0 || aiNewsInFlight.current) return;
+    aiNewsInFlight.current = true;
     setAiNewsLoading(true);
     setAiNewsError(null);
     try {
@@ -691,6 +564,7 @@ export function useSimulation(
       console.error("AI news fetch failed:", err);
       setAiNewsError(err.message || "Failed to fetch AI news");
     } finally {
+      aiNewsInFlight.current = false;
       setAiNewsLoading(false);
     }
   }, [simStocks, settings.variation]);
@@ -743,7 +617,6 @@ export function useSimulation(
     trades,
     simTime,
     dayNumber,
-    news,
     timeSpeed,
     dailySnapshots,
     intradayTicks,

@@ -2,6 +2,7 @@ import { Trophy, TrendingUp, TrendingDown, BarChart3, Calendar, DollarSign, Targ
 import type { TradeRecord, Holding } from "@/hooks/use-simulation";
 import type { TickerData } from "@/hooks/use-finance-data";
 import type { EventDefinition } from "@/lib/events";
+import { formatWholeDollars as formatCurrency } from "@/lib/finance-api";
 
 interface EventCompleteProps {
   event: EventDefinition;
@@ -16,10 +17,6 @@ interface EventCompleteProps {
   dailySnapshots: number[];
   onViewLeaderboard: () => void;
   onGoHome: () => void;
-}
-
-function formatCurrency(val: number): string {
-  return val.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
 interface StatCardProps {

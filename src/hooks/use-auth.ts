@@ -8,10 +8,20 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("getSession error", error);
+          setError("Could not restore your session. Please log in again.");
+        }
+        setUser(data.session?.user ?? null);
+      })
+      .catch((err) => {
+        console.error("getSession failed", err);
+        setError("Could not restore your session. Please log in again.");
+      })
+      // Always leave the splash screen, even when the session lookup fails
+      .finally(() => setLoading(false));
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -47,7 +57,11 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setError(error.message);
+      throw error;
+    }
   }, []);
 
   return {

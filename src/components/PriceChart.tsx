@@ -76,6 +76,16 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     });
   }, [timeRange]);
 
+  // React registers wheel listeners as passive, so preventDefault() only works on a native listener.
+  // The container only mounts once a stock is present, so re-run when that changes.
+  const hasStock = !!stock;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, [handleWheel, hasStock]);
+
   // ─── Draw daily chart ───────────────────────────────────────────
   useEffect(() => {
     if (isIntraday) return; // Skip for intraday modes
@@ -438,7 +448,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
 
       {/* Chart area */}
       {(!isIntraday || intradayData.length > 0) && (
-        <div ref={containerRef} className="flex-1 relative min-h-0 px-1 pt-1" onWheel={e => handleWheel(e.nativeEvent)}>
+        <div ref={containerRef} className="flex-1 relative min-h-0 px-1 pt-1">
           <canvas ref={canvasRef} className="w-full h-full" />
           {hoverInfo && (
             <div
