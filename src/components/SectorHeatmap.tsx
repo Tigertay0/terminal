@@ -8,10 +8,17 @@ interface SectorHeatmapProps {
 
 const SECTORS = ["Technology", "Finance", "Healthcare", "Energy", "Consumer"];
 
+// Quotes carry Yahoo sector names ("Financial Services", "Consumer Cyclical"...); bucket them into the map's groups
+function sectorGroup(sector: string): string {
+  if (sector.startsWith("Financial")) return "Finance";
+  if (sector.startsWith("Consumer")) return "Consumer";
+  return sector;
+}
+
 export function SectorHeatmap({ stocks, onSelectSymbol }: SectorHeatmapProps) {
   const sectorGroups = SECTORS.map(sector => ({
     name: sector,
-    stocks: stocks.filter(s => s.sector === sector),
+    stocks: stocks.filter(s => sectorGroup(s.sector) === sector),
   }));
 
   const getHeatColor = (pct: number) => {
