@@ -81,7 +81,7 @@ interface SaveSelectProps {
 }
 ```
 
-**Layout (Bloomberg-style):**
+**Layout (dense market-data style):**
 
 - Title: `SIMULATION SAVES`
 - Card grid showing each save:
@@ -239,7 +239,7 @@ Today: every 30 s unconditionally. Improve to:
 
 1. **Fix portfolio serialization** in current auto-save (§2.2.5). Verify in Supabase that `holdings` is now a real array. *(30 min)*
 2. **Add `initialState` to `useSimulation`** (§2.2.3). Unit-test by hardcoding an initial state and confirming `cash`/`holdings` render correctly. *(45 min)*
-3. **Build `SaveSelect.tsx`** (§2.2.1) using existing shadcn `Card` + `Button` primitives. Follow existing Bloomberg theme tokens (`bb-orange`, `bb-green`). *(90 min)*
+3. **Build `SaveSelect.tsx`** (§2.2.1) using existing shadcn `Card` + `Button` primitives. Follow existing Rochambeau theme tokens (`rf-orange`, `rf-green`). *(90 min)*
 4. **Wire root `App`** (§2.2.2) — add the `save-select` mode, route based on `saves.length`. *(60 min)*
 5. **Update `SimTerminal`** (§2.2.4) — accept `initialSave`, seed state, debounce auto-save, add SAVE button. *(60 min)*
 6. **Real-mode watchlist polish** (§2.1) — fix the load-once gate, add retry, surface errors. *(30 min)*

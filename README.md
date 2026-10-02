@@ -1,6 +1,6 @@
-# Bloomberg Terminal
+# Rochambeau Finance Terminal
 
-A web-based Bloomberg-style terminal with real-time stock data and a full simulation mode.
+A web-based market data workstation with real-time stock data and a full simulation mode.
 
 - Real mode: live quotes, charts, market movers from Yahoo Finance
 - Simulation mode: paper trading, time controls, news engine, tutorial

@@ -95,15 +95,15 @@ export function PortfolioPanel({
     : null;
 
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="portfolio-panel">
+    <div className="rf-panel flex flex-col h-full" data-testid="portfolio-panel">
       {/* Header with KPIs */}
-      <div className="bg-[hsl(var(--bb-panel-header))] px-2 py-1.5 border-b border-border">
+      <div className="bg-[hsl(var(--rf-panel-header))] px-2 py-1.5 border-b border-border">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1">
-            <Wallet className="w-3 h-3 text-bb-orange" />
-            <span className="text-[10px] font-bold text-bb-orange tracking-wider">PORTFOLIO</span>
+            <Wallet className="w-3 h-3 text-rf-orange" />
+            <span className="text-[10px] font-bold text-rf-orange tracking-wider">PORTFOLIO</span>
           </div>
-          <span className={`text-[10px] font-bold ${totalPnL >= 0 ? "text-bb-green" : "text-bb-red"}`}>
+          <span className={`text-[10px] font-bold ${totalPnL >= 0 ? "text-rf-green" : "text-rf-red"}`}>
             {totalPnL >= 0 ? "+" : ""}{formatCurrency(totalPnL)} ({totalPnLPct >= 0 ? "+" : ""}{totalPnLPct.toFixed(2)}%)
           </span>
         </div>
@@ -114,7 +114,7 @@ export function PortfolioPanel({
           </div>
           <div>
             <div className="text-[9px] text-muted-foreground">CASH</div>
-            <div className="text-[11px] font-bold text-bb-green">{formatCurrency(cash)}</div>
+            <div className="text-[11px] font-bold text-rf-green">{formatCurrency(cash)}</div>
           </div>
           <div>
             <div className="text-[9px] text-muted-foreground">INVESTED</div>
@@ -131,7 +131,7 @@ export function PortfolioPanel({
             onClick={() => setTab(t)}
             className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${
               tab === t
-                ? "text-bb-orange border-b border-bb-orange"
+                ? "text-rf-orange border-b border-rf-orange"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             data-testid={`tab-${t}`}
@@ -142,7 +142,7 @@ export function PortfolioPanel({
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto bb-scrollbar">
+      <div className="flex-1 overflow-y-auto rf-scrollbar">
         {tab === "portfolio" && (
           <div>
             {holdings.size === 0 ? (
@@ -173,7 +173,7 @@ export function PortfolioPanel({
                       </div>
                       <div className="text-right">
                         <div className="text-[11px] font-bold text-foreground">{formatCurrency(stock.price * h.shares)}</div>
-                        <div className={`text-[10px] font-medium ${pnl >= 0 ? "text-bb-green" : "text-bb-red"}`}>
+                        <div className={`text-[10px] font-medium ${pnl >= 0 ? "text-rf-green" : "text-rf-red"}`}>
                           {pnl >= 0 ? "+" : ""}{formatCurrency(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)
                         </div>
                       </div>
@@ -195,7 +195,7 @@ export function PortfolioPanel({
             {currentStock && (
               <div className="bg-white/[0.02] rounded-sm p-2 border border-border/50">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-bb-orange">{selectedSymbol}</span>
+                  <span className="text-xs font-bold text-rf-orange">{selectedSymbol}</span>
                   <span className="text-xs font-bold text-foreground">${formatPrice(currentStock.price)}</span>
                 </div>
                 <div className="text-[10px] text-muted-foreground mt-0.5">{currentStock.name}</div>
@@ -208,7 +208,7 @@ export function PortfolioPanel({
                 onClick={() => setTradeAction("BUY")}
                 className={`py-1.5 text-[10px] font-bold rounded-sm transition-colors ${
                   tradeAction === "BUY"
-                    ? "bg-bb-green/20 text-bb-green"
+                    ? "bg-rf-green/20 text-rf-green"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="trade-buy"
@@ -219,7 +219,7 @@ export function PortfolioPanel({
                 onClick={() => setTradeAction("SELL")}
                 className={`py-1.5 text-[10px] font-bold rounded-sm transition-colors ${
                   tradeAction === "SELL"
-                    ? "bg-bb-red/20 text-bb-red"
+                    ? "bg-rf-red/20 text-rf-red"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="trade-sell"
@@ -234,7 +234,7 @@ export function PortfolioPanel({
                 <label className="text-[9px] text-muted-foreground">{inputMode === "shares" ? "SHARES" : "AMOUNT ($)"}</label>
                 <button
                   onClick={() => { setInputMode(m => m === "shares" ? "dollars" : "shares"); setShares(""); }}
-                  className="text-[9px] font-bold text-bb-cyan hover:text-bb-cyan/80 transition-colors flex items-center gap-0.5"
+                  className="text-[9px] font-bold text-rf-cyan hover:text-rf-cyan/80 transition-colors flex items-center gap-0.5"
                   data-testid="toggle-input-mode"
                 >
                   <DollarSign className="w-2.5 h-2.5" />
@@ -248,7 +248,7 @@ export function PortfolioPanel({
                 placeholder={inputMode === "shares" ? "0" : "$0.00"}
                 min="0"
                 step={inputMode === "shares" ? "0.0001" : "0.01"}
-                className="w-full bg-[hsl(220,14%,9%)] border border-border rounded-sm px-2 py-1.5 text-xs font-mono text-foreground outline-none focus:border-bb-orange"
+                className="w-full bg-[hsl(220,14%,9%)] border border-border rounded-sm px-2 py-1.5 text-xs font-mono text-foreground outline-none focus:border-rf-orange"
                 data-testid="input-shares"
               />
               <div className="flex items-center justify-between mt-1">
@@ -298,8 +298,8 @@ export function PortfolioPanel({
               disabled={!shares || parseFloat(shares) <= 0}
               className={`w-full py-2 text-xs font-bold rounded-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
                 tradeAction === "BUY"
-                  ? "bg-bb-green text-black hover:bg-bb-green/90"
-                  : "bg-bb-red text-white hover:bg-bb-red/90"
+                  ? "bg-rf-green text-black hover:bg-rf-green/90"
+                  : "bg-rf-red text-white hover:bg-rf-red/90"
               }`}
               data-testid="button-execute-trade"
             >
@@ -309,7 +309,7 @@ export function PortfolioPanel({
             {/* Message */}
             {message && (
               <div className={`text-[10px] font-bold text-center py-1 rounded-sm ${
-                message.type === "success" ? "text-bb-green bg-bb-green/10" : "text-bb-red bg-bb-red/10"
+                message.type === "success" ? "text-rf-green bg-rf-green/10" : "text-rf-red bg-rf-red/10"
               }`}>
                 {message.text}
               </div>
@@ -330,7 +330,7 @@ export function PortfolioPanel({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span className={`text-[9px] font-bold px-1 rounded-sm ${
-                        t.action === "BUY" ? "bg-bb-green/20 text-bb-green" : "bg-bb-red/20 text-bb-red"
+                        t.action === "BUY" ? "bg-rf-green/20 text-rf-green" : "bg-rf-red/20 text-rf-red"
                       }`}>
                         {t.action}
                       </span>
@@ -404,7 +404,7 @@ function StatsView({
       {/* Best by $ */}
       <StatHighlight
         label="TOP GAINER ($)"
-        icon={<TrendingUp className="w-3 h-3 text-bb-green" />}
+        icon={<TrendingUp className="w-3 h-3 text-rf-green" />}
         entry={stats.bestDollar}
         mode="dollar"
         positive
@@ -412,7 +412,7 @@ function StatsView({
       {/* Worst by $ */}
       <StatHighlight
         label="TOP LOSER ($)"
-        icon={<TrendingDown className="w-3 h-3 text-bb-red" />}
+        icon={<TrendingDown className="w-3 h-3 text-rf-red" />}
         entry={stats.worstDollar}
         mode="dollar"
         positive={false}
@@ -420,7 +420,7 @@ function StatsView({
       {/* Best by % */}
       <StatHighlight
         label="TOP GAINER (%)"
-        icon={<TrendingUp className="w-3 h-3 text-bb-green" />}
+        icon={<TrendingUp className="w-3 h-3 text-rf-green" />}
         entry={stats.bestPercent}
         mode="percent"
         positive
@@ -428,7 +428,7 @@ function StatsView({
       {/* Worst by % */}
       <StatHighlight
         label="TOP LOSER (%)"
-        icon={<TrendingDown className="w-3 h-3 text-bb-red" />}
+        icon={<TrendingDown className="w-3 h-3 text-rf-red" />}
         entry={stats.worstPercent}
         mode="percent"
         positive={false}
@@ -448,10 +448,10 @@ function StatsView({
                 <span className="text-[11px] font-bold text-foreground">{e.symbol}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-[10px] font-bold tabular-nums ${e.pnl >= 0 ? "text-bb-green" : "text-bb-red"}`}>
+                <span className={`text-[10px] font-bold tabular-nums ${e.pnl >= 0 ? "text-rf-green" : "text-rf-red"}`}>
                   {e.pnl >= 0 ? "+" : ""}{formatCurrency(e.pnl)}
                 </span>
-                <span className={`text-[10px] tabular-nums ${e.pnlPct >= 0 ? "text-bb-green" : "text-bb-red"}`}>
+                <span className={`text-[10px] tabular-nums ${e.pnlPct >= 0 ? "text-rf-green" : "text-rf-red"}`}>
                   {e.pnlPct >= 0 ? "+" : ""}{e.pnlPct.toFixed(1)}%
                 </span>
               </div>
@@ -473,9 +473,9 @@ function StatHighlight({
   positive: boolean;
 }) {
   if (!entry) return null;
-  const color = positive ? (entry.pnl >= 0 ? "text-bb-green" : "text-bb-red") : (entry.pnl <= 0 ? "text-bb-red" : "text-bb-green");
-  const bgColor = positive ? (entry.pnl >= 0 ? "bg-bb-green/[0.06]" : "bg-bb-red/[0.06]") : (entry.pnl <= 0 ? "bg-bb-red/[0.06]" : "bg-bb-green/[0.06]");
-  const borderColor = positive ? (entry.pnl >= 0 ? "border-bb-green/20" : "border-bb-red/20") : (entry.pnl <= 0 ? "border-bb-red/20" : "border-bb-green/20");
+  const color = positive ? (entry.pnl >= 0 ? "text-rf-green" : "text-rf-red") : (entry.pnl <= 0 ? "text-rf-red" : "text-rf-green");
+  const bgColor = positive ? (entry.pnl >= 0 ? "bg-rf-green/[0.06]" : "bg-rf-red/[0.06]") : (entry.pnl <= 0 ? "bg-rf-red/[0.06]" : "bg-rf-green/[0.06]");
+  const borderColor = positive ? (entry.pnl >= 0 ? "border-rf-green/20" : "border-rf-red/20") : (entry.pnl <= 0 ? "border-rf-red/20" : "border-rf-green/20");
 
   return (
     <div className={`rounded-sm border ${borderColor} ${bgColor} p-2`}>

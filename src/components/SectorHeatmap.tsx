@@ -26,11 +26,11 @@ export function SectorHeatmap({ stocks, onSelectSymbol }: SectorHeatmapProps) {
   };
 
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="sector-heatmap">
-      <div className="bb-panel-header">
-        <span className="text-2xs font-bold text-bb-orange tracking-wider uppercase">Sector Map</span>
+    <div className="rf-panel flex flex-col h-full" data-testid="sector-heatmap">
+      <div className="rf-panel-header">
+        <span className="text-2xs font-bold text-rf-orange tracking-wider uppercase">Sector Map</span>
       </div>
-      <div className="flex-1 overflow-y-auto bb-scrollbar p-1.5 space-y-1.5">
+      <div className="flex-1 overflow-y-auto rf-scrollbar p-1.5 space-y-1.5">
         {sectorGroups.map(group => {
           const avgChg = group.stocks.length > 0
             ? group.stocks.reduce((s, st) => s + st.changesPercentage, 0) / group.stocks.length
@@ -48,7 +48,7 @@ export function SectorHeatmap({ stocks, onSelectSymbol }: SectorHeatmapProps) {
                   <div
                     key={stock.symbol}
                     onClick={() => onSelectSymbol(stock.symbol)}
-                    className={`${getHeatColor(stock.changesPercentage)} px-1.5 py-0.5 rounded-sm cursor-pointer hover:ring-1 hover:ring-bb-orange/30 transition-all`}
+                    className={`${getHeatColor(stock.changesPercentage)} px-1.5 py-0.5 rounded-sm cursor-pointer hover:ring-1 hover:ring-rf-orange/30 transition-all`}
                     title={`${stock.symbol}: ${formatPercent(stock.changesPercentage)}`}
                     data-testid={`heat-${stock.symbol}`}
                   >

@@ -27,7 +27,7 @@ const LAUNCH_END = new Date("2026-05-06T11:59:59-04:00");
 
 const LAUNCH_EVENT: Omit<EventDefinition, "eventKey" | "startsAt" | "endsAt"> = {
   name: "The Grand Opening",
-  description: "The inaugural Bloomberg Terminal challenge. 100 days, $10K, high volatility — prove you belong.",
+  description: "The inaugural Rochambeau Finance Terminal challenge. 100 days, $10K, high volatility — prove you belong.",
   allowedSymbols: null,
   durationDays: 100,
   startingCash: 10000,

@@ -108,7 +108,7 @@ export function EventComplete({
         {Array.from({ length: 20 }).map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-bb-cyan/40"
+            className="absolute w-1 h-1 rounded-full bg-rf-cyan/40"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -118,11 +118,11 @@ export function EventComplete({
         ))}
       </div>
 
-      <div className="relative w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto rounded-sm border border-bb-cyan/30 bg-background shadow-2xl shadow-bb-cyan/10">
+      <div className="relative w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto rounded-sm border border-rf-cyan/30 bg-background shadow-2xl shadow-rf-cyan/10">
         {/* Header */}
-        <div className="relative px-6 pt-8 pb-6 text-center border-b border-border bg-gradient-to-b from-bb-cyan/[0.08] to-transparent">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-bb-cyan/10 border-2 border-bb-cyan/30 flex items-center justify-center">
-            <Trophy className="w-8 h-8 text-bb-cyan" />
+        <div className="relative px-6 pt-8 pb-6 text-center border-b border-border bg-gradient-to-b from-rf-cyan/[0.08] to-transparent">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rf-cyan/10 border-2 border-rf-cyan/30 flex items-center justify-center">
+            <Trophy className="w-8 h-8 text-rf-cyan" />
           </div>
           <h2 className="text-xl font-bold text-foreground tracking-wide mb-1">EVENT COMPLETE</h2>
           <p className="text-xs text-muted-foreground">{event.name}</p>
@@ -130,18 +130,18 @@ export function EventComplete({
           {/* Final Profit */}
           <div className="mt-4 bg-white/[0.03] border border-border/50 rounded-sm p-3 inline-block">
             <div className="text-[9px] text-muted-foreground tracking-wider mb-1">FINAL PROFIT/LOSS</div>
-            <div className={`text-2xl font-bold tabular-nums ${isPositive ? "text-bb-green" : "text-bb-red"}`}>
+            <div className={`text-2xl font-bold tabular-nums ${isPositive ? "text-rf-green" : "text-rf-red"}`}>
               {isPositive ? "+" : ""}{formatCurrency(profit)}
             </div>
-            <div className={`text-xs ${isPositive ? "text-bb-green/70" : "text-bb-red/70"}`}>
+            <div className={`text-xs ${isPositive ? "text-rf-green/70" : "text-rf-red/70"}`}>
               {isPositive ? "+" : ""}{profitPct}% return
             </div>
           </div>
 
           {/* Prize callout */}
           {event.prize && (
-            <div className="mt-3 bg-bb-orange/[0.08] border border-bb-orange/20 rounded-sm px-3 py-2 inline-block">
-              <p className="text-[10px] font-bold text-bb-orange">{event.prize}</p>
+            <div className="mt-3 bg-rf-orange/[0.08] border border-rf-orange/20 rounded-sm px-3 py-2 inline-block">
+              <p className="text-[10px] font-bold text-rf-orange">{event.prize}</p>
             </div>
           )}
         </div>
@@ -151,7 +151,7 @@ export function EventComplete({
           <div className="flex items-center justify-center gap-3">
             <div className="text-center">
               <div className="text-[9px] text-muted-foreground tracking-wider">YOUR RANK</div>
-              <div className="text-2xl font-bold text-bb-cyan">
+              <div className="text-2xl font-bold text-rf-cyan">
                 #{leaderboardRank}
               </div>
               <div className="text-[10px] text-muted-foreground">of {totalParticipants} players</div>
@@ -174,33 +174,33 @@ export function EventComplete({
         {/* Achievements Grid */}
         <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center gap-1.5 mb-3">
-            <Star className="w-3.5 h-3.5 text-bb-orange" />
-            <span className="text-[10px] font-bold text-bb-orange tracking-wider">ACHIEVEMENTS & RECAP</span>
+            <Star className="w-3.5 h-3.5 text-rf-orange" />
+            <span className="text-[10px] font-bold text-rf-orange tracking-wider">ACHIEVEMENTS & RECAP</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <StatCard
-              icon={<TrendingUp className="w-3 h-3 text-bb-green" />}
+              icon={<TrendingUp className="w-3 h-3 text-rf-green" />}
               label="BEST STOCK"
               value={bestStock.symbol}
               subValue={bestStock.pnl !== 0 ? `${bestStock.pnl >= 0 ? "+" : ""}${formatCurrency(bestStock.pnl)}` : "No trades"}
-              color="text-bb-green"
+              color="text-rf-green"
             />
             <StatCard
-              icon={<TrendingDown className="w-3 h-3 text-bb-red" />}
+              icon={<TrendingDown className="w-3 h-3 text-rf-red" />}
               label="WORST STOCK"
               value={worstStock.symbol}
               subValue={worstStock.pnl !== 0 ? `${formatCurrency(worstStock.pnl)}` : "No losses"}
-              color="text-bb-red"
+              color="text-rf-red"
             />
             <StatCard
-              icon={<Calendar className="w-3 h-3 text-bb-cyan" />}
+              icon={<Calendar className="w-3 h-3 text-rf-cyan" />}
               label="BEST TRADING DAY"
               value={bestDay.gain > 0 ? `Day ${bestDay.day}` : "—"}
               subValue={bestDay.gain > 0 ? `+${formatCurrency(bestDay.gain)} gain` : "No standout day"}
-              color="text-bb-cyan"
+              color="text-rf-cyan"
             />
             <StatCard
-              icon={<BarChart3 className="w-3 h-3 text-bb-orange" />}
+              icon={<BarChart3 className="w-3 h-3 text-rf-orange" />}
               label="TOTAL TRADES"
               value={`${trades.length}`}
               subValue={`${trades.filter(t => t.action === "BUY").length} buys, ${trades.filter(t => t.action === "SELL").length} sells`}
@@ -226,7 +226,7 @@ export function EventComplete({
         <div className="px-6 py-4 space-y-2">
           <button
             onClick={onViewLeaderboard}
-            className="w-full py-2.5 bg-bb-cyan text-black font-bold text-sm rounded-sm hover:bg-bb-cyan/90 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-rf-cyan text-black font-bold text-sm rounded-sm hover:bg-rf-cyan/90 transition-colors flex items-center justify-center gap-2"
             data-testid="view-leaderboard-btn"
           >
             <Trophy className="w-4 h-4" />

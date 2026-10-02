@@ -3,6 +3,7 @@ import { TrendingUp, Gamepad2, ArrowRight, DollarSign, Activity } from "lucide-r
 import type { SimSettings, MarketVariation } from "@/hooks/use-simulation";
 import { EventBanner } from "@/components/EventBanner";
 import type { EventDefinition } from "@/lib/events";
+import { BrandMark } from "@/components/BrandMark";
 
 interface ModeSelectProps {
   onSelectReal: () => void;
@@ -43,13 +44,8 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-3">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" />
-                <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.7" />
-                <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
-                <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
-              </svg>
-              <span className="text-bb-orange font-bold text-lg tracking-wider">SIMULATION SETUP</span>
+              <BrandMark size={28} />
+              <span className="text-rf-orange font-bold text-lg tracking-wider">SIMULATION SETUP</span>
             </div>
             <p className="text-muted-foreground text-xs">Configure your trading simulation</p>
           </div>
@@ -57,7 +53,7 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
           {/* Starting Cash */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-3.5 h-3.5 text-bb-green" />
+              <DollarSign className="w-3.5 h-3.5 text-rf-green" />
               <span className="text-xs font-bold text-foreground tracking-wider">STARTING CAPITAL</span>
             </div>
             <div className="grid grid-cols-5 gap-2">
@@ -67,7 +63,7 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
                   onClick={() => setCash(opt.value)}
                   className={`py-2 px-2 text-xs font-mono rounded-sm border transition-all ${
                     cash === opt.value
-                      ? "border-bb-orange bg-bb-orange/10 text-bb-orange"
+                      ? "border-rf-orange bg-rf-orange/10 text-rf-orange"
                       : "border-border bg-card hover:border-muted-foreground/30 text-muted-foreground"
                   }`}
                   data-testid={`cash-${opt.value}`}
@@ -81,7 +77,7 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
           {/* Market Variation */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-3.5 h-3.5 text-bb-cyan" />
+              <Activity className="w-3.5 h-3.5 text-rf-cyan" />
               <span className="text-xs font-bold text-foreground tracking-wider">MARKET VARIATION</span>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -91,13 +87,13 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
                   onClick={() => setVariation(opt.value)}
                   className={`py-3 px-3 rounded-sm border text-left transition-all ${
                     variation === opt.value
-                      ? "border-bb-orange bg-bb-orange/10"
+                      ? "border-rf-orange bg-rf-orange/10"
                       : "border-border bg-card hover:border-muted-foreground/30"
                   }`}
                   data-testid={`variation-${opt.value}`}
                 >
                   <div className={`text-xs font-bold mb-1 ${
-                    variation === opt.value ? "text-bb-orange" : "text-foreground"
+                    variation === opt.value ? "text-rf-orange" : "text-foreground"
                   }`}>
                     {opt.label}
                   </div>
@@ -110,7 +106,7 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
           {/* Start button */}
           <button
             onClick={() => onSelectSim({ startingCash: cash, variation })}
-            className="w-full py-3 bg-bb-orange text-black font-bold text-sm rounded-sm hover:bg-bb-orange/90 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 bg-rf-orange text-black font-bold text-sm rounded-sm hover:bg-rf-orange/90 transition-colors flex items-center justify-center gap-2"
             data-testid="button-start-sim"
           >
             START SIMULATION
@@ -141,13 +137,8 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
         {/* Logo & Title */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" />
-              <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.7" />
-              <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
-              <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
-            </svg>
-            <span className="text-bb-orange font-bold text-xl tracking-wider">BLOOMBERG TERMINAL</span>
+            <BrandMark size={32} />
+            <span className="text-rf-orange font-bold text-xl tracking-wider">ROCHAMBEAU FINANCE TERMINAL</span>
           </div>
           <p className="text-muted-foreground text-xs tracking-wide">SELECT MODE</p>
         </div>
@@ -162,12 +153,12 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
           {/* Real Mode */}
           <button
             onClick={onSelectReal}
-            className="group p-6 rounded-sm border border-border bg-card hover:border-bb-green/50 hover:bg-bb-green/[0.03] transition-all text-left"
+            className="group p-6 rounded-sm border border-border bg-card hover:border-rf-green/50 hover:bg-rf-green/[0.03] transition-all text-left"
             data-testid="button-real-mode"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-sm bg-bb-green/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-bb-green" />
+              <div className="w-10 h-10 rounded-sm bg-rf-green/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-rf-green" />
               </div>
               <div>
                 <div className="text-sm font-bold text-foreground">REAL MODE</div>
@@ -177,20 +168,20 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
             <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
               View real-time simulated market data, track stocks, analyze charts, and monitor market movements.
             </p>
-            <div className="flex items-center gap-1 text-bb-green text-xs font-medium group-hover:gap-2 transition-all">
-              Enter Terminal <ArrowRight className="w-3 h-3" />
+            <div className="flex items-center gap-1 text-rf-green text-xs font-medium group-hover:gap-2 transition-all">
+              Enter Live Markets <ArrowRight className="w-3 h-3" />
             </div>
           </button>
 
           {/* Simulation Mode */}
           <button
             onClick={() => onSimClick ? onSimClick() : setPhase("settings")}
-            className="group p-6 rounded-sm border border-border bg-card hover:border-bb-orange/50 hover:bg-bb-orange/[0.03] transition-all text-left"
+            className="group p-6 rounded-sm border border-border bg-card hover:border-rf-orange/50 hover:bg-rf-orange/[0.03] transition-all text-left"
             data-testid="button-sim-mode"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-sm bg-bb-orange/10 flex items-center justify-center">
-                <Gamepad2 className="w-5 h-5 text-bb-orange" />
+              <div className="w-10 h-10 rounded-sm bg-rf-orange/10 flex items-center justify-center">
+                <Gamepad2 className="w-5 h-5 text-rf-orange" />
               </div>
               <div>
                 <div className="text-sm font-bold text-foreground">SIMULATION</div>
@@ -200,7 +191,7 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
             <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
               Trade with virtual currency. Control time flow, react to news events, and learn to invest risk-free.
             </p>
-            <div className="flex items-center gap-1 text-bb-orange text-xs font-medium group-hover:gap-2 transition-all">
+            <div className="flex items-center gap-1 text-rf-orange text-xs font-medium group-hover:gap-2 transition-all">
               Configure & Start <ArrowRight className="w-3 h-3" />
             </div>
           </button>

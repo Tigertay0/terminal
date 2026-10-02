@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { BrandMark } from "@/components/BrandMark";
 
 interface AuthScreenProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -68,7 +69,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground select-none relative overflow-hidden">
-      {/* subtle terminal grid backdrop */}
+      {/* subtle grid backdrop */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.025]"
@@ -82,19 +83,14 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
       {/* Top bar logo */}
       <header className="px-6 py-5 flex items-center justify-between shrink-0 z-10">
         <div className="flex items-center gap-2">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-label="Bloomberg Terminal">
-            <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" />
-            <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.7" />
-            <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
-            <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
-          </svg>
-          <span className="text-bb-orange font-bold text-xs tracking-[0.2em] font-mono">BLOOMBERG</span>
-          <span className="text-muted-foreground text-xs tracking-[0.2em] font-mono">TERMINAL</span>
+          <BrandMark size={22} />
+          <span className="text-rf-orange font-bold text-xs tracking-[0.2em] font-mono">ROCHAMBEAU</span>
+          <span className="text-muted-foreground text-xs tracking-[0.2em] font-mono">FINANCE TERMINAL</span>
         </div>
 
         {/* live status */}
         <div className="hidden sm:flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-bb-green animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-rf-green animate-pulse" />
           <span className="text-[10px] tracking-[0.2em] font-mono text-muted-foreground">SECURE CONNECTION</span>
         </div>
       </header>
@@ -108,7 +104,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
               className="text-3xl font-light tracking-tight text-foreground mb-3"
               style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 300 }}
             >
-              Welcome to <span className="text-bb-orange italic">terminal</span>
+              Welcome to <span className="text-rf-orange italic">Rochambeau</span>
             </h1>
             <p className="text-sm text-muted-foreground font-mono">
               Real-time markets · paper trading · simulation
@@ -122,7 +118,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
               type="button"
               onClick={handleGoogle}
               disabled={submitting}
-              className="w-full h-11 flex items-center justify-center gap-3 bg-card border border-border hover:border-bb-orange/50 hover:bg-accent transition-colors disabled:opacity-50 group"
+              className="w-full h-11 flex items-center justify-center gap-3 bg-card border border-border hover:border-rf-orange/50 hover:bg-accent transition-colors disabled:opacity-50 group"
               data-testid="button-google"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
@@ -155,14 +151,14 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                     placeholder="you@example.com"
                     required
                     autoFocus
-                    className="w-full h-11 bg-card border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
+                    className="w-full h-11 bg-card border border-border focus:border-rf-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                     data-testid="input-email"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!email || submitting}
-                  className="w-full h-11 bg-bb-orange text-black font-bold text-sm font-mono tracking-[0.15em] hover:bg-bb-orange/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-full h-11 bg-rf-orange text-black font-bold text-sm font-mono tracking-[0.15em] hover:bg-rf-orange/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   data-testid="button-continue"
                 >
                   CONTINUE
@@ -178,7 +174,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                   data-testid="button-change-email"
                 >
                   <span className="text-sm text-foreground font-mono truncate">{email}</span>
-                  <span className="text-[10px] tracking-[0.2em] font-mono text-muted-foreground group-hover:text-bb-orange">CHANGE</span>
+                  <span className="text-[10px] tracking-[0.2em] font-mono text-muted-foreground group-hover:text-rf-orange">CHANGE</span>
                 </button>
 
                 {mode === "signup" && (
@@ -191,7 +187,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Your name"
-                      className="w-full h-11 bg-card border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
+                      className="w-full h-11 bg-card border border-border focus:border-rf-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                       data-testid="input-display-name"
                     />
                   </div>
@@ -209,14 +205,14 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                     required
                     autoFocus
                     minLength={6}
-                    className="w-full h-11 bg-card border border-border focus:border-bb-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
+                    className="w-full h-11 bg-card border border-border focus:border-rf-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                     data-testid="input-password"
                   />
                 </div>
 
                 {displayError && (
-                  <div className="flex items-start gap-2 text-bb-red text-xs font-mono bg-bb-red/[0.08] border border-bb-red/30 px-3 py-2">
-                    <span className="text-bb-red shrink-0">!</span>
+                  <div className="flex items-start gap-2 text-rf-red text-xs font-mono bg-rf-red/[0.08] border border-rf-red/30 px-3 py-2">
+                    <span className="text-rf-red shrink-0">!</span>
                     <span>{displayError}</span>
                   </div>
                 )}
@@ -224,7 +220,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                 <button
                   type="submit"
                   disabled={submitting || !password}
-                  className="w-full h-11 bg-bb-orange text-black font-bold text-sm font-mono tracking-[0.15em] hover:bg-bb-orange/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-full h-11 bg-rf-orange text-black font-bold text-sm font-mono tracking-[0.15em] hover:bg-rf-orange/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   data-testid="button-submit"
                 >
                   {submitting
@@ -240,7 +236,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
             <div className="text-center pt-2">
               <button
                 onClick={() => { setMode(mode === "login" ? "signup" : "login"); setLocalError(null); }}
-                className="text-xs text-muted-foreground hover:text-bb-orange font-mono transition-colors"
+                className="text-xs text-muted-foreground hover:text-rf-orange font-mono transition-colors"
                 data-testid="button-toggle-mode"
               >
                 {mode === "login"
@@ -268,8 +264,8 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
 
           {/* Email error when shown on email step */}
           {step === "email" && displayError && (
-            <div className="mt-4 flex items-start gap-2 text-bb-red text-xs font-mono bg-bb-red/[0.08] border border-bb-red/30 px-3 py-2">
-              <span className="text-bb-red shrink-0">!</span>
+            <div className="mt-4 flex items-start gap-2 text-rf-red text-xs font-mono bg-rf-red/[0.08] border border-rf-red/30 px-3 py-2">
+              <span className="text-rf-red shrink-0">!</span>
               <span>{displayError}</span>
             </div>
           )}
@@ -280,7 +276,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
       <footer className="px-6 py-5 border-t border-border bg-sidebar z-10">
         <div className="max-w-[420px] mx-auto text-center space-y-2">
           <p className="text-[10px] text-muted-foreground/70 font-mono leading-relaxed">
-            By continuing, you agree to use this terminal for educational purposes only. Market data provided by Yahoo Finance.
+            By continuing, you agree to use Rochambeau Finance Terminal for educational purposes only. Market data provided by Yahoo Finance.
           </p>
           <p className="text-[9px] text-muted-foreground/50 font-mono">
             Created by Adetayo Agueh

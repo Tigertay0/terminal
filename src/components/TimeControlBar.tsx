@@ -63,8 +63,8 @@ export function TimeControlBar({
     <div className="flex items-center h-8 px-3 gap-3 bg-sidebar border-t border-b border-border shrink-0 select-none" data-testid="time-controls">
       {/* Sim/Event badge */}
       <div className="flex items-center gap-1.5 shrink-0">
-        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${eventMode ? 'bg-bb-cyan' : 'bg-bb-orange'}`} />
-        <span className={`text-[10px] font-bold tracking-wider ${eventMode ? 'text-bb-cyan' : 'text-bb-orange'}`}>
+        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${eventMode ? 'bg-rf-cyan' : 'bg-rf-orange'}`} />
+        <span className={`text-[10px] font-bold tracking-wider ${eventMode ? 'text-rf-cyan' : 'text-rf-orange'}`}>
           {eventMode ? 'EVENT' : 'SIM'}
         </span>
       </div>
@@ -92,11 +92,11 @@ export function TimeControlBar({
 
       {/* Day counter / Event countdown */}
       <div className="flex items-center gap-1 shrink-0">
-        <Calendar className={`w-3 h-3 ${eventMode ? 'text-bb-cyan' : 'text-muted-foreground'}`} />
+        <Calendar className={`w-3 h-3 ${eventMode ? 'text-rf-cyan' : 'text-muted-foreground'}`} />
         {eventMode && totalEventDays ? (
           <>
-            <span className="text-2xs text-bb-cyan font-bold">DAYS LEFT</span>
-            <span className="text-2xs font-bold text-bb-cyan tabular-nums">
+            <span className="text-2xs text-rf-cyan font-bold">DAYS LEFT</span>
+            <span className="text-2xs font-bold text-rf-cyan tabular-nums">
               {Math.max(0, totalEventDays - dayNumber)}
             </span>
           </>
@@ -117,9 +117,9 @@ export function TimeControlBar({
         <span className="text-xs font-bold text-foreground tabular-nums">{timeStr}</span>
         <span className="text-2xs text-muted-foreground">ET</span>
         {isMarketHours ? (
-          <span className="text-[9px] font-bold text-bb-green ml-1">OPEN</span>
+          <span className="text-[9px] font-bold text-rf-green ml-1">OPEN</span>
         ) : (
-          <span className="text-[9px] font-bold text-bb-red ml-1">CLOSED</span>
+          <span className="text-[9px] font-bold text-rf-red ml-1">CLOSED</span>
         )}
       </div>
 
@@ -133,7 +133,7 @@ export function TimeControlBar({
             onClick={() => onSetSpeed(btn.speed)}
             className={`flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold transition-all ${
               timeSpeed === btn.speed
-                ? "bg-bb-orange/20 text-bb-orange border border-bb-orange/30"
+                ? "bg-rf-orange/20 text-rf-orange border border-rf-orange/30"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04] border border-transparent"
             }`}
             data-testid={`speed-${btn.speed}`}
@@ -155,9 +155,9 @@ export function TimeControlBar({
             saveStatus === "saving"
               ? "text-muted-foreground border-border cursor-wait"
               : saveStatus === "saved"
-              ? "text-bb-green border-bb-green/30 bg-bb-green/10"
+              ? "text-rf-green border-rf-green/30 bg-rf-green/10"
               : saveStatus === "error"
-              ? "text-bb-red border-bb-red/30 bg-bb-red/10"
+              ? "text-rf-red border-rf-red/30 bg-rf-red/10"
               : "text-muted-foreground border-border hover:text-foreground hover:bg-white/[0.04]"
           }`}
           data-testid="manual-save-btn"
@@ -171,7 +171,7 @@ export function TimeControlBar({
       {lastSavedAt && savedAgoStr && (
         <div className="flex items-center gap-1 shrink-0">
           <div className={`w-1 h-1 rounded-full ${
-            saveStatus === "error" ? "bg-bb-red" : saveStatus === "saving" ? "bg-yellow-500 animate-pulse" : "bg-bb-green"
+            saveStatus === "error" ? "bg-rf-red" : saveStatus === "saving" ? "bg-yellow-500 animate-pulse" : "bg-rf-green"
           }`} />
           <span className="text-[9px] text-muted-foreground">
             Saved {savedAgoStr}
@@ -182,8 +182,8 @@ export function TimeControlBar({
       {/* Speed indicator */}
       {timeSpeed !== "paused" && (
         <div className="flex items-center gap-1 shrink-0">
-          <div className="w-1 h-1 rounded-full bg-bb-green animate-pulse" />
-          <span className="text-[9px] text-bb-green font-bold">RUNNING</span>
+          <div className="w-1 h-1 rounded-full bg-rf-green animate-pulse" />
+          <span className="text-[9px] text-rf-green font-bold">RUNNING</span>
         </div>
       )}
     </div>

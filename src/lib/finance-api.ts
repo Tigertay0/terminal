@@ -56,5 +56,5 @@ export function formatVolume(n: number | undefined | null): string {
 
 export function getChangeColor(change: number | undefined | null): string {
   if (change == null || change === 0) return "text-muted-foreground";
-  return change > 0 ? "text-bb-green" : "text-bb-red";
+  return change > 0 ? "text-rf-green" : "text-rf-red";
 }

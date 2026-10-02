@@ -1,4 +1,4 @@
-// Bloomberg Terminal — Types only (no DB needed for this app)
+// Rochambeau Finance Terminal — Types only (no DB needed for this app)
 import { z } from "zod";
 
 // ---- Quote data ----

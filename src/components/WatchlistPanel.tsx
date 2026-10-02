@@ -18,14 +18,14 @@ export function WatchlistPanel({
   onRemoveSymbol,
 }: WatchlistPanelProps) {
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="watchlist-panel">
-      <div className="bb-panel-header">
-        <span className="text-2xs font-bold text-bb-orange tracking-wider uppercase">Watchlist</span>
+    <div className="rf-panel flex flex-col h-full" data-testid="watchlist-panel">
+      <div className="rf-panel-header">
+        <span className="text-2xs font-bold text-rf-orange tracking-wider uppercase">Watchlist</span>
         <span className="text-2xs text-muted-foreground">{symbols.length} items</span>
       </div>
-      <div className="flex-1 overflow-y-auto bb-scrollbar">
+      <div className="flex-1 overflow-y-auto rf-scrollbar">
         {/* Header row */}
-        <div className="grid grid-cols-[60px_58px_50px_54px] gap-1 px-2 py-1 border-b border-border text-2xs text-muted-foreground sticky top-0 bg-[hsl(var(--bb-panel-bg))] z-10">
+        <div className="grid grid-cols-[60px_58px_50px_54px] gap-1 px-2 py-1 border-b border-border text-2xs text-muted-foreground sticky top-0 bg-[hsl(var(--rf-panel-bg))] z-10">
           <span>Symbol</span>
           <span className="text-right">Price</span>
           <span className="text-right">Chg</span>
@@ -51,16 +51,16 @@ export function WatchlistPanel({
               onClick={() => onSelectSymbol(sym)}
               className={`grid grid-cols-[60px_58px_50px_54px] gap-1 px-2 py-0.5 text-[11px] cursor-pointer transition-colors group ${
                 isSelected
-                  ? "bg-bb-orange/10 border-l-2 border-l-bb-orange"
+                  ? "bg-rf-orange/10 border-l-2 border-l-rf-orange"
                   : "hover:bg-white/[0.03] border-l-2 border-l-transparent"
               }`}
               data-testid={`watchlist-item-${sym}`}
             >
               <div className="flex items-center gap-1 min-w-0">
                 {stock.change > 0 ? (
-                  <TrendingUp className="w-2.5 h-2.5 text-bb-green shrink-0" />
+                  <TrendingUp className="w-2.5 h-2.5 text-rf-green shrink-0" />
                 ) : stock.change < 0 ? (
-                  <TrendingDown className="w-2.5 h-2.5 text-bb-red shrink-0" />
+                  <TrendingDown className="w-2.5 h-2.5 text-rf-red shrink-0" />
                 ) : (
                   <Minus className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
                 )}
@@ -71,7 +71,7 @@ export function WatchlistPanel({
                     className="opacity-0 group-hover:opacity-100 ml-auto"
                     data-testid={`button-remove-${sym}`}
                   >
-                    <X className="w-2.5 h-2.5 text-muted-foreground hover:text-bb-red" />
+                    <X className="w-2.5 h-2.5 text-muted-foreground hover:text-rf-red" />
                   </button>
                 )}
               </div>

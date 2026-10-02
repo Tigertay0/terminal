@@ -74,14 +74,14 @@ export default {
           foreground: "hsl(var(--sidebar-accent-foreground) / <alpha-value>)",
           border: "var(--sidebar-accent-border)",
         },
-        // Bloomberg-specific
-        bb: {
-          green: "hsl(var(--bb-green) / <alpha-value>)",
-          red: "hsl(var(--bb-red) / <alpha-value>)",
-          orange: "hsl(var(--bb-orange) / <alpha-value>)",
-          blue: "hsl(var(--bb-blue) / <alpha-value>)",
-          yellow: "hsl(var(--bb-yellow) / <alpha-value>)",
-          cyan: "hsl(var(--bb-cyan) / <alpha-value>)",
+        // Rochambeau-specific
+        rf: {
+          green: "hsl(var(--rf-green) / <alpha-value>)",
+          red: "hsl(var(--rf-red) / <alpha-value>)",
+          orange: "hsl(var(--rf-orange) / <alpha-value>)",
+          blue: "hsl(var(--rf-blue) / <alpha-value>)",
+          yellow: "hsl(var(--rf-yellow) / <alpha-value>)",
+          cyan: "hsl(var(--rf-cyan) / <alpha-value>)",
         },
       },
       fontFamily: {

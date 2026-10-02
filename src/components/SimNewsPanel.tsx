@@ -135,10 +135,10 @@ export function SimNewsPanel({
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md" data-testid="sim-news-expanded">
         {/* Header */}
-        <div className="bb-panel-header shrink-0 border-b border-border">
+        <div className="rf-panel-header shrink-0 border-b border-border">
           <div className="flex items-center gap-1.5">
-            <Newspaper className="w-3 h-3 text-bb-orange" />
-            <span className="text-2xs font-bold text-bb-orange tracking-wider uppercase">
+            <Newspaper className="w-3 h-3 text-rf-orange" />
+            <span className="text-2xs font-bold text-rf-orange tracking-wider uppercase">
               MARKET NEWS
             </span>
             <span className="text-2xs text-muted-foreground ml-1">{filteredItems.length} / {aiNews.length}</span>
@@ -159,7 +159,7 @@ export function SimNewsPanel({
             {(selectedCompanies.size > 0 || selectedSector !== "all" || importanceFilter !== "all" || growthRange[0] !== -30 || growthRange[1] !== 30) && (
               <button
                 onClick={clearFilters}
-                className="text-[9px] text-bb-cyan hover:text-bb-cyan/80 ml-auto"
+                className="text-[9px] text-rf-cyan hover:text-rf-cyan/80 ml-auto"
               >
                 Clear all
               </button>
@@ -190,7 +190,7 @@ export function SimNewsPanel({
                         ? "bg-amber-500/20 text-amber-400"
                         : f === "low"
                           ? "bg-zinc-500/20 text-zinc-400"
-                          : "bg-bb-orange/20 text-bb-orange"
+                          : "bg-rf-orange/20 text-rf-orange"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -213,14 +213,14 @@ export function SimNewsPanel({
 
           {/* Company chips */}
           {(companySearch || selectedCompanies.size > 0) && (
-            <div className="flex flex-wrap gap-0.5 max-h-14 overflow-y-auto bb-scrollbar">
+            <div className="flex flex-wrap gap-0.5 max-h-14 overflow-y-auto rf-scrollbar">
               {filteredCompanies.map(c => (
                 <button
                   key={c.symbol}
                   onClick={() => toggleCompany(c.symbol)}
                   className={`text-[9px] px-1.5 py-0.5 rounded-sm border transition-colors ${
                     selectedCompanies.has(c.symbol)
-                      ? "border-bb-orange/50 bg-bb-orange/10 text-bb-orange"
+                      ? "border-rf-orange/50 bg-rf-orange/10 text-rf-orange"
                       : "border-border/30 text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -233,14 +233,14 @@ export function SimNewsPanel({
           {/* Growth range slider */}
           <div className="flex items-center gap-2">
             <span className="text-[9px] text-muted-foreground whitespace-nowrap">Growth:</span>
-            <span className="text-[9px] text-bb-red font-mono w-8 text-right">{growthRange[0]}%</span>
+            <span className="text-[9px] text-rf-red font-mono w-8 text-right">{growthRange[0]}%</span>
             <input
               type="range"
               min={-30}
               max={30}
               value={growthRange[0]}
               onChange={e => setGrowthRange([+e.target.value, growthRange[1]])}
-              className="flex-1 h-1 accent-bb-orange"
+              className="flex-1 h-1 accent-rf-orange"
             />
             <input
               type="range"
@@ -248,14 +248,14 @@ export function SimNewsPanel({
               max={30}
               value={growthRange[1]}
               onChange={e => setGrowthRange([growthRange[0], +e.target.value])}
-              className="flex-1 h-1 accent-bb-orange"
+              className="flex-1 h-1 accent-rf-orange"
             />
-            <span className="text-[9px] text-bb-green font-mono w-8">{growthRange[1]}%</span>
+            <span className="text-[9px] text-rf-green font-mono w-8">{growthRange[1]}%</span>
           </div>
         </div>
 
         {/* News list */}
-        <div className="flex-1 overflow-y-auto bb-scrollbar">
+        <div className="flex-1 overflow-y-auto rf-scrollbar">
           {loading && (
             <div className="space-y-2 p-2">
               {[...Array(5)].map((_, i) => (
@@ -274,12 +274,12 @@ export function SimNewsPanel({
 
           {error && !loading && (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <AlertTriangle className="w-6 h-6 text-bb-red/60 mb-2" />
-              <div className="text-[11px] text-bb-red font-medium mb-1">Failed to load news</div>
+              <AlertTriangle className="w-6 h-6 text-rf-red/60 mb-2" />
+              <div className="text-[11px] text-rf-red font-medium mb-1">Failed to load news</div>
               <div className="text-[10px] text-muted-foreground mb-3">{error}</div>
               <button
                 onClick={onRetry}
-                className="flex items-center gap-1.5 px-3 py-1 bg-bb-orange/10 text-bb-orange text-[10px] font-bold rounded-sm hover:bg-bb-orange/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1 bg-rf-orange/10 text-rf-orange text-[10px] font-bold rounded-sm hover:bg-rf-orange/20 transition-colors"
               >
                 <RefreshCw className="w-3 h-3" />
                 Retry
@@ -297,9 +297,9 @@ export function SimNewsPanel({
           )}
 
           {detailsLoading && (
-            <div className="px-4 py-2 bg-bb-cyan/5 border-b border-bb-cyan/20 flex items-center gap-2">
-              <RefreshCw className="w-3 h-3 text-bb-cyan animate-spin" />
-              <span className="text-[10px] text-bb-cyan">Loading in-depth articles...</span>
+            <div className="px-4 py-2 bg-rf-cyan/5 border-b border-rf-cyan/20 flex items-center gap-2">
+              <RefreshCw className="w-3 h-3 text-rf-cyan animate-spin" />
+              <span className="text-[10px] text-rf-cyan">Loading in-depth articles...</span>
             </div>
           )}
 
@@ -315,19 +315,19 @@ export function SimNewsPanel({
   // ─── MINIMIZED VIEW ────────────────────────────────────────────
   return (
     <div
-      className="bb-panel flex flex-col h-full cursor-pointer group"
+      className="rf-panel flex flex-col h-full cursor-pointer group"
       onClick={() => setExpanded(true)}
       data-testid="sim-news-minimized"
     >
-      <div className="bb-panel-header">
+      <div className="rf-panel-header">
         <div className="flex items-center gap-1.5">
-          <Newspaper className="w-3 h-3 text-bb-orange" />
-          <span className="text-2xs font-bold text-bb-orange tracking-wider uppercase">NEWS</span>
+          <Newspaper className="w-3 h-3 text-rf-orange" />
+          <span className="text-2xs font-bold text-rf-orange tracking-wider uppercase">NEWS</span>
         </div>
         <div className="flex items-center gap-1.5">
           <button
             onClick={e => { e.stopPropagation(); setShowAll(p => !p); }}
-            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm transition-colors ${showAll ? "bg-bb-orange/20 text-bb-orange" : "text-muted-foreground hover:text-foreground"}`}
+            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm transition-colors ${showAll ? "bg-rf-orange/20 text-rf-orange" : "text-muted-foreground hover:text-foreground"}`}
           >
             {showAll ? "TOP" : "ALL"}
           </button>
@@ -336,7 +336,7 @@ export function SimNewsPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto bb-scrollbar">
+      <div className="flex-1 overflow-y-auto rf-scrollbar">
         {loading && (
           <div className="space-y-2 p-2">
             {[...Array(3)].map((_, i) => (
@@ -353,11 +353,11 @@ export function SimNewsPanel({
 
         {error && !loading && (
           <div className="flex flex-col items-center justify-center py-4 px-3 text-center">
-            <AlertTriangle className="w-4 h-4 text-bb-red/60 mb-1" />
-            <div className="text-[10px] text-bb-red">News unavailable</div>
+            <AlertTriangle className="w-4 h-4 text-rf-red/60 mb-1" />
+            <div className="text-[10px] text-rf-red">News unavailable</div>
             <button
               onClick={e => { e.stopPropagation(); onRetry(); }}
-              className="text-[9px] text-bb-cyan mt-1 hover:underline"
+              className="text-[9px] text-rf-cyan mt-1 hover:underline"
             >
               Retry
             </button>
@@ -378,7 +378,7 @@ export function SimNewsPanel({
 
         {!loading && !error && moreCount > 0 && (
           <div className="px-2 py-1.5 text-center border-t border-border/30">
-            <span className="text-[9px] text-bb-cyan font-medium">
+            <span className="text-[9px] text-rf-cyan font-medium">
               +{moreCount} more stories — click to expand
             </span>
           </div>
@@ -390,8 +390,8 @@ export function SimNewsPanel({
 
 // ─── News Card (expanded) ────────────────────────────────────────
 function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?: boolean }) {
-  const growthColor = item.expectedGrowth >= 0 ? "text-bb-green" : "text-bb-red";
-  const growthBg = item.expectedGrowth >= 0 ? "bg-bb-green/10" : "bg-bb-red/10";
+  const growthColor = item.expectedGrowth >= 0 ? "text-rf-green" : "text-rf-red";
+  const growthBg = item.expectedGrowth >= 0 ? "bg-rf-green/10" : "bg-rf-red/10";
   const importanceBg = item.importance === "high" ? "bg-amber-500/15 text-amber-400" : "bg-zinc-500/10 text-zinc-500";
   const sentiment = item.sentiment || "neutral";
   const isAlert = sentiment === "alert";
@@ -449,7 +449,7 @@ function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?:
           ) : null}
 
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-bb-orange bg-bb-orange/10 px-1.5 py-0.5 rounded-sm">
+            <span className="text-xs font-bold text-rf-orange bg-rf-orange/10 px-1.5 py-0.5 rounded-sm">
               {item.companyId}
             </span>
             <span className="text-xs text-muted-foreground bg-white/[0.04] px-1.5 py-0.5 rounded-sm">
@@ -497,7 +497,7 @@ function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?:
 
       {/* Tags row */}
       <div className="flex items-center gap-2 flex-wrap ml-[72px]">
-        <span className="text-xs font-bold text-bb-orange bg-bb-orange/10 px-1.5 py-0.5 rounded-sm">
+        <span className="text-xs font-bold text-rf-orange bg-rf-orange/10 px-1.5 py-0.5 rounded-sm">
           {item.companyId}
         </span>
         <span className="text-xs text-muted-foreground bg-white/[0.04] px-1.5 py-0.5 rounded-sm">
@@ -527,7 +527,7 @@ function NewsCard({ item, detailsLoading }: { item: AINewsItem; detailsLoading?:
 
 // ─── Mini News Card (minimized view) ─────────────────────────────
 function MiniNewsCard({ item }: { item: AINewsItem }) {
-  const growthColor = item.expectedGrowth >= 0 ? "text-bb-green" : "text-bb-red";
+  const growthColor = item.expectedGrowth >= 0 ? "text-rf-green" : "text-rf-red";
   const sentiment = item.sentiment || "neutral";
   const sentimentColor: Record<string, string> = {
     bullish: "text-emerald-400",
@@ -553,7 +553,7 @@ function MiniNewsCard({ item }: { item: AINewsItem }) {
             {item.headline}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[9px] font-bold text-bb-orange">{item.companyId}</span>
+            <span className="text-[9px] font-bold text-rf-orange">{item.companyId}</span>
             <span className={`text-[8px] font-bold uppercase ${sentimentColor[sentiment]}`}>{sentiment}</span>
             {item.simDay && (
               <span className="text-[8px] text-muted-foreground/50">

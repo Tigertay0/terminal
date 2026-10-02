@@ -17,13 +17,13 @@ interface NewsFeedProps {
 function generateNews(symbol: string): NewsItem[] {
   const baseNews: NewsItem[] = [
     { title: "Fed Minutes Signal Potential Rate Adjustments in Coming Months", source: "Reuters", time: "2m ago", category: "MACRO", isBreaking: true },
-    { title: "Treasury Yields Climb as Inflation Data Exceeds Expectations", source: "Bloomberg", time: "8m ago", category: "BONDS" },
+    { title: "Treasury Yields Climb as Inflation Data Exceeds Expectations", source: "Reuters", time: "8m ago", category: "BONDS" },
     { title: "Oil Prices Surge on OPEC+ Production Cut Extension", source: "CNBC", time: "14m ago", category: "CMDTY" },
     { title: "Tech Sector Leads Market Rally Amid Strong Earnings Season", source: "WSJ", time: "22m ago", category: "EQUITY" },
     { title: "China Manufacturing PMI Data Points to Economic Recovery", source: "FT", time: "31m ago", category: "GLOBAL" },
     { title: "Semiconductor Stocks Jump on AI Demand Forecasts", source: "Barrons", time: "38m ago", category: "TECH" },
     { title: "European Markets Close Higher on ECB Policy Signals", source: "Reuters", time: "45m ago", category: "GLOBAL" },
-    { title: "Corporate Bond Issuance Hits Record Amid Rate Uncertainty", source: "Bloomberg", time: "52m ago", category: "FI" },
+    { title: "Corporate Bond Issuance Hits Record Amid Rate Uncertainty", source: "Reuters", time: "52m ago", category: "FI" },
     { title: "Dollar Index Weakens After Mixed Employment Report", source: "FX Weekly", time: "1h ago", category: "FX" },
     { title: "Crypto Markets Stabilize After Weekend Volatility", source: "CoinDesk", time: "1h ago", category: "CRYPTO" },
     { title: "S&P 500 Approaches All-Time High on Broad Market Strength", source: "MarketWatch", time: "1h ago", category: "EQUITY" },
@@ -35,7 +35,7 @@ function generateNews(symbol: string): NewsItem[] {
 
   const symbolNews: Record<string, NewsItem[]> = {
     AAPL: [
-      { title: "Apple Accelerates AI Integration Across Product Line", source: "Bloomberg", time: "5m ago", category: "AAPL" },
+      { title: "Apple Accelerates AI Integration Across Product Line", source: "Reuters", time: "5m ago", category: "AAPL" },
       { title: "iPhone Sales Beat Estimates in Greater China Region", source: "WSJ", time: "18m ago", category: "AAPL" },
     ],
     MSFT: [
@@ -43,7 +43,7 @@ function generateNews(symbol: string): NewsItem[] {
       { title: "Microsoft Copilot Enterprise Adoption Exceeds 200K Customers", source: "Reuters", time: "25m ago", category: "MSFT" },
     ],
     NVDA: [
-      { title: "NVIDIA Blackwell Chips See Unprecedented Demand From Hyperscalers", source: "Bloomberg", time: "3m ago", category: "NVDA", isBreaking: true },
+      { title: "NVIDIA Blackwell Chips See Unprecedented Demand From Hyperscalers", source: "Reuters", time: "3m ago", category: "NVDA", isBreaking: true },
       { title: "NVIDIA Data Center Revenue Expected to Double Year-Over-Year", source: "Barrons", time: "19m ago", category: "NVDA" },
     ],
     TSLA: [
@@ -68,37 +68,37 @@ export function NewsFeed({ selectedSymbol }: NewsFeedProps) {
   }, [selectedSymbol]);
 
   const getCategoryColor = (cat: string) => {
-    if (cat === "MACRO" || cat === "ECON") return "text-bb-yellow";
-    if (cat === "EQUITY" || cat === "TECH") return "text-bb-green";
-    if (cat === "FX" || cat === "CRYPTO") return "text-bb-cyan";
-    if (cat === "CMDTY") return "text-bb-orange";
-    if (cat === "BONDS" || cat === "FI" || cat === "FIN") return "text-bb-blue";
+    if (cat === "MACRO" || cat === "ECON") return "text-rf-yellow";
+    if (cat === "EQUITY" || cat === "TECH") return "text-rf-green";
+    if (cat === "FX" || cat === "CRYPTO") return "text-rf-cyan";
+    if (cat === "CMDTY") return "text-rf-orange";
+    if (cat === "BONDS" || cat === "FI" || cat === "FIN") return "text-rf-blue";
     if (cat === "GLOBAL") return "text-muted-foreground";
-    return "text-bb-orange"; // ticker-specific
+    return "text-rf-orange"; // ticker-specific
   };
 
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="news-feed">
-      <div className="bb-panel-header">
+    <div className="rf-panel flex flex-col h-full" data-testid="news-feed">
+      <div className="rf-panel-header">
         <div className="flex items-center gap-1.5">
-          <Newspaper className="w-3 h-3 text-bb-orange" />
-          <span className="text-2xs font-bold text-bb-orange tracking-wider uppercase">News</span>
+          <Newspaper className="w-3 h-3 text-rf-orange" />
+          <span className="text-2xs font-bold text-rf-orange tracking-wider uppercase">News</span>
         </div>
         <span className="text-2xs text-muted-foreground">LIVE</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto bb-scrollbar">
+      <div className="flex-1 overflow-y-auto rf-scrollbar">
         {news.map((item, i) => (
           <div
             key={i}
             className={`px-2 py-1.5 border-b border-border/50 hover:bg-white/[0.02] cursor-pointer transition-colors ${
-              item.isBreaking ? "bg-bb-red/[0.04]" : ""
+              item.isBreaking ? "bg-rf-red/[0.04]" : ""
             }`}
             data-testid={`news-item-${i}`}
           >
             <div className="flex items-start gap-1.5">
               {item.isBreaking && (
-                <span className="text-[9px] font-bold bg-bb-red/20 text-bb-red px-1 py-0 rounded-sm shrink-0 mt-px">
+                <span className="text-[9px] font-bold bg-rf-red/20 text-rf-red px-1 py-0 rounded-sm shrink-0 mt-px">
                   ALERT
                 </span>
               )}

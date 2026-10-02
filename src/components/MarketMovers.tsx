@@ -18,13 +18,13 @@ export function MarketMovers({ gainers, losers, active, onSelectSymbol }: Market
   const data = tab === "gainers" ? gainers : tab === "losers" ? losers : active;
 
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="market-movers">
-      <div className="bb-panel-header">
+    <div className="rf-panel flex flex-col h-full" data-testid="market-movers">
+      <div className="rf-panel-header">
         <div className="flex items-center gap-1">
           {([
-            { key: "gainers" as Tab, label: "Gainers", icon: TrendingUp, color: "text-bb-green" },
-            { key: "losers" as Tab, label: "Losers", icon: TrendingDown, color: "text-bb-red" },
-            { key: "active" as Tab, label: "Active", icon: Activity, color: "text-bb-blue" },
+            { key: "gainers" as Tab, label: "Gainers", icon: TrendingUp, color: "text-rf-green" },
+            { key: "losers" as Tab, label: "Losers", icon: TrendingDown, color: "text-rf-red" },
+            { key: "active" as Tab, label: "Active", icon: Activity, color: "text-rf-blue" },
           ]).map(({ key, label, icon: Icon, color }) => (
             <button
               key={key}
@@ -43,9 +43,9 @@ export function MarketMovers({ gainers, losers, active, onSelectSymbol }: Market
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto bb-scrollbar">
+      <div className="flex-1 overflow-y-auto rf-scrollbar">
         {/* Header */}
-        <div className="grid grid-cols-[1fr_70px_65px_55px] gap-1 px-2 py-1 border-b border-border text-2xs text-muted-foreground sticky top-0 bg-[hsl(var(--bb-panel-bg))] z-10">
+        <div className="grid grid-cols-[1fr_70px_65px_55px] gap-1 px-2 py-1 border-b border-border text-2xs text-muted-foreground sticky top-0 bg-[hsl(var(--rf-panel-bg))] z-10">
           <span>Symbol</span>
           <span className="text-right">Price</span>
           <span className="text-right">{tab === "active" ? "Volume" : "%Chg"}</span>
@@ -66,7 +66,7 @@ export function MarketMovers({ gainers, losers, active, onSelectSymbol }: Market
                 <span className="font-bold truncate">{stock.symbol}</span>
               </div>
               <span className="text-right tabular-nums">{formatPrice(stock.price)}</span>
-              <span className={`text-right tabular-nums ${tab === "active" ? "text-bb-blue" : changeColor}`}>
+              <span className={`text-right tabular-nums ${tab === "active" ? "text-rf-blue" : changeColor}`}>
                 {tab === "active" ? formatVolume(stock.volume) : formatPercent(stock.changesPercentage)}
               </span>
 
