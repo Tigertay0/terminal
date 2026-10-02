@@ -44,3 +44,7 @@ Tables (in Supabase, with RLS enforcing `auth.uid() = user_id`):
 - `sim_saves(id, user_id, name, settings, portfolio, watchlist, day_number, sim_time)` — many per user
 
 A trigger creates a default watchlist of 15 symbols on signup.
+
+## Debut video
+
+A Remotion project for the product debut video lives in [`video/`](video/README.md), including the capture scripts that record real app footage.

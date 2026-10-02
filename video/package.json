@@ -1,0 +1,27 @@
+{
+  "name": "rochambeau-debut-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Remotion product debut video for Rochambeau Finance Terminal",
+  "scripts": {
+    "capture": "node capture/capture.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts RochambeauDebut out/rochambeau-debut.mp4",
+    "still": "remotion still src/index.ts RochambeauDebut out/poster.png --frame=2060"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-serif": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@remotion/cli": "^4.0.532",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.532"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "playwright": "^1.56.1",
+    "typescript": "^5.6.3"
+  }
+}
