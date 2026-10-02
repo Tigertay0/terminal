@@ -11,7 +11,8 @@ import { Outro } from "./scenes/Outro";
 
 // ─── Timeline (frames @ 30fps) ───────────────────────────────────
 // Footage shots play inside one persistent browser window; full-screen
-// cards (hook, logo, chapter break, stats, outro) cut over it.
+// cards (hook, logo, chapter break, stats, outro) cut over it. Shots run
+// past the start of the card above them so its fade-in never reveals an empty window.
 const WIN_START = 258;
 const WIN_END = 1938;
 
@@ -32,7 +33,7 @@ const SHOTS: Shot[] = [
   },
   // Command bar: PLTR, then AMD
   {
-    from: 684, dur: 168, src: "command", trim: 3.0,
+    from: 684, dur: 180, src: "command", trim: 3.0,
     overlay: <Highlight x={6} y={1054} w={600} h={24} delay={2} />,
     keys: [{ at: 0, x: 300, y: 1060, z: 3.0 }, { at: 40, x: 300, y: 1060, z: 3.0 }, { at: 80, x: 900, y: 420, z: 1.3 }, { at: 168, x: 900, y: 440, z: 1.25 }],
   },
@@ -55,7 +56,7 @@ const SHOTS: Shot[] = [
   },
   // Join a live event, land on the leaderboard
   {
-    from: 1578, dur: 210, src: "event", trim: 0.5,
+    from: 1578, dur: 360, src: "event", trim: 0.5,
     keys: [{ at: 0, x: 960, y: 480, z: 1.7 }, { at: 30, x: 960, y: 480, z: 1.75 }, { at: 62, x: 960, y: 540, z: 1 }, { at: 104, x: 1790, y: 800, z: 2.0 }, { at: 210, x: 1790, y: 790, z: 2.05 }],
     overlay: <Highlight x={1662} y={580} w={256} h={470} delay={112} label="LEADERBOARD" />,
   },
