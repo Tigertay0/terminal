@@ -27,7 +27,7 @@ interface StockInput {
 }
 
 // ─── localStorage persistence (scoped per save) ─────────────────
-const NEWS_STORAGE_PREFIX = "bb_sim_ai_news";
+const NEWS_STORAGE_PREFIX = "rf_sim_ai_news";
 
 function newsKey(saveId?: string | null): string {
   return saveId ? `${NEWS_STORAGE_PREFIX}_${saveId}` : NEWS_STORAGE_PREFIX;
