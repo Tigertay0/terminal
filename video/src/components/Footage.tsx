@@ -1,11 +1,10 @@
-import { AbsoluteFill, OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
+import { OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { C, F, ease } from "../theme";
 
 export const SRC_W = 1920;
 export const SRC_H = 1080;
 
-// Camera keyframe: focus point in source pixels + zoom (1 = whole screen visible)
-export type CamKey = { at: number; x: number; y: number; z: number };
+import type { CamKey } from "../timeline";
 
 function camAt(keys: CamKey[], frame: number) {
   if (frame <= keys[0].at) return keys[0];
@@ -21,6 +20,8 @@ function camAt(keys: CamKey[], frame: number) {
 
 // A screen recording inside a viewport, driven by a virtual camera.
 // Overlay children are positioned in source pixels and move with the camera.
+// fit "width": z = 1 shows the full capture width (landscape window).
+// fit "cover": z = 1 fills the viewport height (portrait window crops to the action).
 export const Footage: React.FC<{
   src: string;
   trimSec: number;
@@ -28,11 +29,12 @@ export const Footage: React.FC<{
   height: number;
   keys?: CamKey[];
   rate?: number;
+  fit?: "width" | "cover";
   children?: React.ReactNode;
-}> = ({ src, trimSec, width, height, keys = [{ at: 0, x: SRC_W / 2, y: SRC_H / 2, z: 1 }], rate = 1, children }) => {
+}> = ({ src, trimSec, width, height, keys = [{ at: 0, x: SRC_W / 2, y: SRC_H / 2, z: 1 }], rate = 1, fit = "width", children }) => {
   const frame = useCurrentFrame();
   const cam = camAt(keys, frame);
-  const k = (width / SRC_W) * cam.z;
+  const k = (fit === "cover" ? height / SRC_H : width / SRC_W) * cam.z;
   const tx = Math.min(0, Math.max(width - SRC_W * k, width / 2 - cam.x * k));
   const ty = Math.min(0, Math.max(height - SRC_H * k, height / 2 - cam.y * k));
   return (
@@ -66,11 +68,12 @@ export const Highlight: React.FC<{ x: number; y: number; w: number; h: number; d
 
 // Browser window chrome around the footage
 export const WINDOW = { w: 1600, h: 900, bar: 40 };
-export const Window: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const VWINDOW = { w: 1000, h: 1300, bar: 40 };
+export const Window: React.FC<{ w: number; h: number; children: React.ReactNode }> = ({ w, h, children }) => (
   <div
     style={{
-      width: WINDOW.w,
-      height: WINDOW.h + WINDOW.bar,
+      width: w,
+      height: h + WINDOW.bar,
       borderRadius: 14,
       overflow: "hidden",
       background: C.panel,
@@ -91,8 +94,6 @@ export const Window: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         Rochambeau Finance Terminal
       </div>
     </div>
-    <div style={{ position: "relative", width: WINDOW.w, height: WINDOW.h }}>{children}</div>
+    <div style={{ position: "relative", width: w, height: h }}>{children}</div>
   </div>
 );
-
-export const Fill: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => <AbsoluteFill style={style}>{children}</AbsoluteFill>;

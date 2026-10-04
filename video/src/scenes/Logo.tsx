@@ -31,6 +31,7 @@ export const LogoLockup: React.FC<{ delay?: number; markSize?: number; fontSize?
 
 export const Logo: React.FC<{ dur: number }> = ({ dur }) => {
   const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
   const fadeIn = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
   const out = interpolate(frame, [dur - 22, dur], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.in });
   return (
@@ -38,7 +39,7 @@ export const Logo: React.FC<{ dur: number }> = ({ dur }) => {
       <Grid opacity={0.07} />
       <Glow opacity={0.14 + 0.06 * Math.sin(frame / 12)} />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", transform: `scale(${1 + out * 0.25})`, filter: `blur(${out * 10}px)` }}>
-        <LogoLockup delay={4} />
+        <LogoLockup delay={4} fontSize={height > width ? 112 : 128} />
       </AbsoluteFill>
     </AbsoluteFill>
   );

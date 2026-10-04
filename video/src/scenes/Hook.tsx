@@ -1,4 +1,4 @@
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F, ease } from "../theme";
 import { WordReveal } from "../components/Text";
 
@@ -7,6 +7,8 @@ const LOSS = "M0,120 L60,100 L120,130 L180,90 L240,110 L300,70 L360,95 L420,60 L
 
 export const Hook: React.FC = () => {
   const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+  const v = height > width;
   const draw = interpolate(frame, [6, 70], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.inOut });
   const strike = interpolate(frame, [48, 60], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.out });
   const outA = interpolate(frame, [74, 88], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.in });
@@ -14,21 +16,21 @@ export const Hook: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: C.bg, alignItems: "center", justifyContent: "center" }}>
-      <svg viewBox="0 0 1140 480" width={1800} height={758} style={{ position: "absolute", left: 60, top: 560, opacity: chartFade * 0.8 }}>
+      <svg viewBox="0 0 1140 480" width={v ? 1300 : 1800} height={v ? 547 : 758} style={{ position: "absolute", left: v ? -110 : 60, top: v ? 1180 : 560, opacity: chartFade * 0.8 }}>
         <path d={LOSS} fill="none" stroke={C.red} strokeWidth={4} strokeDasharray={2200} strokeDashoffset={2200 * draw} strokeLinejoin="round" />
       </svg>
 
       <div style={{ textAlign: "center", opacity: 1 - outA, transform: `translateY(${-outA * 40}px)`, filter: `blur(${outA * 8}px)` }}>
-        <div style={{ fontFamily: F.sans, fontWeight: 700, fontSize: 96, letterSpacing: "-0.035em", color: C.text, display: "flex", justifyContent: "center" }}>
+        <div style={{ fontFamily: F.sans, fontWeight: 700, fontSize: v ? 100 : 96, lineHeight: 1.08, letterSpacing: "-0.035em", color: C.text, display: "flex", justifyContent: "center", maxWidth: v ? 900 : undefined, margin: "0 auto" }}>
           <WordReveal text="Most people learn the market" delay={4} stagger={3} />
         </div>
-        <div style={{ position: "relative", display: "inline-block", marginTop: 10, fontFamily: F.sans, fontWeight: 700, fontSize: 96, letterSpacing: "-0.035em", color: C.text }}>
+        <div style={{ position: "relative", display: "inline-block", marginTop: v ? 28 : 10, fontFamily: F.sans, fontWeight: 700, fontSize: v ? 76 : 96, letterSpacing: "-0.035em", color: C.text }}>
           <WordReveal text="by losing real money." delay={18} stagger={4} wordStyle={(_, i) => (i >= 2 ? { color: C.red } : undefined)} />
           <span style={{ position: "absolute", left: "-2%", top: "54%", height: 8, width: `${104 * strike}%`, background: C.amber, borderRadius: 4 }} />
         </div>
       </div>
 
-      <div style={{ position: "absolute", textAlign: "center", fontFamily: F.serif, fontStyle: "italic", fontWeight: 300, fontSize: 104, color: C.text, letterSpacing: "-0.02em", display: "flex", justifyContent: "center" }}>
+      <div style={{ position: "absolute", textAlign: "center", fontFamily: F.serif, fontStyle: "italic", fontWeight: 300, fontSize: 104, lineHeight: 1.12, color: C.text, letterSpacing: "-0.02em", display: "flex", justifyContent: "center", maxWidth: v ? 860 : undefined }}>
         <WordReveal text="What if practice felt real?" delay={84} stagger={4} duration={20} wordStyle={(_, i) => (i >= 3 ? { color: C.amber } : undefined)} />
       </div>
     </AbsoluteFill>

@@ -1,4 +1,4 @@
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F, ease } from "../theme";
 
 // Every figure here is read from the app: INDEX_SYMBOLS (9), the four
@@ -11,16 +11,18 @@ const STATS = [
 
 export const Stats: React.FC<{ dur: number }> = ({ dur }) => {
   const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+  const v = height > width; // portrait stacks the three figures
   const fadeIn = interpolate(frame, [0, 14], [0, 1], { extrapolateRight: "clamp" });
   const out = interpolate(frame, [dur - 14, dur], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.in });
   return (
     <AbsoluteFill style={{ background: "rgba(8,9,12,0.72)", opacity: fadeIn * (1 - out), alignItems: "center", justifyContent: "center" }}>
-      <div style={{ display: "flex", gap: 0 }}>
+      <div style={{ display: "flex", flexDirection: v ? "column" : "row", gap: 0 }}>
         {STATS.map((s, i) => {
           const p = interpolate(frame - 8 - i * 14, [0, 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.out });
           const count = s.value === 0 ? Math.round((1 - p) * 250) : Math.round(p * s.value);
           return (
-            <div key={i} style={{ width: 520, padding: "0 40px", borderLeft: i ? "1px solid rgba(255,255,255,0.12)" : "none", opacity: p, transform: `translateY(${(1 - p) * 50}px)`, textAlign: "center" }}>
+            <div key={i} style={{ width: v ? 820 : 520, padding: v ? "44px 0" : "0 40px", [v ? "borderTop" : "borderLeft"]: i ? "1px solid rgba(255,255,255,0.12)" : "none", opacity: p, transform: `translateY(${(1 - p) * 50}px)`, textAlign: "center" }}>
               <div style={{ fontFamily: F.mono, fontWeight: 700, fontSize: 210, color: i === 2 ? C.amber : C.text, lineHeight: 1, letterSpacing: "-0.04em" }}>
                 {s.prefix}{count}
               </div>

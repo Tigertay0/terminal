@@ -3,7 +3,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import { startDevServer, openApp, startRecording, sleep, glide, tap, typeSlow } from "./harness.mjs";
+import { startDevServer, openApp, startRecording, sleep, glide, tap, typeSlow, press } from "./harness.mjs";
 
 const out = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "footage");
 fs.mkdirSync(out, { recursive: true });
@@ -65,11 +65,11 @@ const clips = {
     await sleep(300);
     await typeSlow(page, "PLTR", 180);
     await sleep(400);
-    await page.keyboard.press("Enter");
+    await press(page, "Enter");
     await sleep(2600);
     await tap(page, '[data-testid="input-command"]', { steps: 20 });
     await typeSlow(page, "AMD", 180);
-    await page.keyboard.press("Enter");
+    await press(page, "Enter");
     await sleep(2400);
     await stop(); await browser.close();
   },

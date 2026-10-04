@@ -132,6 +132,7 @@ export async function startRecording(page, outFile, { maxWidth = 1920, maxHeight
   await cdp.send("Page.startScreencast", { format: "jpeg", quality: 92, maxWidth, maxHeight, everyNthFrame: 1 });
   const started = Date.now() / 1000;
 
+  page.__events = [];
   return async function stop() {
     await cdp.send("Page.stopScreencast");
     const ended = Date.now() / 1000;
@@ -152,6 +153,11 @@ export async function startRecording(page, outFile, { maxWidth = 1920, maxHeight
       ff.on("exit", (c) => (c === 0 ? res() : rej(new Error(`ffmpeg ${c}`))));
     });
     fs.rmSync(frameDir, { recursive: true, force: true });
+    // Sidecar with input events in video time, used to sync sound effects
+    const t0 = frames[0].t;
+    const events = page.__events.map((e) => ({ type: e.type, t: +(e.epoch - t0).toFixed(3) })).filter((e) => e.t >= 0);
+    fs.writeFileSync(outFile.replace(/\.mp4$/, ".events.json"), JSON.stringify(events, null, 1) + "\n");
+    page.__events = null;
     const fps = frames.length / (ended - started);
     console.log(`  ${path.basename(outFile)}: ${frames.length} frames, ${(ended - started).toFixed(1)}s, ~${fps.toFixed(1)} fps captured`);
   };
@@ -171,10 +177,16 @@ export async function glide(page, selectorOrPoint, { steps = 28, pause = 120 } =
   await sleep(pause);
   return { x, y };
 }
+const log = (page, type) => page.__events?.push({ type, epoch: Date.now() / 1000 });
 export async function tap(page, selectorOrPoint, opts) {
   await glide(page, selectorOrPoint, opts);
+  log(page, "click");
   await page.mouse.down(); await sleep(70); await page.mouse.up();
 }
 export async function typeSlow(page, text, delay = 110) {
-  for (const ch of text) { await page.keyboard.type(ch); await sleep(delay); }
+  for (const ch of text) { log(page, "key"); await page.keyboard.type(ch); await sleep(delay); }
+}
+export async function press(page, key) {
+  log(page, key === "Enter" ? "enter" : "key");
+  await page.keyboard.press(key);
 }

@@ -1,4 +1,4 @@
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F, ease } from "../theme";
 import { Glow, Grid } from "../components/Backdrop";
 import { WordReveal } from "../components/Text";
@@ -8,6 +8,8 @@ const SPEEDS = ["PAUSE", "1x", "5x", "1HR", "1DAY"];
 
 export const BendTime: React.FC<{ dur: number }> = ({ dur }) => {
   const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+  const v = height > width;
   const fadeIn = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
   const out = interpolate(frame, [dur - 12, dur], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.in });
   const active = Math.min(SPEEDS.length - 1, Math.floor(interpolate(frame, [22, 70], [0, SPEEDS.length - 0.01], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })));
@@ -32,7 +34,7 @@ export const BendTime: React.FC<{ dur: number }> = ({ dur }) => {
         <path d={d} fill="none" stroke={C.green} strokeWidth={3} />
       </svg>
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 48, transform: `scale(${1 + out * 0.08})` }}>
-        <div style={{ fontFamily: F.serif, fontStyle: "italic", fontWeight: 300, fontSize: 150, color: C.text, letterSpacing: "-0.02em", display: "flex", lineHeight: 1 }}>
+        <div style={{ fontFamily: F.serif, fontStyle: "italic", fontWeight: 300, fontSize: v ? 124 : 150, color: C.text, letterSpacing: "-0.02em", display: "flex", lineHeight: 1 }}>
           <WordReveal text="Then, bend time." delay={2} stagger={5} duration={20} wordStyle={(_, i) => (i >= 1 ? { color: C.amber } : undefined)} />
         </div>
         <div style={{ display: "flex", gap: 14, opacity: interpolate(frame, [14, 28], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
@@ -42,9 +44,9 @@ export const BendTime: React.FC<{ dur: number }> = ({ dur }) => {
               style={{
                 fontFamily: F.mono,
                 fontWeight: 700,
-                fontSize: 32,
+                fontSize: v ? 28 : 32,
                 letterSpacing: "0.08em",
-                padding: "12px 26px",
+                padding: v ? "12px 20px" : "12px 26px",
                 borderRadius: 6,
                 border: `1.5px solid ${i === active ? C.amber : "rgba(255,255,255,0.12)"}`,
                 color: i === active ? C.amber : C.muted,
