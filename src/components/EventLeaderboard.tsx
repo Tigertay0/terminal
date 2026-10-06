@@ -45,18 +45,18 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
   const userRank = participants.findIndex(p => p.user_id === userId) + 1;
 
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="event-leaderboard">
+    <div className="rf-panel flex flex-col h-full" data-testid="event-leaderboard">
       {/* Header */}
-      <div className="bg-[hsl(var(--bb-panel-header))] px-2 py-1.5 border-b border-border">
+      <div className="bg-[hsl(var(--rf-panel-header))] px-2 py-1.5 border-b border-border">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1">
-            <Trophy className="w-3 h-3 text-bb-cyan" />
-            <span className="text-[10px] font-bold text-bb-cyan tracking-wider">LEADERBOARD</span>
+            <Trophy className="w-3 h-3 text-rf-cyan" />
+            <span className="text-[10px] font-bold text-rf-cyan tracking-wider">LEADERBOARD</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Clock className="w-2.5 h-2.5 text-muted-foreground" />
             <span className="text-[9px] text-muted-foreground">Ends in</span>
-            <span className="text-[10px] font-bold text-bb-cyan tabular-nums">{timeLeft}</span>
+            <span className="text-[10px] font-bold text-rf-cyan tabular-nums">{timeLeft}</span>
           </div>
         </div>
         <div className="flex items-center justify-between">
@@ -67,9 +67,9 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
           </div>
         </div>
         {userRank > 0 && (
-          <div className="flex items-center gap-1 mt-1 bg-bb-cyan/10 border border-bb-cyan/20 rounded-sm px-1.5 py-0.5">
-            <span className="text-[9px] text-bb-cyan font-bold">YOUR RANK:</span>
-            <span className="text-[10px] text-bb-cyan font-bold">#{userRank}</span>
+          <div className="flex items-center gap-1 mt-1 bg-rf-cyan/10 border border-rf-cyan/20 rounded-sm px-1.5 py-0.5">
+            <span className="text-[9px] text-rf-cyan font-bold">YOUR RANK:</span>
+            <span className="text-[10px] text-rf-cyan font-bold">#{userRank}</span>
             <span className="text-[9px] text-muted-foreground">of {participants.length}</span>
           </div>
         )}
@@ -84,7 +84,7 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
       </div>
 
       {/* Participant Rows */}
-      <div className="flex-1 overflow-y-auto bb-scrollbar" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto rf-scrollbar" ref={scrollRef}>
         {participants.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <Trophy className="w-6 h-6 text-muted-foreground/30 mb-2" />
@@ -103,7 +103,7 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
                 key={p.id}
                 className={`flex items-center px-2 py-1.5 border-b border-border/30 transition-colors ${
                   isCurrentUser
-                    ? "bg-bb-cyan/[0.06] border-l-2 border-l-bb-cyan"
+                    ? "bg-rf-cyan/[0.06] border-l-2 border-l-rf-cyan"
                     : "hover:bg-white/[0.02]"
                 } ${rank <= 3 ? "bg-white/[0.01]" : ""}`}
                 data-testid={`leaderboard-row-${p.id}`}
@@ -114,15 +114,15 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
                     <span className={`text-[11px] font-medium truncate ${
-                      isCurrentUser ? "text-bb-cyan font-bold" : "text-foreground"
+                      isCurrentUser ? "text-rf-cyan font-bold" : "text-foreground"
                     }`}>
                       {p.display_name}
                     </span>
                     {isCurrentUser && (
-                      <span className="text-[8px] bg-bb-cyan/20 text-bb-cyan px-1 rounded-sm font-bold">YOU</span>
+                      <span className="text-[8px] bg-rf-cyan/20 text-rf-cyan px-1 rounded-sm font-bold">YOU</span>
                     )}
                     {isCompleted && (
-                      <span className="text-[8px] bg-bb-green/20 text-bb-green px-1 rounded-sm font-bold">DONE</span>
+                      <span className="text-[8px] bg-rf-green/20 text-rf-green px-1 rounded-sm font-bold">DONE</span>
                     )}
                   </div>
                 </div>
@@ -133,7 +133,7 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
                 </div>
                 <div className="w-20 text-right shrink-0">
                   <div className={`text-[10px] font-bold tabular-nums flex items-center justify-end gap-0.5 ${
-                    isPositive ? "text-bb-green" : p.profit < 0 ? "text-bb-red" : "text-muted-foreground"
+                    isPositive ? "text-rf-green" : p.profit < 0 ? "text-rf-red" : "text-muted-foreground"
                   }`}>
                     {isPositive && p.profit > 0 ? (
                       <TrendingUp className="w-2.5 h-2.5" />

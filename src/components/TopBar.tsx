@@ -3,6 +3,7 @@ import { Search, X, LogOut, User, Home, Sun, Moon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
+import { BrandMark } from "@/components/BrandMark";
 
 interface SearchResult {
   symbol: string;
@@ -108,27 +109,22 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
   const isAfterHours = isWeekday && totalMinutes >= 960 && totalMinutes < 1200;
 
   let marketStatus = "CLOSED";
-  let statusColor = "text-bb-red";
-  if (isMarketOpen) { marketStatus = "OPEN"; statusColor = "text-bb-green"; }
-  else if (isPreMarket) { marketStatus = "PRE-MKT"; statusColor = "text-bb-yellow"; }
-  else if (isAfterHours) { marketStatus = "AFTER-HRS"; statusColor = "text-bb-yellow"; }
+  let statusColor = "text-rf-red";
+  if (isMarketOpen) { marketStatus = "OPEN"; statusColor = "text-rf-green"; }
+  else if (isPreMarket) { marketStatus = "PRE-MKT"; statusColor = "text-rf-yellow"; }
+  else if (isAfterHours) { marketStatus = "AFTER-HRS"; statusColor = "text-rf-yellow"; }
 
   return (
     <div
       className="flex items-center h-8 px-2 gap-3 border-b border-border bg-sidebar shrink-0 select-none"
       data-testid="topbar"
     >
-      {/* Bloomberg logo */}
+      {/* Brand mark */}
       <div className="flex items-center gap-1.5 shrink-0">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-label="Bloomberg Terminal">
-          <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" />
-          <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.7" />
-          <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
-          <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
-        </svg>
-        <span className="text-bb-orange font-bold text-xs tracking-wider">BLOOMBERG</span>
+        <BrandMark size={20} />
+        <span className="text-rf-orange font-bold text-xs tracking-wider">ROCHAMBEAU</span>
         {simMode && (
-          <span className="text-[9px] font-bold bg-bb-orange/20 text-bb-orange px-1.5 py-0.5 rounded-sm ml-1">SIM</span>
+          <span className="text-[9px] font-bold bg-rf-orange/20 text-rf-orange px-1.5 py-0.5 rounded-sm ml-1">SIM</span>
         )}
       </div>
 
@@ -139,7 +135,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
         <>
           <button
             onClick={onHome}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-bb-orange hover:bg-bb-orange/10 transition-all"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-rf-orange hover:bg-rf-orange/10 transition-all"
             title="Back to Mode Select"
             data-testid="button-home"
           >
@@ -176,7 +172,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
 
         {/* Autocomplete dropdown */}
         {showDropdown && results.length > 0 && (
-          <div className="absolute top-6 left-0 right-0 bg-card border border-border rounded-sm shadow-xl z-50 max-h-64 overflow-y-auto bb-scrollbar" data-testid="search-dropdown">
+          <div className="absolute top-6 left-0 right-0 bg-card border border-border rounded-sm shadow-xl z-50 max-h-64 overflow-y-auto rf-scrollbar" data-testid="search-dropdown">
             {results.map((r, i) => (
               <button
                 key={r.symbol}
@@ -187,7 +183,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
                 data-testid={`search-result-${r.symbol}`}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[11px] font-bold text-bb-orange shrink-0">{r.symbol}</span>
+                  <span className="text-[11px] font-bold text-rf-orange shrink-0">{r.symbol}</span>
                   <span className="text-[11px] text-foreground truncate">{r.name}</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
@@ -203,7 +199,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
       {/* Active symbol */}
       {selectedSymbol && (
         <div className="flex items-center gap-1 shrink-0">
-          <span className="text-bb-orange font-bold text-xs">{selectedSymbol}</span>
+          <span className="text-rf-orange font-bold text-xs">{selectedSymbol}</span>
           <span className="text-2xs text-muted-foreground">Equity</span>
         </div>
       )}
@@ -213,7 +209,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
       {/* Market status */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-1">
-          <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? "bg-bb-green" : isPreMarket || isAfterHours ? "bg-bb-yellow" : "bg-bb-red"}`} />
+          <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? "bg-rf-green" : isPreMarket || isAfterHours ? "bg-rf-yellow" : "bg-rf-red"}`} />
           <span className={`text-2xs font-medium ${statusColor}`}>{marketStatus}</span>
         </div>
         <span className="text-2xs text-muted-foreground">NYSE</span>
@@ -245,12 +241,12 @@ function UserMenu({ onAuth }: { onAuth?: () => void }) {
     return (
       <button
         onClick={onAuth}
-        className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-sm hover:bg-bb-orange/10 transition-all cursor-pointer"
+        className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-sm hover:bg-rf-orange/10 transition-all cursor-pointer"
         title="Sign in"
         data-testid="button-sign-in"
       >
         <User className="w-3 h-3 text-muted-foreground" />
-        <span className="text-2xs text-muted-foreground hover:text-bb-orange transition-colors">Guest</span>
+        <span className="text-2xs text-muted-foreground hover:text-rf-orange transition-colors">Guest</span>
       </button>
     );
   }
@@ -258,12 +254,12 @@ function UserMenu({ onAuth }: { onAuth?: () => void }) {
   return (
     <div className="flex items-center gap-2 shrink-0">
       <div className="flex items-center gap-1">
-        <div className="w-1.5 h-1.5 rounded-full bg-bb-green" />
+        <div className="w-1.5 h-1.5 rounded-full bg-rf-green" />
         <span className="text-2xs font-medium text-foreground" data-testid="text-user">{name}</span>
       </div>
       <button
         onClick={() => supabase.auth.signOut()}
-        className="flex items-center gap-1 text-2xs text-muted-foreground hover:text-bb-orange transition-colors"
+        className="flex items-center gap-1 text-2xs text-muted-foreground hover:text-rf-orange transition-colors"
         data-testid="button-logout"
         title="Sign out"
       >
@@ -278,7 +274,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-bb-orange hover:bg-bb-orange/10 transition-all"
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-rf-orange hover:bg-rf-orange/10 transition-all"
       title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       data-testid="button-theme-toggle"
     >

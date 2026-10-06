@@ -50,8 +50,8 @@ export function CommandBar({ onCommand, commandHistory }: CommandBarProps) {
 
   return (
     <div className="flex items-center h-7 px-2 gap-2 bg-sidebar border-t border-border shrink-0" data-testid="command-bar">
-      <Terminal className="w-3 h-3 text-bb-orange shrink-0" />
-      <ChevronRight className="w-3 h-3 text-bb-orange shrink-0" />
+      <Terminal className="w-3 h-3 text-rf-orange shrink-0" />
+      <ChevronRight className="w-3 h-3 text-rf-orange shrink-0" />
       <input
         ref={inputRef}
         type="text"

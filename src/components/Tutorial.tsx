@@ -81,10 +81,10 @@ export function Tutorial({ onComplete }: TutorialProps) {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" data-testid="tutorial-overlay">
         <div className="w-full max-w-md bg-card border border-border rounded-sm shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-[hsl(var(--bb-panel-header))]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-[hsl(var(--rf-panel-header))]">
             <div className="flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-bb-orange" />
-              <span className="text-xs font-bold text-bb-orange tracking-wider">TUTORIAL</span>
+              <GraduationCap className="w-4 h-4 text-rf-orange" />
+              <span className="text-xs font-bold text-rf-orange tracking-wider">TUTORIAL</span>
               <span className="text-[10px] text-muted-foreground ml-2">
                 {step + 1} / {STEPS.length}
               </span>
@@ -101,7 +101,7 @@ export function Tutorial({ onComplete }: TutorialProps) {
           {/* Progress bar */}
           <div className="h-0.5 bg-border">
             <div
-              className="h-full bg-bb-orange transition-all duration-300"
+              className="h-full bg-rf-orange transition-all duration-300"
               style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
             />
           </div>
@@ -109,8 +109,8 @@ export function Tutorial({ onComplete }: TutorialProps) {
           {/* Content */}
           <div className="p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-sm bg-bb-orange/10 flex items-center justify-center shrink-0">
-                <Icon className="w-5 h-5 text-bb-orange" />
+              <div className="w-10 h-10 rounded-sm bg-rf-orange/10 flex items-center justify-center shrink-0">
+                <Icon className="w-5 h-5 text-rf-orange" />
               </div>
               <h3 className="text-sm font-bold text-foreground">{current.title}</h3>
             </div>
@@ -120,15 +120,15 @@ export function Tutorial({ onComplete }: TutorialProps) {
             </p>
 
             {current.tip && (
-              <div className="bg-bb-orange/[0.06] border border-bb-orange/20 rounded-sm px-3 py-2 mb-4">
-                <div className="text-[10px] font-bold text-bb-orange mb-0.5">TIP</div>
+              <div className="bg-rf-orange/[0.06] border border-rf-orange/20 rounded-sm px-3 py-2 mb-4">
+                <div className="text-[10px] font-bold text-rf-orange mb-0.5">TIP</div>
                 <div className="text-[11px] text-foreground/80">{current.tip}</div>
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-[hsl(var(--bb-panel-header))]">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-[hsl(var(--rf-panel-header))]">
             <button
               onClick={() => setStep(s => s - 1)}
               disabled={step === 0}
@@ -149,7 +149,7 @@ export function Tutorial({ onComplete }: TutorialProps) {
 
             <button
               onClick={() => isLast ? onComplete() : setStep(s => s + 1)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-bb-orange text-black text-xs font-bold rounded-sm hover:bg-bb-orange/90 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-rf-orange text-black text-xs font-bold rounded-sm hover:bg-rf-orange/90 transition-colors"
               data-testid="button-next"
             >
               {isLast ? "Start Trading" : "Next"}

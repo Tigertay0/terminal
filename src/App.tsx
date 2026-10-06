@@ -32,6 +32,7 @@ import {
   type SimSaveRow, type EventParticipantRow,
 } from "@/lib/supabase";
 import { getCurrentEvent, type EventDefinition } from "@/lib/events";
+import { BrandMark } from "@/components/BrandMark";
 
 const DEFAULT_WATCHLIST = [
   "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM",
@@ -154,13 +155,8 @@ function RealTerminal({ userId, initialWatchlist, onHome, onAuth }: { userId: st
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-3">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="mx-auto animate-pulse">
-            <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" />
-            <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.7" />
-            <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
-            <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
-          </svg>
-          <div className="text-bb-orange font-bold text-sm tracking-wider">BLOOMBERG TERMINAL</div>
+          <BrandMark size={40} className="mx-auto animate-pulse" />
+          <div className="text-rf-orange font-bold text-sm tracking-wider">ROCHAMBEAU FINANCE TERMINAL</div>
           <div className="text-muted-foreground text-xs">Connecting to Yahoo Finance...</div>
         </div>
       </div>
@@ -352,13 +348,8 @@ function SimTerminal({
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-3">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="mx-auto animate-pulse">
-            <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" />
-            <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.7" />
-            <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
-            <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
-          </svg>
-          <div className="text-bb-orange font-bold text-sm tracking-wider">SIMULATION MODE</div>
+          <BrandMark size={40} className="mx-auto animate-pulse" />
+          <div className="text-rf-orange font-bold text-sm tracking-wider">SIMULATION MODE</div>
           <div className="text-muted-foreground text-xs">Initializing market simulation...</div>
         </div>
       </div>
@@ -586,13 +577,8 @@ function EventTerminal({
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-3">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="mx-auto animate-pulse">
-            <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" />
-            <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" opacity="0.7" />
-            <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" opacity="0.5" />
-            <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(187, 80%, 55%)" opacity="0.3" />
-          </svg>
-          <div className="text-bb-cyan font-bold text-sm tracking-wider">EVENT MODE</div>
+          <BrandMark size={40} className="mx-auto animate-pulse" />
+          <div className="text-rf-cyan font-bold text-sm tracking-wider">EVENT MODE</div>
           <div className="text-muted-foreground text-xs">Loading {event.name}...</div>
         </div>
       </div>
@@ -642,17 +628,17 @@ function EventTerminal({
         </div>
         <div className="min-h-0 flex flex-col">
           {/* Toggle tabs */}
-          <div className="flex border-b border-border shrink-0 bg-[hsl(var(--bb-panel-bg))]">
+          <div className="flex border-b border-border shrink-0 bg-[hsl(var(--rf-panel-bg))]">
             <button
               onClick={() => setEventPanel("leaderboard")}
-              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "leaderboard" ? "text-bb-cyan border-b border-bb-cyan" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "leaderboard" ? "text-rf-cyan border-b border-rf-cyan" : "text-muted-foreground hover:text-foreground"}`}
               data-testid="tab-leaderboard"
             >
               LEADERBOARD
             </button>
             <button
               onClick={() => setEventPanel("news")}
-              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "news" ? "text-bb-cyan border-b border-bb-cyan" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "news" ? "text-rf-cyan border-b border-rf-cyan" : "text-muted-foreground hover:text-foreground"}`}
               data-testid="tab-news"
             >
               NEWS
@@ -803,13 +789,8 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <div className="h-screen flex items-center justify-center bg-background">
           <div className="text-center space-y-3">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="mx-auto animate-pulse">
-              <rect x="2" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" />
-              <rect x="14" y="2" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.7" />
-              <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
-              <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
-            </svg>
-            <div className="text-bb-orange font-bold text-sm tracking-wider">BLOOMBERG TERMINAL</div>
+            <BrandMark size={40} className="mx-auto animate-pulse" />
+            <div className="text-rf-orange font-bold text-sm tracking-wider">ROCHAMBEAU FINANCE TERMINAL</div>
           </div>
         </div>
       </QueryClientProvider>

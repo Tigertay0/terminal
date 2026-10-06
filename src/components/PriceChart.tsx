@@ -373,7 +373,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
 
   if (!stock) {
     return (
-      <div className="bb-panel flex flex-col h-full items-center justify-center">
+      <div className="rf-panel flex flex-col h-full items-center justify-center">
         <span className="text-muted-foreground text-xs">Select a ticker to view chart</span>
       </div>
     );
@@ -388,11 +388,11 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     : ["1W", "1M", "3M", "6M", "1Y"];
 
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="price-chart">
+    <div className="rf-panel flex flex-col h-full" data-testid="price-chart">
       {/* Header */}
-      <div className="bb-panel-header">
+      <div className="rf-panel-header">
         <div className="flex items-center gap-3">
-          <span className="text-bb-orange font-bold text-xs">{symbol}</span>
+          <span className="text-rf-orange font-bold text-xs">{symbol}</span>
           <span className="text-2xs text-muted-foreground truncate max-w-[160px]">{stock.name}</span>
         </div>
         <div className="flex items-center gap-1">
@@ -403,15 +403,15 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
               className={`text-2xs px-1.5 py-0.5 rounded-sm font-medium transition-colors ${
                 timeRange === r
                   ? r === "LIVE"
-                    ? "bg-bb-green/20 text-bb-green"
-                    : "bg-bb-orange/20 text-bb-orange"
+                    ? "bg-rf-green/20 text-rf-green"
+                    : "bg-rf-orange/20 text-rf-orange"
                   : "text-muted-foreground hover:text-foreground"
               }`}
               data-testid={`button-range-${r}`}
             >
               {r === "LIVE" ? (
                 <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-bb-green animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-rf-green animate-pulse" />
                   LIVE
                 </span>
               ) : r}

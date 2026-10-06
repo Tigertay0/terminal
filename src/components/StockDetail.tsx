@@ -9,7 +9,7 @@ interface StockDetailProps {
 export function StockDetail({ stock }: StockDetailProps) {
   if (!stock) {
     return (
-      <div className="bb-panel flex flex-col h-full items-center justify-center">
+      <div className="rf-panel flex flex-col h-full items-center justify-center">
         <span className="text-muted-foreground text-xs">No ticker selected</span>
       </div>
     );
@@ -25,15 +25,15 @@ export function StockDetail({ stock }: StockDetailProps) {
     : 50;
 
   return (
-    <div className="bb-panel flex flex-col h-full" data-testid="stock-detail">
-      <div className="bb-panel-header">
+    <div className="rf-panel flex flex-col h-full" data-testid="stock-detail">
+      <div className="rf-panel-header">
         <div className="flex items-center gap-2">
-          <span className="text-bb-orange font-bold text-xs tracking-wider">{stock.symbol}</span>
+          <span className="text-rf-orange font-bold text-xs tracking-wider">{stock.symbol}</span>
           <span className="text-2xs text-muted-foreground">DETAIL</span>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto bb-scrollbar p-2 space-y-2 overflow-x-hidden">
+      <div className="flex-1 overflow-y-auto rf-scrollbar p-2 space-y-2 overflow-x-hidden">
         {/* Price section */}
         <div className="flex items-center gap-2">
           <div>
@@ -69,11 +69,11 @@ export function StockDetail({ stock }: StockDetailProps) {
           </div>
           <div className="relative h-1.5 bg-border rounded-full">
             <div
-              className="absolute top-0 h-full bg-bb-orange/40 rounded-full"
+              className="absolute top-0 h-full bg-rf-orange/40 rounded-full"
               style={{ width: `${rangePos}%` }}
             />
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-bb-orange rounded-full border border-background"
+              className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-rf-orange rounded-full border border-background"
               style={{ left: `calc(${rangePos}% - 4px)` }}
             />
           </div>
@@ -89,7 +89,7 @@ export function StockDetail({ stock }: StockDetailProps) {
           <div className="relative h-1.5 bg-border rounded-full overflow-hidden">
             <div
               className={`absolute top-0 h-full rounded-full ${
-                stock.volume > stock.avgVolume ? "bg-bb-green/50" : "bg-bb-blue/50"
+                stock.volume > stock.avgVolume ? "bg-rf-green/50" : "bg-rf-blue/50"
               }`}
               style={{ width: `${Math.min((stock.volume / stock.avgVolume) * 100, 100)}%` }}
             />

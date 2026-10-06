@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 type Theme = "dark" | "light";
 
-const STORAGE_KEY = "bb-terminal-theme";
+const STORAGE_KEY = "rochambeau-theme";
 
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {

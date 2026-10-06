@@ -52,7 +52,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
             <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
             <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
           </svg>
-          <div className="text-bb-orange font-bold text-sm tracking-wider">LOADING SAVES</div>
+          <div className="text-rf-orange font-bold text-sm tracking-wider">LOADING SAVES</div>
           <div className="text-muted-foreground text-xs">Fetching your simulations…</div>
         </div>
       </div>
@@ -71,7 +71,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
               <rect x="2" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.5" />
               <rect x="14" y="14" width="8" height="8" rx="1" fill="hsl(36, 100%, 50%)" opacity="0.3" />
             </svg>
-            <span className="text-bb-orange font-bold text-lg tracking-wider">SIMULATION SAVES</span>
+            <span className="text-rf-orange font-bold text-lg tracking-wider">SIMULATION SAVES</span>
           </div>
           <p className="text-muted-foreground text-xs">Continue a previous simulation or start fresh</p>
         </div>
@@ -88,14 +88,14 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
             return (
               <div
                 key={save.id}
-                className="group border border-border bg-card rounded-sm p-4 hover:border-bb-orange/40 hover:bg-bb-orange/[0.02] transition-all"
+                className="group border border-border bg-card rounded-sm p-4 hover:border-rf-orange/40 hover:bg-rf-orange/[0.02] transition-all"
                 data-testid={`save-card-${save.id}`}
               >
                 <div className="flex items-center justify-between gap-4">
                   {/* Left: Save info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <Save className="w-3.5 h-3.5 text-bb-orange shrink-0" />
+                      <Save className="w-3.5 h-3.5 text-rf-orange shrink-0" />
                       <span className="text-sm font-bold text-foreground truncate">{save.name || "Untitled"}</span>
                       <span className="text-[9px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-sm shrink-0">
                         {save.settings?.variation?.toUpperCase() ?? "REALISTIC"}
@@ -122,7 +122,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
                     <div className="text-xs font-bold text-foreground tabular-nums">
                       {formatCurrency(portfolioValue)}
                     </div>
-                    <div className={`flex items-center justify-end gap-0.5 text-[10px] font-bold tabular-nums ${isPositive ? "text-bb-green" : "text-bb-red"}`}>
+                    <div className={`flex items-center justify-end gap-0.5 text-[10px] font-bold tabular-nums ${isPositive ? "text-rf-green" : "text-rf-red"}`}>
                       {isPositive ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                       {isPositive ? "+" : ""}{formatCurrency(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)
                     </div>
@@ -132,7 +132,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => onContinue(save)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-bb-orange/10 text-bb-orange text-[10px] font-bold border border-bb-orange/20 hover:bg-bb-orange/20 transition-all"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-rf-orange/10 text-rf-orange text-[10px] font-bold border border-rf-orange/20 hover:bg-rf-orange/20 transition-all"
                       data-testid={`continue-${save.id}`}
                     >
                       <Play className="w-3 h-3" />
@@ -140,7 +140,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
                     </button>
                     <button
                       onClick={() => setDeleteTarget(save.id)}
-                      className="p-1.5 rounded-sm text-muted-foreground hover:text-bb-red hover:bg-bb-red/10 transition-all opacity-0 group-hover:opacity-100"
+                      className="p-1.5 rounded-sm text-muted-foreground hover:text-rf-red hover:bg-rf-red/10 transition-all opacity-0 group-hover:opacity-100"
                       data-testid={`delete-${save.id}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -161,7 +161,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
             }
             onNew();
           }}
-          className="w-full py-3 bg-bb-orange text-black font-bold text-sm rounded-sm hover:bg-bb-orange/90 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 bg-rf-orange text-black font-bold text-sm rounded-sm hover:bg-rf-orange/90 transition-colors flex items-center justify-center gap-2"
           data-testid="button-new-sim"
         >
           <Plus className="w-4 h-4" />
@@ -181,8 +181,8 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
         {completedEvents && completedEvents.length > 0 && (
           <>
             <div className="flex items-center gap-2 mt-6 mb-3">
-              <Trophy className="w-3.5 h-3.5 text-bb-cyan" />
-              <span className="text-[10px] font-bold text-bb-cyan tracking-wider">COMPLETED EVENTS</span>
+              <Trophy className="w-3.5 h-3.5 text-rf-cyan" />
+              <span className="text-[10px] font-bold text-rf-cyan tracking-wider">COMPLETED EVENTS</span>
               <div className="flex-1 h-px bg-border" />
             </div>
             <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
@@ -201,7 +201,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[8px] font-bold tracking-wider text-bb-cyan bg-bb-cyan/10 px-1.5 py-0.5 rounded-sm border border-bb-cyan/20">EVENT</span>
+                          <span className="text-[8px] font-bold tracking-wider text-rf-cyan bg-rf-cyan/10 px-1.5 py-0.5 rounded-sm border border-rf-cyan/20">EVENT</span>
                           <span className="text-xs font-bold text-foreground/80 truncate">
                             {ep.settings?.eventName ?? ep.event_key}
                           </span>
@@ -218,7 +218,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className={`text-xs font-bold tabular-nums ${isPositive ? 'text-bb-green' : 'text-bb-red'}`}>
+                        <div className={`text-xs font-bold tabular-nums ${isPositive ? 'text-rf-green' : 'text-rf-red'}`}>
                           {isPositive ? '+' : ''}{formatCurrency(profit)}
                         </div>
                         <div className="text-[9px] text-muted-foreground">

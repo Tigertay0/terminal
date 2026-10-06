@@ -24,7 +24,7 @@ export function EventBanner({ onJoinEvent }: EventBannerProps) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-sm border border-bb-cyan/30 bg-gradient-to-r from-bb-cyan/[0.08] via-bb-cyan/[0.04] to-transparent mb-6"
+      className="relative overflow-hidden rounded-sm border border-rf-cyan/30 bg-gradient-to-r from-rf-cyan/[0.08] via-rf-cyan/[0.04] to-transparent mb-6"
       data-testid="event-banner"
     >
       {/* Animated glow line at top */}
@@ -40,14 +40,14 @@ export function EventBanner({ onJoinEvent }: EventBannerProps) {
         {/* Icon + Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="relative">
-            <div className="w-9 h-9 rounded-sm bg-bb-cyan/15 flex items-center justify-center border border-bb-cyan/20">
-              <Trophy className="w-4.5 h-4.5 text-bb-cyan" />
+            <div className="w-9 h-9 rounded-sm bg-rf-cyan/15 flex items-center justify-center border border-rf-cyan/20">
+              <Trophy className="w-4.5 h-4.5 text-rf-cyan" />
             </div>
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-bb-cyan rounded-full animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-rf-cyan rounded-full animate-pulse" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-bold tracking-[0.2em] text-bb-cyan bg-bb-cyan/15 px-1.5 py-0.5 rounded-sm border border-bb-cyan/20">
+              <span className="text-[9px] font-bold tracking-[0.2em] text-rf-cyan bg-rf-cyan/15 px-1.5 py-0.5 rounded-sm border border-rf-cyan/20">
                 NEW
               </span>
               <span className="text-[9px] font-bold tracking-wider text-muted-foreground">
@@ -66,13 +66,13 @@ export function EventBanner({ onJoinEvent }: EventBannerProps) {
             {event.description}
           </p>
           {event.prize && (
-            <p className="text-[9px] font-bold text-bb-orange mt-0.5 flex items-center gap-1">
+            <p className="text-[9px] font-bold text-rf-orange mt-0.5 flex items-center gap-1">
               {event.prize}
             </p>
           )}
           <div className="flex items-center gap-3 mt-1">
             <span className="text-[9px] text-muted-foreground flex items-center gap-1">
-              <Zap className="w-2.5 h-2.5 text-bb-cyan" />
+              <Zap className="w-2.5 h-2.5 text-rf-cyan" />
               {event.durationDays} day{event.durationDays !== 1 ? "s" : ""}
             </span>
             <span className="text-[9px] text-muted-foreground">
@@ -96,11 +96,11 @@ export function EventBanner({ onJoinEvent }: EventBannerProps) {
               <Clock className="w-2.5 h-2.5" />
               <span>Ends in</span>
             </div>
-            <span className="text-xs font-bold text-bb-cyan tabular-nums">{timeLeft}</span>
+            <span className="text-xs font-bold text-rf-cyan tabular-nums">{timeLeft}</span>
           </div>
           <button
             onClick={() => onJoinEvent(event)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-sm bg-bb-cyan text-black text-xs font-bold hover:bg-bb-cyan/90 transition-all group"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-sm bg-rf-cyan text-black text-xs font-bold hover:bg-rf-cyan/90 transition-all group"
             data-testid="join-event-btn"
           >
             JOIN EVENT
