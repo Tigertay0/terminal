@@ -4,7 +4,7 @@ A web-based market data workstation with real-time stock data and a full simulat
 
 - Real mode: live quotes, charts, market movers from Yahoo Finance
 - Simulation mode: paper trading, time controls, news engine, tutorial
-- Full authentication with Supabase — your watchlist and simulation saves persist across devices
+- Authentication with Supabase. Your watchlist and simulation saves persist across devices
 
 ## Stack
 
