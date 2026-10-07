@@ -259,7 +259,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
             data-testid="button-skip"
           >
             <span className="text-sm font-mono text-foreground">Continue as Guest</span>
-            <span className="text-[10px] font-mono text-muted-foreground">— no save</span>
+            <span className="text-[10px] font-mono text-muted-foreground">(no save)</span>
           </button>
 
           {/* Email error when shown on email step */}

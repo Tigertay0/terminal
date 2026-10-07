@@ -27,7 +27,7 @@ const LAUNCH_END = new Date("2026-05-06T11:59:59-04:00");
 
 const LAUNCH_EVENT: Omit<EventDefinition, "eventKey" | "startsAt" | "endsAt"> = {
   name: "The Grand Opening",
-  description: "The inaugural Rochambeau Finance Terminal challenge. 100 days, $10K, high volatility — prove you belong.",
+  description: "The inaugural Rochambeau Finance Terminal challenge. 100 days, $10K, high volatility.",
   allowedSymbols: null,
   durationDays: 100,
   startingCash: 10000,
@@ -56,7 +56,7 @@ export const ROTATING_TEMPLATES: EventTemplate[] = [
   },
   {
     name: "Blue Chip Blitz",
-    description: "Play it safe with America's largest companies — or so you think.",
+    description: "Play it safe with America's largest companies. Safe, or so you think.",
     allowedSymbols: ["AAPL", "MSFT", "JPM", "JNJ", "WMT", "PG", "UNH", "V", "BRK-B", "MA"],
     durationDays: 15,
     startingCash: 50000,

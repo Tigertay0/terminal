@@ -291,7 +291,7 @@ export function SimNewsPanel({
             <div className="flex flex-col items-center justify-center py-8 text-center px-4">
               <Newspaper className="w-6 h-6 text-muted-foreground/30 mb-2" />
               <div className="text-[11px] text-muted-foreground">
-                {aiNews.length > 0 ? "No items match your filters" : "No news yet — start the simulation"}
+                {aiNews.length > 0 ? "No items match your filters" : "No news yet. Start the simulation."}
               </div>
             </div>
           )}
@@ -379,7 +379,7 @@ export function SimNewsPanel({
         {!loading && !error && moreCount > 0 && (
           <div className="px-2 py-1.5 text-center border-t border-border/30">
             <span className="text-[9px] text-rf-cyan font-medium">
-              +{moreCount} more stories — click to expand
+              +{moreCount} more stories, click to expand
             </span>
           </div>
         )}
