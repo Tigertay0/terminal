@@ -28,9 +28,10 @@ interface StockInput {
 
 // ─── localStorage persistence (scoped per save) ─────────────────
 const NEWS_STORAGE_PREFIX = "rf_sim_ai_news";
+const LEGACY_NEWS_STORAGE_PREFIX = "bb_sim_ai_news";
 
-function newsKey(saveId?: string | null): string {
-  return saveId ? `${NEWS_STORAGE_PREFIX}_${saveId}` : NEWS_STORAGE_PREFIX;
+function newsKey(saveId?: string | null, prefix = NEWS_STORAGE_PREFIX): string {
+  return saveId ? `${prefix}_${saveId}` : prefix;
 }
 
 export function saveNewsToStorage(items: AINewsItem[], saveId?: string | null) {
@@ -41,7 +42,7 @@ export function saveNewsToStorage(items: AINewsItem[], saveId?: string | null) {
 
 export function loadNewsFromStorage(saveId?: string | null): AINewsItem[] {
   try {
-    const raw = localStorage.getItem(newsKey(saveId));
+    const raw = localStorage.getItem(newsKey(saveId)) ?? localStorage.getItem(newsKey(saveId, LEGACY_NEWS_STORAGE_PREFIX));
     if (!raw) return [];
     return JSON.parse(raw) as AINewsItem[];
   } catch {

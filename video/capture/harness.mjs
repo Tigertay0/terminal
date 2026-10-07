@@ -81,7 +81,7 @@ export async function startDevServer(port = 5173) {
 }
 
 export async function openApp({ width = 1920, height = 1080, scale = 1, authed = true, url = "http://localhost:5173/" } = {}) {
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--disable-gpu", "--font-render-hinting=none"] });
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || "/opt/pw-browsers/chromium", args: ["--disable-gpu", "--font-render-hinting=none"] });
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: scale, colorScheme: "dark" });
   await installRoutes(context);
   const sess = mock.session();
