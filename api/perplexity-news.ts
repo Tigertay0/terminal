@@ -1,4 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createRateLimiter, getRequestUserId } from "./_lib/auth";
+
+// Per-user limit: ~20 requests per 10 minutes (best-effort, per instance).
+const allowRequest = createRateLimiter(20, 10 * 60 * 1000);
 
 // Limits on request input: every call spends Perplexity credits, so keep prompts small.
 const MAX_STOCKS = 10;
@@ -49,6 +53,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Same-origin only: no CORS headers, so other sites cannot spend the API key.
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only" });
+  }
+
+  // Only logged-in users may spend Perplexity credits.
+  const userId = await getRequestUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Sign in required" });
+  }
+  if (!allowRequest(userId)) {
+    return res.status(429).json({ error: "Too many news requests. Try again in a few minutes." });
   }
 
   const apiKey = process.env.PERPLEXITY_API_KEY;
