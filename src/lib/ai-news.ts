@@ -2,6 +2,7 @@
 // Client-side module for fetching Perplexity-generated news
 
 import { pickRandom } from "./utils";
+import { supabase } from "./supabase";
 
 export interface AINewsItem {
   id: string;
@@ -50,11 +51,26 @@ export function loadNewsFromStorage(saveId?: string | null): AINewsItem[] {
   }
 }
 
+// The endpoint requires a logged-in user; returns null when there is no session.
+async function getAuthHeaders(): Promise<Record<string, string> | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    return token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Fetch headlines only (fast — no summaries) ──────────────────
 export async function fetchAINews(
   stocks: StockInput[],
   variation: string,
 ): Promise<AINewsItem[]> {
+  // Logged out: skip AI news; template/synthetic news still fill the feed.
+  const headers = await getAuthHeaders();
+  if (!headers) return [];
+
   // Only send top 5 stocks to keep the prompt small and fast
   const topStocks = stocks.slice(0, 5);
 
@@ -64,9 +80,16 @@ export async function fetchAINews(
     try {
       const res = await fetch("/api/perplexity-news", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ stocks: topStocks, variation, mode: "headlines" }),
       });
+
+      // Session expired: treat like logged out. Rate limited: retrying won't help.
+      if (res.status === 401) return [];
+      if (res.status === 429) {
+        lastError = new Error("Too many news requests. Try again in a few minutes.");
+        break;
+      }
 
       if (res.status === 504) {
         lastError = new Error("Server timeout — retrying...");
@@ -109,6 +132,9 @@ export async function fetchAINewsDetails(
   const needsDetail = items.filter(i => !i.summary);
   if (needsDetail.length === 0) return new Map();
 
+  const headers = await getAuthHeaders();
+  if (!headers) return new Map();
+
   // Send headlines with index markers for reliable matching
   const headlines = needsDetail.map((i, idx) => `[${idx}] [${i.companyId}] ${i.headline}`);
 
@@ -117,7 +143,7 @@ export async function fetchAINewsDetails(
     try {
       const res = await fetch("/api/perplexity-news", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           stocks: stocks.slice(0, 5),
           variation,
