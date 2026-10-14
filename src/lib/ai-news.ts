@@ -93,7 +93,7 @@ export async function fetchAINews(
       }
 
       if (res.status === 504) {
-        lastError = new Error("Server timeout — retrying...");
+        lastError = new Error("Server timeout, retrying...");
         await new Promise(r => setTimeout(r, 2000));
         continue;
       }
