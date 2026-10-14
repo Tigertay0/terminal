@@ -54,7 +54,8 @@ export function loadNewsFromStorage(saveId?: string | null): AINewsItem[] {
 // The endpoint requires a logged-in user; returns null when there is no session.
 async function getAuthHeaders(): Promise<Record<string, string> | null> {
   try {
-    const { data } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) console.warn("Could not read session for AI news:", error.message);
     const token = data.session?.access_token;
     return token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : null;
   } catch {
@@ -103,6 +104,7 @@ export async function fetchAINews(
       }
 
       const raw = await res.json();
+      if (!Array.isArray(raw)) throw new Error("Unexpected news response");
       const now = Date.now();
 
       return raw.map((item: any, idx: number) => ({

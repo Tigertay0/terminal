@@ -56,7 +56,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Only logged-in users may spend Perplexity credits.
-  const userId = await getRequestUserId(req);
+  let userId: string | null;
+  try {
+    userId = await getRequestUserId(req);
+  } catch (err: any) {
+    console.error("Token verification unavailable:", err?.message || err);
+    return res.status(503).json({ error: "Sign-in check unavailable. Try again shortly." });
+  }
   if (!userId) {
     return res.status(401).json({ error: "Sign in required" });
   }
