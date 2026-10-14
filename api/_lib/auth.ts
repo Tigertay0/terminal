@@ -18,18 +18,21 @@ export function getBearerToken(req: Pick<VercelRequest, "headers">): string | nu
   return match ? match[1] : null;
 }
 
-/** Returns the Supabase user id for the request's bearer token, or null if missing/invalid. */
+/**
+ * Returns the Supabase user id for the request's bearer token, or null if the
+ * token is missing/invalid. Throws when Supabase itself can't be reached, so
+ * callers can answer 503 instead of telling a signed-in user to sign in again.
+ */
 export async function getRequestUserId(req: Pick<VercelRequest, "headers">): Promise<string | null> {
   const token = getBearerToken(req);
   if (!token) return null;
-  try {
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data.user) return null;
-    return data.user.id;
-  } catch (err: any) {
-    console.error("Token verification failed:", err?.message || err);
-    return null;
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error) {
+    const status = error.status ?? 0;
+    if (status >= 400 && status < 500) return null;
+    throw error;
   }
+  return data.user?.id ?? null;
 }
 
 /**
