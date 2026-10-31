@@ -27,7 +27,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   getWatchlist, saveWatchlist, upsertSimSave, listSimSaves, deleteSimSave,
-  getEventParticipant, joinEvent, updateEventProgress, completeEvent as completeEventApi,
+  getEventParticipant, joinEvent, updateEventProgress, completeEvent as completeEventApi, ApiError,
   getCompletedEvents, getEventLeaderboard,
   type SimSaveRow, type EventParticipantRow,
 } from "@/lib/user-data";
@@ -247,7 +247,7 @@ function SimTerminal({
   const performSave = useCallback((): Promise<boolean> => {
     if (!userId || baseData.loading) return Promise.resolve(true);
     const payload = {
-      name: saveName || "Untitled",
+      name: saveName.trim() || "Untitled",
       settings: effectiveSettings,
       portfolio: serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks),
       watchlist,
@@ -258,7 +258,7 @@ function SimTerminal({
       setSaveStatus("saving");
       try {
         const newId = await upsertSimSave({ id: saveIdRef.current, ...payload });
-        if (newId && !saveIdRef.current) {
+        if (newId !== saveIdRef.current) {
           saveIdRef.current = newId;
           setSaveId(newId);
         }
@@ -501,7 +501,7 @@ function EventTerminal({
       // Fetch rank after completing
       .then(() => getEventLeaderboard(event.eventKey))
       .then(lb => {
-        const rank = lb.findIndex(p => p.user_id === userId) + 1;
+        const rank = lb.findIndex(p => p.is_you) + 1;
         setLeaderboardRank(rank || lb.length);
         setTotalParticipants(lb.length);
       })
@@ -743,14 +743,20 @@ export default function App() {
       } else {
         // Join the event
         // The leaderboard shows the account's display name, set on the server.
-        participant = await joinEvent(event.eventKey, {
-          startingCash: event.startingCash,
-          variation: event.variation,
-          eventName: event.name,
-        });
-        if (!participant) {
-          toast({ title: "Failed to join event", variant: "destructive" });
-          return;
+        try {
+          participant = await joinEvent(event.eventKey, {
+            startingCash: event.startingCash,
+            variation: event.variation,
+            eventName: event.name,
+          });
+        } catch (err) {
+          // Joined meanwhile (another tab): resume that entry. Otherwise the event ended.
+          if (!(err instanceof ApiError && err.status === 409)) throw err;
+          participant = await getEventParticipant(event.eventKey);
+          if (!participant) {
+            toast({ title: "This event has ended", description: "A new one starts soon." });
+            return;
+          }
         }
       }
 

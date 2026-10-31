@@ -14,27 +14,44 @@ const CACHE_ORIGIN = "https://terminal-cache.internal";
  * the JSON for `ttl` seconds. The key is built from the validated input, so
  * reordered or junk query strings share one entry.
  */
-async function cachedJson(c: Context<AppEnv>, key: string, ttl: number, compute: () => Promise<unknown>) {
-  // Absent outside the Workers runtime (unit tests).
+async function cachedJson<T>(
+  c: Context<AppEnv>,
+  key: string,
+  ttl: number,
+  compute: () => Promise<T>,
+  worthCaching: (data: T) => boolean = () => true,
+) {
+  // Absent outside the Workers runtime (unit tests); a no-op on *.workers.dev,
+  // where the per-isolate caches in lib/yahoo.ts do the work.
   const cache = typeof caches === "undefined" ? undefined : caches.default;
   const request = new Request(`${CACHE_ORIGIN}${key}`);
   const hit = await cache?.match(request);
   if (hit) return hit;
 
-  const response = new Response(JSON.stringify(await compute()), {
+  const data = await compute();
+  const response = new Response(JSON.stringify(data), {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": `public, max-age=${ttl}`,
       "Access-Control-Allow-Origin": "*",
     },
   });
-  if (cache) c.executionCtx.waitUntil(cache.put(request, response.clone()));
+  if (cache && worthCaching(data)) {
+    c.executionCtx.waitUntil(
+      cache.put(request, response.clone()).catch((error) => console.warn(`[cache] ${(error as Error).message}`)),
+    );
+  }
   return response;
 }
 
 export const yahooRoutes = new Hono<AppEnv>();
 
 yahooRoutes.use("*", async (c, next) => {
+  // Per client address: every miss here is a call to Yahoo.
+  const address = c.req.header("cf-connecting-ip");
+  if (address && !(await c.env.MARKET_LIMITER.limit({ key: address })).success) {
+    return c.json({ error: "Too many requests" }, 429, { "Retry-After": "60" });
+  }
   if (c.req.method === "OPTIONS") {
     return c.body(null, 204, {
       "Access-Control-Allow-Origin": "*",
@@ -56,7 +73,8 @@ yahooRoutes.get("/quote", async (c) => {
   if (symbols.length === 0) return c.json({ error: "No symbols" }, 400);
 
   try {
-    return await cachedJson(c, `/quote/${symbols.join(",")}`, 10, () => fetchQuotes(symbols));
+    // A partial answer (Yahoo failed some symbols) is served but not cached.
+    return await cachedJson(c, `/quote/${symbols.join(",")}`, 10, () => fetchQuotes(symbols), (data) => data.length === symbols.length);
   } catch (err) {
     console.error("Quote error:", (err as Error)?.message || err);
     return c.json({ error: "Failed to fetch quotes" }, 502);

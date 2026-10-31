@@ -8,6 +8,8 @@ export function testEnv(connectionString = "postgres://nobody@127.0.0.1:1/none",
   return {
     HYPERDRIVE: { connectionString },
     NEWS_LIMITER: { limit: async () => ({ success: true }) },
+    NEWS_GLOBAL_LIMITER: { limit: async () => ({ success: true }) },
+    MARKET_LIMITER: { limit: async () => ({ success: true }) },
     BETTER_AUTH_URL: SITE,
     BETTER_AUTH_SECRET: "test-secret-that-is-long-enough-for-better-auth",
     ...overrides,

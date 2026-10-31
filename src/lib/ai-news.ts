@@ -53,6 +53,9 @@ export function loadNewsFromStorage(saveId?: string | null): AINewsItem[] {
 // Same-origin request: the session cookie goes along. Logged-out users get a
 // 401, which is treated as "no AI news" (template/synthetic news still fill the feed).
 const JSON_HEADERS = { "Content-Type": "application/json" };
+const RETRY_DELAY_MS = 2000;
+// The server writes at most this many article bodies per request.
+const MAX_DETAIL_ITEMS = 10;
 
 // ─── Fetch headlines only (fast — no summaries) ──────────────────
 export async function fetchAINews(
@@ -62,50 +65,44 @@ export async function fetchAINews(
   // Only send top 5 stocks to keep the prompt small and fast
   const topStocks = stocks.slice(0, 5);
 
-  // Retry up to 3 times on timeouts
+  // Only timeouts and dropped connections are retried: every attempt is a paid
+  // call, and any other failure would fail the same way again.
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+    let res: Response;
     try {
-      const res = await fetch("/api/ai-news", {
+      res = await fetch("/api/ai-news", {
         method: "POST",
         headers: JSON_HEADERS,
         body: JSON.stringify({ stocks: topStocks, variation, mode: "headlines" }),
       });
-
-      // Session expired: treat like logged out. Rate limited: retrying won't help.
-      if (res.status === 401) return [];
-      if (res.status === 429) {
-        lastError = new Error("Too many news requests. Try again in a few minutes.");
-        break;
-      }
-
-      if (res.status === 504) {
-        lastError = new Error("Server timeout, retrying...");
-        await new Promise(r => setTimeout(r, 2000));
-        continue;
-      }
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `API returned ${res.status}` }));
-        throw new Error(err.error || `API returned ${res.status}`);
-      }
-
-      const raw = await res.json();
-      if (!Array.isArray(raw)) throw new Error("Unexpected news response");
-      const now = Date.now();
-
-      return raw.map((item: any, idx: number) => ({
-        ...item,
-        summary: "", // no summary in headlines mode — loaded on demand
-        id: `ai-${now}-${idx}`,
-        generatedAt: now,
-      }));
-    } catch (err: any) {
-      lastError = err;
-      if (attempt < 2) {
-        await new Promise(r => setTimeout(r, 2000));
-      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error("Network error");
+      continue;
     }
+
+    // Session expired: treat like logged out.
+    if (res.status === 401) return [];
+    if (res.status === 504) {
+      lastError = new Error("News took too long");
+      continue;
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.error || `API returned ${res.status}`);
+    }
+
+    const raw = await res.json();
+    if (!Array.isArray(raw)) throw new Error("Unexpected news response");
+    const now = Date.now();
+
+    return raw.map((item: any, idx: number) => ({
+      ...item,
+      summary: "", // no summary in headlines mode — loaded on demand
+      id: `ai-${now}-${idx}`,
+      generatedAt: now,
+    }));
   }
 
   throw lastError || new Error("Failed after 3 attempts");
@@ -118,7 +115,7 @@ export async function fetchAINewsDetails(
   variation: string,
 ): Promise<Map<string, string>> {
   // Only fetch for items that don't have summaries yet
-  const needsDetail = items.filter(i => !i.summary);
+  const needsDetail = items.filter(i => !i.summary).slice(0, MAX_DETAIL_ITEMS);
   if (needsDetail.length === 0) return new Map();
 
   // Send headlines with index markers for reliable matching
@@ -139,7 +136,7 @@ export async function fetchAINewsDetails(
       });
 
       if (res.status === 504) {
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
         continue;
       }
       if (!res.ok) return new Map();
@@ -147,10 +144,9 @@ export async function fetchAINewsDetails(
       const raw = await res.json();
       const detailMap = new Map<string, string>();
 
-      // Match by index or by company ticker
+      // The server answers in the order the headlines were sent.
       if (Array.isArray(raw)) {
         raw.forEach((detail: any, idx: number) => {
-          // Try direct index mapping first
           if (idx < needsDetail.length && detail.summary) {
             detailMap.set(needsDetail[idx].id, String(detail.summary));
           }
@@ -160,7 +156,7 @@ export async function fetchAINewsDetails(
       return detailMap;
     } catch (err: any) {
       lastError = err;
-      if (attempt < 1) await new Promise(r => setTimeout(r, 2000));
+      if (attempt < 1) await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
     }
   }
   return new Map();

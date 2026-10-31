@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { eventWindow } from "../../shared/events";
 import { MAX_SIM_SAVES } from "../../shared/limits";
 import { call, json, testEnv } from "./helpers";
 
@@ -22,6 +23,10 @@ const ownerUrl = secret("TEST_OWNER_DATABASE_URL", "neon-dev-owner.url");
 const run = Boolean(workerUrl && ownerUrl);
 const env = testEnv(workerUrl ?? undefined);
 const tag = `dbtest-${Date.now()}`;
+// Sign-up is limited per client address, so each sign-up here comes from its
+// own documentation-range address (Cloudflare sets this header in production).
+const TEST_NET = "198.51.100.";
+const freshAddress = () => ({ "cf-connecting-ip": `${TEST_NET}${Math.floor(Math.random() * 254) + 1}` });
 const emails: string[] = [];
 
 const SAVE = {
@@ -33,10 +38,14 @@ const SAVE = {
   sim_time: "2026-10-31T14:30:00.000Z",
 };
 
-async function signUp(name: string): Promise<string> {
-  const email = `${tag}-${name}@example.com`;
+function signUpRequest(label: string, name: string) {
+  const email = `${tag}-${label}@example.com`;
   emails.push(email);
-  const res = await call(env, "/api/auth/sign-up/email", json("POST", { email, password: "correct-horse-9", name }));
+  return call(env, "/api/auth/sign-up/email", { ...json("POST", { email, password: "correct-horse-9", name }), headers: freshAddress() });
+}
+
+async function signUp(name: string): Promise<string> {
+  const res = await signUpRequest(name, name);
   expect(res.status, await res.clone().text()).toBe(200);
   const cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
   expect(cookie).toContain("terminal.session_token");
@@ -56,7 +65,8 @@ describe.skipIf(!run)("data access against the dev database", () => {
   let bob = "";
   let aliceSave = "";
   let aliceEntry = "";
-  const eventKey = `${tag}-event`;
+  // Only the event running now accepts entries.
+  const eventKey = eventWindow().eventKey;
 
   beforeAll(async () => {
     alice = await signUp("alice");
@@ -71,6 +81,7 @@ describe.skipIf(!run)("data access against the dev database", () => {
     await owner.connect();
     // Cascades to sessions, accounts, watchlists, saves and event entries.
     await owner.query("DELETE FROM users WHERE email = ANY($1)", [emails]);
+    await owner.query("DELETE FROM auth_rate_limits WHERE key LIKE $1", [`%${TEST_NET}%`]);
     await owner.end();
   });
 
@@ -115,14 +126,25 @@ describe.skipIf(!run)("data access against the dev database", () => {
     expect(await body(as(bob, `/api/events/${eventKey}/entry`))).toBeNull();
   });
 
+  it("refuses entries for events that are not running", async () => {
+    for (const key of ["launch_2026", "rotating_2020-01-01", `${tag}-made-up`]) {
+      expect((await as(bob, `/api/events/${key}/entry`, json("POST", { settings: {} }))).status, key).toBe(409);
+    }
+  });
+
   it("lets only the owner update an entry, and only while it is active", async () => {
     const progress = { currentDay: 2, profit: 1234.5, portfolio: {} };
     const entry = `/api/events/entries/${aliceEntry}`;
     expect((await as(bob, `${entry}/progress`, json("PATCH", progress))).status).toBe(404);
     expect((await as(bob, `${entry}/complete`, json("POST", { ...progress, finalStats: {} }))).status).toBe(404);
     expect((await as(alice, `${entry}/progress`, json("PATCH", progress))).status).toBe(204);
+    // A late, older update cannot move progress back.
+    expect((await as(alice, `${entry}/progress`, json("PATCH", { ...progress, currentDay: 1 }))).status).toBe(404);
     expect((await as(alice, `${entry}/complete`, json("POST", { ...progress, profit: 2000, finalStats: { trades: 3 } }))).status).toBe(204);
+    // A retried completion succeeds, but the first result stands.
+    expect((await as(alice, `${entry}/complete`, json("POST", { ...progress, profit: 5e9, finalStats: {} }))).status).toBe(204);
     expect((await as(alice, `${entry}/progress`, json("PATCH", { ...progress, profit: 999999 }))).status).toBe(404);
+    expect((await as(alice, `${entry}/progress`, json("PATCH", { ...progress, profit: 1e13 }))).status).toBe(400);
 
     expect(await body(as(alice, "/api/events/completed"))).toEqual([expect.objectContaining({ id: aliceEntry, profit: 2000 })]);
     expect(await body(as(bob, "/api/events/completed"))).toEqual([]);
@@ -130,9 +152,13 @@ describe.skipIf(!run)("data access against the dev database", () => {
 
   it("shows other players only the leaderboard's own columns", async () => {
     const board = await body<Record<string, unknown>[]>(as(bob, `/api/events/${eventKey}/leaderboard`));
-    expect(board).toHaveLength(1);
-    expect(Object.keys(board[0]!).sort()).toEqual(["current_day", "display_name", "id", "profit", "status", "user_id"]);
-    expect(board[0]!.profit).toBe(2000);
+    const row = board.find((r) => r.id === aliceEntry);
+    expect(row).toBeDefined();
+    expect(Object.keys(row!).sort()).toEqual(["current_day", "display_name", "id", "is_you", "profit", "status"]);
+    expect(row!.profit).toBe(2000);
+    expect(row!.is_you).toBe(false);
+    const own = await body<Record<string, unknown>[]>(as(alice, `/api/events/${eventKey}/leaderboard`));
+    expect(own.find((r) => r.id === aliceEntry)!.is_you).toBe(true);
   });
 
   it("keeps auth endpoints the app does not use closed", async () => {
@@ -141,11 +167,27 @@ describe.skipIf(!run)("data access against the dev database", () => {
     }
   });
 
-  it("rejects display names longer than leaderboards allow", async () => {
-    const email = `${tag}-long@example.com`;
-    emails.push(email);
-    const res = await call(env, "/api/auth/sign-up/email", json("POST", { email, password: "correct-horse-9", name: "x".repeat(41) }));
-    expect(res.status).toBe(400);
+  it("cleans display names before other players see them", async () => {
+    const named = async (label: string, name: string) => {
+      const res = await signUpRequest(label, name);
+      expect(res.status).toBe(200);
+      return ((await res.json()) as { user: { name: string } }).user.name;
+    };
+    expect(await named("long", "x".repeat(60))).toBe("x".repeat(40));
+    expect(await named("hidden", "Ad\u200Ba\u202E Lovelace")).toBe("Ada Lovelace");
+    expect(await named("blank", "\u200B\u200B")).toMatch(/^Trader \d{4}$/);
+    expect(await named("empty", "")).toMatch(/^Trader \d{4}$/);
+  });
+
+  it("counts AI news calls against the daily allowance before calling the model", async () => {
+    // A key Anthropic rejects: the call gets as far as the provider, then fails cleanly.
+    const withKey = testEnv(workerUrl ?? undefined, { ANTHROPIC_API_KEY: "sk-ant-invalid-test-key" });
+    const stocks = [{ symbol: "AAPL", name: "Apple", price: 200, sector: "Technology", marketCap: 3e12 }];
+    const res = await call(withKey, "/api/ai-news", {
+      ...json("POST", { stocks, variation: "high", mode: "headlines" }),
+      headers: { cookie: alice },
+    });
+    expect(res.status).toBe(502);
   });
 
   it("ends the session on sign-out", async () => {

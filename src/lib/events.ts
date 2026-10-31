@@ -3,6 +3,7 @@
 // No server-side cron needed — events are computed from the current date.
 
 import type { MarketVariation } from "@/hooks/use-simulation";
+import { eventWindow } from "@shared/events";
 
 export interface EventDefinition {
   eventKey: string;
@@ -22,9 +23,6 @@ export interface EventDefinition {
 }
 
 // ─── Launch Event ────────────────────────────────────────────────
-const LAUNCH_START = new Date("2026-04-30T00:00:00-04:00");
-const LAUNCH_END = new Date("2026-05-06T11:59:59-04:00");
-
 const LAUNCH_EVENT: Omit<EventDefinition, "eventKey" | "startsAt" | "endsAt"> = {
   name: "The Grand Opening",
   description: "The inaugural Rochambeau Finance Terminal challenge. 100 days, $10K, high volatility.",
@@ -112,9 +110,6 @@ export const ROTATING_TEMPLATES: EventTemplate[] = [
   },
 ];
 
-// ─── Rotation period in milliseconds (5 real-world days) ─────────
-const ROTATION_MS = 5 * 24 * 60 * 60 * 1000;
-
 // ─── Get Current Event ───────────────────────────────────────────
 /**
  * Deterministically computes the current active event based on the date.
@@ -122,31 +117,11 @@ const ROTATION_MS = 5 * 24 * 60 * 60 * 1000;
  * After May 5: rotating 5-day events cycling through ROTATING_TEMPLATES.
  */
 export function getCurrentEvent(now: Date = new Date()): EventDefinition {
-  // Launch event period
-  if (now <= LAUNCH_END) {
-    return {
-      ...LAUNCH_EVENT,
-      eventKey: "launch_2026",
-      startsAt: LAUNCH_START,
-      endsAt: LAUNCH_END,
-    };
-  }
-
-  // After launch: rotating events
-  const msSinceLaunchEnd = now.getTime() - LAUNCH_END.getTime();
-  const rotationIndex = Math.floor(msSinceLaunchEnd / ROTATION_MS);
-  const templateIndex = rotationIndex % ROTATING_TEMPLATES.length;
-  const template = ROTATING_TEMPLATES[templateIndex];
-
-  const startsAt = new Date(LAUNCH_END.getTime() + rotationIndex * ROTATION_MS);
-  const endsAt = new Date(startsAt.getTime() + ROTATION_MS);
-
-  return {
-    ...template,
-    eventKey: `rotating_${startsAt.toISOString().split("T")[0]}`,
-    startsAt,
-    endsAt,
-  };
+  const { eventKey, rotationIndex, startsAt, endsAt } = eventWindow(now);
+  const details = rotationIndex === null
+    ? LAUNCH_EVENT
+    : ROTATING_TEMPLATES[rotationIndex % ROTATING_TEMPLATES.length];
+  return { ...details, eventKey, startsAt, endsAt };
 }
 
 // ─── Time Remaining Helpers ──────────────────────────────────────

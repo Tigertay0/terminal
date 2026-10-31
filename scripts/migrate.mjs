@@ -26,7 +26,12 @@ function databaseUrl() {
   throw new Error("No database URL: pass a file, set MIGRATION_DATABASE_URL, or fill it in .secrets/dev.env.");
 }
 
-const client = new pg.Client({ connectionString: databaseUrl() });
+const url = databaseUrl();
+// The advisory lock below only holds on a direct connection, not through Neon's pooler.
+if (new URL(url).hostname.includes("-pooler")) {
+  throw new Error("Use the direct (non -pooler) host for migrations.");
+}
+const client = new pg.Client({ connectionString: url });
 await client.connect();
 try {
   // One runner at a time; a second waits here instead of failing midway.
@@ -52,7 +57,7 @@ try {
       ran++;
     } catch (err) {
       await client.query("rollback").catch(() => undefined);
-      throw new Error(`${file} failed: ${err.message}`);
+      throw new Error(`${file} failed: ${err.message}`, { cause: err });
     }
   }
   console.log(ran ? `${ran} migration(s) applied` : "database is up to date");

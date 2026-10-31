@@ -28,15 +28,15 @@ Live at **https://terminal.tiger-tayo.workers.dev**
 
 | Route | Who | What |
 |---|---|---|
-| `GET /api/yf/quote?symbols=`, `/chart`, `/search` | anyone | Yahoo Finance data, cached at the edge |
+| `GET /api/yf/quote?symbols=`, `/chart`, `/search` | anyone | Yahoo Finance data. Cached per Worker instance, and at the edge once the site has a custom domain (the Cache API does nothing on workers.dev). 600 requests a minute per address |
 | `/api/auth/*` | anyone | Sign up, sign in, sign out, session (Better Auth). Sign-up and sign-in are rate limited per address |
 | `GET /api/config` | anyone | Whether Google sign-in is available |
 | `GET/PUT /api/watchlist` | signed in | The user's watchlist (a new account gets the default list on first read) |
 | `GET/POST /api/saves`, `PUT/DELETE /api/saves/:id` | signed in | Simulation saves, up to 20 per user |
-| `/api/events/...` | signed in | Join an event, report progress, finish, leaderboard, completed events |
-| `POST /api/ai-news` | signed in | AI headlines (`mode: "headlines"`) or article bodies (`mode: "detailed"`), 5 a minute per user |
+| `/api/events/...` | signed in | Join the event running now, report progress, finish, leaderboard, completed events |
+| `POST /api/ai-news` | signed in | AI headlines (`mode: "headlines"`) or article bodies (`mode: "detailed"`). 5 a minute and 150 a day per user; 60 a minute and 3,000 a day for everyone |
 
-Every user-data query filters on the signed-in user's id, so nobody can read or change another account's rows. Event results can't change once an entry is completed, and the leaderboard only shows names, days and profit.
+Every user-data query filters on the signed-in user's id, so nobody can read or change another account's rows. Only the event running now can be joined, results can't change once an entry is completed, and the leaderboard only shows names, days and profit (plus which row is yours). Results are still computed in the browser, so a determined player could submit a made-up score, as with the old version.
 
 ## Local development
 

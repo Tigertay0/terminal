@@ -33,6 +33,13 @@ export const PG = {
   uniqueViolation: "23505",
 } as const;
 
+/**
+ * Errors that mean the value sent cannot be stored (malformed text for a typed
+ * column, a NUL byte, an out-of-range number or date, a failed CHECK), so the
+ * request is wrong, not the server.
+ */
+export const BAD_INPUT_CODES = new Set(["22P02", "22021", "22P05", "22001", "22003", "22007", "22008", "23514"]);
+
 export function pgCode(error: unknown): string | null {
   const code = (error as { code?: unknown } | null)?.code;
   return typeof code === "string" ? code : null;

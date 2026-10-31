@@ -86,3 +86,15 @@ it("answers unknown API paths with JSON 404", async () => {
   expect(res.status).toBe(404);
   expect(await res.json()).toEqual({ error: "Not found" });
 });
+
+describe("AI news", () => {
+  it("keeps price impact in range and on the side its sentiment says", async () => {
+    const { settleGrowth } = await import("../routes/ai-news");
+    expect(settleGrowth("bullish", -4)).toBe(4);
+    expect(settleGrowth("bearish", 6)).toBe(-6);
+    expect(settleGrowth("alert", -150)).toBe(-25);
+    expect(settleGrowth("neutral", 1e9)).toBe(25);
+    expect(settleGrowth("alert", 0)).toBe(0);
+  });
+
+});

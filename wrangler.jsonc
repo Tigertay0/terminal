@@ -25,9 +25,14 @@
       "localConnectionString": "postgres://postgres@localhost:5432/terminal"
     }
   ],
-  // AI news spends API credits: at most 5 calls a minute per signed-in user.
+  // AI news spends API credits: at most 5 calls a minute per signed-in user, and
+  // 60 a minute across everyone (counted per Cloudflare location, so approximate).
   "ratelimits": [
-    { "name": "NEWS_LIMITER", "namespace_id": "5101", "simple": { "limit": 5, "period": 60 } }
+    { "name": "NEWS_LIMITER", "namespace_id": "5101", "simple": { "limit": 5, "period": 60 } },
+    { "name": "NEWS_GLOBAL_LIMITER", "namespace_id": "5102", "simple": { "limit": 60, "period": 60 } },
+    // Market data is public: each address (a whole school network can share one)
+    // gets 600 requests a minute; the app makes about 20 a minute per open tab.
+    { "name": "MARKET_LIMITER", "namespace_id": "5103", "simple": { "limit": 600, "period": 60 } }
   ],
   "vars": {
     "BETTER_AUTH_URL": "https://terminal.tiger-tayo.workers.dev"

@@ -61,17 +61,18 @@ export async function listSimSaves(): Promise<SimSaveRow[]> {
   return api<SimSaveRow[]>("listSimSaves", "/api/saves");
 }
 
-/** Updates the save with `payload.id`, or creates one; returns its id (null if it no longer exists). */
-export async function upsertSimSave(payload: SimSavePayload): Promise<string | null> {
+/**
+ * Updates the save with `payload.id`, or creates one, and returns its id. A
+ * save deleted in another tab is created again, so the game keeps saving.
+ */
+export async function upsertSimSave(payload: SimSavePayload): Promise<string> {
   const { id, ...row } = payload;
   if (id) {
     try {
       const updated = await api<{ id: string }>("upsertSimSave update", `/api/saves/${encodeURIComponent(id)}`, json("PUT", row));
       return updated.id;
     } catch (err) {
-      // Deleted from another tab: nothing to update, so no id comes back.
-      if (err instanceof ApiError && err.status === 404) return null;
-      throw err;
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
     }
   }
   const created = await api<{ id: string }>("upsertSimSave insert", "/api/saves", json("POST", row));
@@ -134,8 +135,11 @@ export async function completeEvent(
 
 export type LeaderboardEntry = Pick<
   EventParticipantRow,
-  "id" | "user_id" | "display_name" | "current_day" | "profit" | "status"
->;
+  "id" | "display_name" | "current_day" | "profit" | "status"
+> & {
+  /** True on the signed-in user's own row. */
+  is_you: boolean;
+};
 
 /** Leaderboard for an event, best profit first */
 export async function getEventLeaderboard(eventKey: string): Promise<LeaderboardEntry[]> {
@@ -149,13 +153,19 @@ export function subscribeToLeaderboard(
   eventKey: string,
   callback: (participants: LeaderboardEntry[]) => void,
 ) {
+  let active = true;
   // Errors are already logged by getEventLeaderboard; keep the last good data on failure.
   const refresh = () => {
-    getEventLeaderboard(eventKey).then(callback).catch(() => {});
+    getEventLeaderboard(eventKey)
+      .then((rows) => { if (active) callback(rows); })
+      .catch(() => {});
   };
   refresh();
   const pollInterval = setInterval(refresh, LEADERBOARD_POLL_MS);
-  return () => clearInterval(pollInterval);
+  return () => {
+    active = false;
+    clearInterval(pollInterval);
+  };
 }
 
 /** The user's completed events, for the save tab */

@@ -29,6 +29,14 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
     return () => { cancelled = true; };
   }, []);
 
+  // Coming back from Google with the Back button restores this page as it was
+  // left, mid-submit; let the buttons work again.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) setSubmitting(false); };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
   const handleEmailContinue = (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
@@ -58,7 +66,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
     setSubmitting(true);
     try {
       // Redirects to Google, then back to the app signed in.
-      const { error } = await authClient.signIn.social({ provider: "google", callbackURL: "/" });
+      const { error } = await authClient.signIn.social({ provider: "google", callbackURL: "/", errorCallbackURL: "/" });
       if (error) throw new Error(error.message || "Google sign-in unavailable.");
     } catch (err: any) {
       setLocalError(err.message || "Google sign-in unavailable. Please use email/password or continue as guest.");

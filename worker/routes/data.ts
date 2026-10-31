@@ -6,6 +6,7 @@ import {
   MAX_WATCHLIST_SYMBOLS,
   SYMBOL_PATTERN,
 } from "../../shared/limits";
+import { eventWindow } from "../../shared/events";
 import type { AppEnv } from "../app";
 import { PG, pgCode } from "../db";
 
@@ -19,15 +20,25 @@ import { PG, pgCode } from "../db";
 
 const uuid = z.string().uuid();
 const eventKey = z.string().regex(/^[a-z0-9_-]{1,64}$/i);
-const symbols = z.array(z.string().regex(SYMBOL_PATTERN)).max(MAX_WATCHLIST_SYMBOLS);
-const jsonObject = z.record(z.unknown());
-const finiteNumber = z.number().finite();
+// The length is checked before any item is, so a huge array is refused cheaply.
+const symbols = z
+  .unknown()
+  .refine((value) => Array.isArray(value) && value.length <= MAX_WATCHLIST_SYMBOLS, "Too many symbols")
+  .pipe(z.array(z.string().regex(SYMBOL_PATTERN)));
+const KB = 1024;
+/** A JSON object no bigger than `maxBytes` once serialised (stored as JSONB). */
+const jsonObject = (maxBytes: number) =>
+  z.record(z.unknown()).refine((value) => JSON.stringify(value).length <= maxBytes, "Too large");
 const day = z.number().int().min(0).max(1_000_000);
+// Matches the CHECK on event_participants.profit.
+const profit = z.number().finite().min(-1e12).max(1e12);
+// A portfolio carries its trade history; final stats carry one snapshot per day.
+const portfolioJson = jsonObject(512 * KB);
 
 const savePayload = z.object({
   name: z.string().trim().min(1).max(80),
-  settings: jsonObject,
-  portfolio: jsonObject,
+  settings: jsonObject(16 * KB),
+  portfolio: portfolioJson,
   watchlist: symbols,
   day_number: day,
   sim_time: z.string().datetime({ offset: true }),
@@ -35,13 +46,16 @@ const savePayload = z.object({
 
 const progressPayload = z.object({
   currentDay: day,
-  profit: finiteNumber,
-  portfolio: jsonObject,
+  profit,
+  portfolio: portfolioJson,
 });
 
 const completePayload = progressPayload.extend({
-  finalStats: jsonObject,
+  finalStats: jsonObject(256 * KB),
 });
+
+// Older event entries a user can list; one per event they played.
+const MAX_COMPLETED_EVENTS = 100;
 
 // Returned to the owner; profit is numeric in Postgres and a number in JSON.
 const PARTICIPANT_COLUMNS = `id, event_key, user_id, display_name, current_day, profit::float8 AS profit,
@@ -62,18 +76,20 @@ export const dataRoutes = new Hono<AppEnv>();
 
 // The default list is created on first read, which replaces Supabase's sign-up trigger.
 dataRoutes.get("/watchlist", async (c) => {
-  const { rows } = await c.var.pool.query<{ symbols: string[] }>(
-    `WITH created AS (
-       INSERT INTO watchlists (user_id, symbols) VALUES ($1, $2)
+  const userId = c.var.user.id;
+  const read = () =>
+    c.var.pool.query<{ symbols: string[] }>("SELECT symbols FROM watchlists WHERE user_id = $1", [userId]);
+  let { rows } = await read();
+  if (!rows[0]) {
+    ({ rows } = await c.var.pool.query<{ symbols: string[] }>(
+      `INSERT INTO watchlists (user_id, symbols) VALUES ($1, $2)
        ON CONFLICT (user_id) DO NOTHING
-       RETURNING symbols
-     )
-     SELECT symbols FROM created
-     UNION ALL
-     SELECT symbols FROM watchlists WHERE user_id = $1
-     LIMIT 1`,
-    [c.var.user.id, DEFAULT_WATCHLIST],
-  );
+       RETURNING symbols`,
+      [userId, DEFAULT_WATCHLIST],
+    ));
+    // Another request created it first: read what that one stored.
+    if (!rows[0]) ({ rows } = await read());
+  }
   return c.json({ symbols: rows[0]?.symbols ?? DEFAULT_WATCHLIST });
 });
 
@@ -103,6 +119,7 @@ dataRoutes.post("/saves", async (c) => {
   const body = await readJson(c, savePayload);
   if (!body) return invalid(c);
   const client = await c.var.pool.connect();
+  let broken: Error | undefined;
   try {
     await client.query("BEGIN");
     // Serialises one user's inserts, so two tabs saving at once cannot both take the last slot.
@@ -118,10 +135,13 @@ dataRoutes.post("/saves", async (c) => {
     if (!rows[0]) return c.json({ error: `You can keep up to ${MAX_SIM_SAVES} saves. Delete one first.` }, 409);
     return c.json({ id: rows[0].id }, 201);
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
+    await client.query("ROLLBACK").catch((rollbackError: Error) => {
+      // A connection that cannot roll back must not be reused; dropping it also frees the lock.
+      broken = rollbackError;
+    });
     throw error;
   } finally {
-    client.release();
+    client.release(broken);
   }
 });
 
@@ -155,8 +175,9 @@ dataRoutes.get("/events/completed", async (c) => {
   const { rows } = await c.var.pool.query(
     `SELECT ${PARTICIPANT_COLUMNS} FROM event_participants
      WHERE user_id = $1 AND status = 'completed'
-     ORDER BY updated_at DESC`,
-    [c.var.user.id],
+     ORDER BY updated_at DESC
+     LIMIT $2`,
+    [c.var.user.id, MAX_COMPLETED_EVENTS],
   );
   return c.json(rows);
 });
@@ -172,11 +193,13 @@ dataRoutes.get("/events/:eventKey/entry", async (c) => {
   return c.json(rows[0] ?? null);
 });
 
-// The leaderboard name is the account's display name, never one the client sends.
+// Only the event running now can be joined, and the leaderboard name is the
+// account's display name, never one the client sends.
 dataRoutes.post("/events/:eventKey/entry", async (c) => {
   const key = eventKey.safeParse(c.req.param("eventKey"));
-  const body = await readJson(c, z.object({ settings: jsonObject }));
+  const body = await readJson(c, z.object({ settings: jsonObject(4 * KB) }));
   if (!key.success || !body) return invalid(c);
+  if (key.data !== eventWindow().eventKey) return c.json({ error: "This event is not running" }, 409);
   try {
     const { rows } = await c.var.pool.query(
       `INSERT INTO event_participants (event_key, user_id, display_name, settings)
@@ -192,7 +215,8 @@ dataRoutes.post("/events/:eventKey/entry", async (c) => {
 });
 
 // Progress and results can only change while the entry is still active, so a
-// finished result cannot be edited afterwards.
+// finished result cannot be edited afterwards. Progress never moves back a day,
+// so a late, older update cannot overwrite a newer one.
 dataRoutes.patch("/events/entries/:id/progress", async (c) => {
   const id = uuid.safeParse(c.req.param("id"));
   const body = await readJson(c, progressPayload);
@@ -200,35 +224,43 @@ dataRoutes.patch("/events/entries/:id/progress", async (c) => {
   const { rowCount } = await c.var.pool.query(
     `UPDATE event_participants
      SET current_day = $3, profit = $4, portfolio = $5, updated_at = now()
-     WHERE id = $1 AND user_id = $2 AND status = 'active'`,
+     WHERE id = $1 AND user_id = $2 AND status = 'active' AND current_day <= $3`,
     [id.data, c.var.user.id, body.currentDay, body.profit, body.portfolio],
   );
   return rowCount ? c.body(null, 204) : notFound(c);
 });
 
+// Completing twice succeeds (a retry after a lost response), but the first result stands.
 dataRoutes.post("/events/entries/:id/complete", async (c) => {
   const id = uuid.safeParse(c.req.param("id"));
   const body = await readJson(c, completePayload);
   if (!id.success || !body) return invalid(c);
-  const { rowCount } = await c.var.pool.query(
-    `UPDATE event_participants
-     SET status = 'completed', current_day = $3, profit = $4, portfolio = $5, final_stats = $6, updated_at = now()
-     WHERE id = $1 AND user_id = $2 AND status = 'active'`,
+  const { rows } = await c.var.pool.query<{ status: string }>(
+    `WITH done AS (
+       UPDATE event_participants
+       SET status = 'completed', current_day = $3, profit = $4, portfolio = $5, final_stats = $6, updated_at = now()
+       WHERE id = $1 AND user_id = $2 AND status = 'active'
+       RETURNING status
+     )
+     SELECT status FROM done
+     UNION ALL
+     SELECT status FROM event_participants WHERE id = $1 AND user_id = $2 AND NOT EXISTS (SELECT 1 FROM done)`,
     [id.data, c.var.user.id, body.currentDay, body.profit, body.portfolio, body.finalStats],
   );
-  return rowCount ? c.body(null, 204) : notFound(c);
+  return rows[0]?.status === "completed" ? c.body(null, 204) : notFound(c);
 });
 
-// Only the columns the leaderboard shows; other players' portfolios and settings stay private.
+// Only the columns the leaderboard shows: other players' accounts, portfolios
+// and settings stay private, and is_you marks the signed-in user's own row.
 dataRoutes.get("/events/:eventKey/leaderboard", async (c) => {
   const key = eventKey.safeParse(c.req.param("eventKey"));
   if (!key.success) return invalid(c);
   const { rows } = await c.var.pool.query(
-    `SELECT id, user_id, display_name, current_day, profit::float8 AS profit, status
+    `SELECT id, display_name, current_day, profit::float8 AS profit, status, user_id = $2 AS is_you
      FROM event_participants WHERE event_key = $1
      ORDER BY profit DESC, updated_at ASC
      LIMIT 500`,
-    [key.data],
+    [key.data, c.var.user.id],
   );
   return c.json(rows);
 });
