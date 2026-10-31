@@ -1,12 +1,18 @@
+import { MemoryCookieStore } from "tough-cookie";
 import YahooFinance from "yahoo-finance2";
+import { ExtendedCookieJar } from "yahoo-finance2/lib/cookieJar";
 
-// v3+ exports a class, not a singleton — must instantiate.
-const yahooFinance: any = new (YahooFinance as any)();
+// Yahoo's session cookie and crumb are kept for the whole isolate, but each call
+// gets its own client. A client's request queue and in-flight crumb lookup are
+// promises, and a Worker cancels work that one request leaves to another, so a
+// shared client fails whenever two requests overlap.
+const cookieStore = new MemoryCookieStore();
 
-// Suppress schema-validation notices in serverless logs
-try { yahooFinance.suppressNotices?.(["yahooSurvey"]); } catch { }
+function yahooClient(): any {
+  return new YahooFinance({ suppressNotices: ["yahooSurvey"], cookieJar: new ExtendedCookieJar(cookieStore) });
+}
 
-// In-memory caches (per serverless instance)
+// In-memory caches (per Worker isolate), in front of the Cache API in routes/yahoo.ts
 const quoteCache = new Map<string, { data: any; ts: number }>();
 const QUOTE_TTL = 15_000;
 const searchCacheMap = new Map<string, { data: any; ts: number }>();
@@ -94,6 +100,7 @@ export async function fetchQuotes(symbols: string[]) {
   }
 
   if (toFetch.length > 0) {
+    const yahooFinance = yahooClient();
     const fetched = await Promise.allSettled(
       toFetch.map(async (sym) => yahooFinance.quote(sym))
     );
@@ -118,7 +125,7 @@ export async function searchStocks(query: string) {
   const cached = searchCacheMap.get(cacheKey);
   if (cached && Date.now() - cached.ts < SEARCH_TTL) return cached.data;
 
-  const result = await yahooFinance.search(query, { newsCount: 0 });
+  const result = await yahooClient().search(query, { newsCount: 0 });
   const mapped = (result.quotes || [])
     .filter((r: any) => ["EQUITY", "ETF", "INDEX", "MUTUALFUND"].includes(r.quoteType))
     .slice(0, 12)
@@ -138,7 +145,7 @@ export async function fetchChart(symbol: string, range = "6mo", interval = "1d")
   const cached = chartCacheMap.get(cacheKey);
   if (cached && Date.now() - cached.ts < CHART_TTL) return cached.data;
 
-  const result = await yahooFinance.chart(symbol, {
+  const result = await yahooClient().chart(symbol, {
     period1: getStartDate(range),
     interval: interval as any,
   });

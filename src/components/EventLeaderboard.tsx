@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Trophy, Clock, TrendingUp, TrendingDown, Minus, Users } from "lucide-react";
-import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/supabase";
+import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/user-data";
 import { getEventTimeRemaining, type EventDefinition } from "@/lib/events";
 
 interface EventLeaderboardProps {

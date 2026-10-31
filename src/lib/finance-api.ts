@@ -1,4 +1,4 @@
-// Finance API helper — calls our Vercel serverless Yahoo Finance proxy
+// Finance API helper — calls the Worker's Yahoo Finance proxy (/api/yf)
 
 export async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url);

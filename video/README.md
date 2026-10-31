@@ -9,7 +9,7 @@ Rendered file: `out/rochambeau-debut-9x16.mp4` (1080×1920, for Reels, Shorts, T
 | Path | What it is |
 | --- | --- |
 | `capture/capture.mjs` | Playwright script that drives the real app and records six clips into `public/footage/` |
-| `capture/harness.mjs` | Mocked Supabase session + market data routes, local fonts, synthetic cursor, CDP screencast → MP4 |
+| `capture/harness.mjs` | Mocked account session, app API and market data routes, local fonts, synthetic cursor, CDP screencast → MP4 |
 | `capture/mock-data.mjs` | Deterministic quotes, charts, leaderboard and news so captures are reproducible offline |
 | `public/footage/*.events.json` | Every click and keystroke the capture made, in video time (drives the sound effects) |
 | `src/timeline.ts` | The edit: shots with trims and camera keys for both aspect ratios, captions, card timings |

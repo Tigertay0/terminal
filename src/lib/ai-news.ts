@@ -1,8 +1,7 @@
 // ─── AI News Types & Service ─────────────────────────────────────
-// Client-side module for fetching Perplexity-generated news
+// Client-side module for fetching AI-generated news (Claude, via /api/ai-news)
 
 import { pickRandom } from "./utils";
-import { supabase } from "./supabase";
 
 export interface AINewsItem {
   id: string;
@@ -51,37 +50,25 @@ export function loadNewsFromStorage(saveId?: string | null): AINewsItem[] {
   }
 }
 
-// The endpoint requires a logged-in user; returns null when there is no session.
-async function getAuthHeaders(): Promise<Record<string, string> | null> {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) console.warn("Could not read session for AI news:", error.message);
-    const token = data.session?.access_token;
-    return token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : null;
-  } catch {
-    return null;
-  }
-}
+// Same-origin request: the session cookie goes along. Logged-out users get a
+// 401, which is treated as "no AI news" (template/synthetic news still fill the feed).
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
 // ─── Fetch headlines only (fast — no summaries) ──────────────────
 export async function fetchAINews(
   stocks: StockInput[],
   variation: string,
 ): Promise<AINewsItem[]> {
-  // Logged out: skip AI news; template/synthetic news still fill the feed.
-  const headers = await getAuthHeaders();
-  if (!headers) return [];
-
   // Only send top 5 stocks to keep the prompt small and fast
   const topStocks = stocks.slice(0, 5);
 
-  // Retry up to 3 times (Vercel cold starts can cause 504s)
+  // Retry up to 3 times on timeouts
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch("/api/perplexity-news", {
+      const res = await fetch("/api/ai-news", {
         method: "POST",
-        headers,
+        headers: JSON_HEADERS,
         body: JSON.stringify({ stocks: topStocks, variation, mode: "headlines" }),
       });
 
@@ -134,18 +121,15 @@ export async function fetchAINewsDetails(
   const needsDetail = items.filter(i => !i.summary);
   if (needsDetail.length === 0) return new Map();
 
-  const headers = await getAuthHeaders();
-  if (!headers) return new Map();
-
   // Send headlines with index markers for reliable matching
   const headlines = needsDetail.map((i, idx) => `[${idx}] [${i.companyId}] ${i.headline}`);
 
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const res = await fetch("/api/perplexity-news", {
+      const res = await fetch("/api/ai-news", {
         method: "POST",
-        headers,
+        headers: JSON_HEADERS,
         body: JSON.stringify({
           stocks: stocks.slice(0, 5),
           variation,
