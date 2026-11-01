@@ -1,5 +1,5 @@
 // Deterministic market + account data so the real app renders without
-// Yahoo Finance or Supabase access during capture.
+// Yahoo Finance or account access during capture.
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -152,21 +152,21 @@ export function search(q) {
 
 export const USER = {
   id: "7f3c1a52-1d4e-4b8a-9c61-0e2f5d8a4b17",
-  aud: "authenticated",
-  role: "authenticated",
   email: "demo@rochambeau.finance",
-  email_confirmed_at: "2026-09-01T12:00:00Z",
-  app_metadata: { provider: "email", providers: ["email"] },
-  user_metadata: { display_name: "Demo" },
-  created_at: "2026-09-01T12:00:00Z",
-  updated_at: "2026-10-01T12:00:00Z",
+  name: "Demo",
+  emailVerified: false,
+  image: null,
+  createdAt: "2026-09-01T12:00:00Z",
+  updatedAt: "2026-10-01T12:00:00Z",
 };
 
-const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+// What GET /api/auth/get-session returns for a signed-in user.
 export function session() {
-  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
-  const access_token = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: USER.id, aud: "authenticated", role: "authenticated", exp, email: USER.email })}.capture`;
-  return { access_token, token_type: "bearer", expires_in: 60 * 60 * 24 * 30, expires_at: exp, refresh_token: "capture-refresh", user: USER };
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+  return {
+    session: { id: "capture-session", userId: USER.id, token: "capture", expiresAt, createdAt: USER.createdAt, updatedAt: USER.updatedAt, ipAddress: null, userAgent: null },
+    user: USER,
+  };
 }
 
 export const WATCHLIST = ["AAPL", "NVDA", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "JPM", "GS", "MS", "BAC", "V", "XOM", "UNH", "WMT", "HD"];

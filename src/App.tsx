@@ -27,17 +27,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   getWatchlist, saveWatchlist, upsertSimSave, listSimSaves, deleteSimSave,
-  getEventParticipant, joinEvent, updateEventProgress, completeEvent as completeEventApi,
+  getEventParticipant, joinEvent, updateEventProgress, completeEvent as completeEventApi, ApiError,
   getCompletedEvents, getEventLeaderboard,
   type SimSaveRow, type EventParticipantRow,
-} from "@/lib/supabase";
+} from "@/lib/user-data";
 import { getCurrentEvent, type EventDefinition } from "@/lib/events";
 import { BrandMark } from "@/components/BrandMark";
 
-const DEFAULT_WATCHLIST = [
-  "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM",
-  "V", "UNH", "BRK-B", "JNJ", "WMT", "MA", "PG"
-];
+import { DEFAULT_WATCHLIST, MAX_SIM_SAVES } from "@shared/limits";
 
 type AppMode = "auth" | "select" | "save-select" | "sim-settings" | "real" | "sim" | "event";
 
@@ -108,7 +105,7 @@ function RealTerminal({ userId, initialWatchlist, onHome, onAuth }: { userId: st
   useEffect(() => {
     if (!userId || loading) return;
     const timeout = setTimeout(() => {
-      saveWatchlist(userId, watchlist).catch((err) => {
+      saveWatchlist(watchlist).catch((err) => {
         console.error("saveWatchlist failed:", err);
         toast({
           title: "Watchlist save failed",
@@ -250,7 +247,7 @@ function SimTerminal({
   const performSave = useCallback((): Promise<boolean> => {
     if (!userId || baseData.loading) return Promise.resolve(true);
     const payload = {
-      name: saveName || "Untitled",
+      name: saveName.trim() || "Untitled",
       settings: effectiveSettings,
       portfolio: serializePortfolio(sim.cash, sim.holdings, sim.trades, sim.simStocks),
       watchlist,
@@ -260,8 +257,8 @@ function SimTerminal({
     const runSave = async (): Promise<boolean> => {
       setSaveStatus("saving");
       try {
-        const newId = await upsertSimSave(userId, { id: saveIdRef.current, ...payload });
-        if (newId && !saveIdRef.current) {
+        const newId = await upsertSimSave({ id: saveIdRef.current, ...payload });
+        if (newId !== saveIdRef.current) {
           saveIdRef.current = newId;
           setSaveId(newId);
         }
@@ -480,7 +477,7 @@ function EventTerminal({
     updateEventProgress(participant.id, s.dayNumber, profit, portfolio).catch(() => {});
   }, [event.startingCash, participant.id]);
 
-  // ─── Sync progress to Supabase ────────────────────────────────
+  // ─── Sync progress to the leaderboard ─────────────────────────
   const lastSyncedDay = useRef(participant.current_day);
   useEffect(() => {
     if (baseData.loading) return;
@@ -504,7 +501,7 @@ function EventTerminal({
       // Fetch rank after completing
       .then(() => getEventLeaderboard(event.eventKey))
       .then(lb => {
-        const rank = lb.findIndex(p => p.user_id === userId) + 1;
+        const rank = lb.findIndex(p => p.is_you) + 1;
         setLeaderboardRank(rank || lb.length);
         setTotalParticipants(lb.length);
       })
@@ -691,13 +688,9 @@ export default function App() {
     if (auth.isAuthenticated && auth.userId) {
       const loadWatchlist = async () => {
         try {
-          let symbols = await getWatchlist(auth.userId!);
-          // Retry once after 750ms for new signups where trigger may not have fired yet
-          if (!symbols || symbols.length === 0) {
-            await new Promise(r => setTimeout(r, 750));
-            symbols = await getWatchlist(auth.userId!);
-          }
-          if (symbols && symbols.length > 0) {
+          // A new account's default list is created on this first read.
+          const symbols = await getWatchlist();
+          if (symbols.length > 0) {
             setUserWatchlist(symbols);
           }
         } catch (err) {
@@ -722,7 +715,7 @@ export default function App() {
   const handleDeleteSave = useCallback(async (id: string) => {
     if (!auth.userId) return;
     try {
-      await deleteSimSave(auth.userId, id);
+      await deleteSimSave(id);
       setSavesList(prev => prev.filter(s => s.id !== id));
       toast({ title: "Save deleted" });
     } catch {
@@ -737,11 +730,9 @@ export default function App() {
       return;
     }
 
-    const displayName = auth.user?.user_metadata?.display_name ?? auth.user?.email?.split("@")[0] ?? "Anonymous";
-
     try {
       // Check if already participating
-      let participant = await getEventParticipant(event.eventKey, auth.userId);
+      let participant = await getEventParticipant(event.eventKey);
 
       if (participant) {
         if (participant.status === "completed") {
@@ -751,14 +742,21 @@ export default function App() {
         // Resume existing participation
       } else {
         // Join the event
-        participant = await joinEvent(event.eventKey, auth.userId, displayName, {
-          startingCash: event.startingCash,
-          variation: event.variation,
-          eventName: event.name,
-        });
-        if (!participant) {
-          toast({ title: "Failed to join event", variant: "destructive" });
-          return;
+        // The leaderboard shows the account's display name, set on the server.
+        try {
+          participant = await joinEvent(event.eventKey, {
+            startingCash: event.startingCash,
+            variation: event.variation,
+            eventName: event.name,
+          });
+        } catch (err) {
+          // Joined meanwhile (another tab): resume that entry. Otherwise the event ended.
+          if (!(err instanceof ApiError && err.status === 409)) throw err;
+          participant = await getEventParticipant(event.eventKey);
+          if (!participant) {
+            toast({ title: "This event has ended", description: "A new one starts soon." });
+            return;
+          }
         }
       }
 
@@ -770,13 +768,13 @@ export default function App() {
       console.error("Join event error:", err);
       toast({ title: "Failed to join event", variant: "destructive" });
     }
-  }, [auth.userId, auth.user, toast]);
+  }, [auth.userId, toast]);
 
   // ─── Load completed events for save tab ─────────────────────────
   const loadCompletedEvents = useCallback(async () => {
     if (!auth.userId) return;
     try {
-      const events = await getCompletedEvents(auth.userId);
+      const events = await getCompletedEvents();
       setCompletedEvents(events);
     } catch (err) {
       console.error("Failed to load completed events:", err);
@@ -825,7 +823,7 @@ export default function App() {
             if (auth.userId) {
               setSavesLoading(true);
               try {
-                const saves = await listSimSaves(auth.userId);
+                const saves = await listSimSaves();
                 setSavesList(saves);
                 await loadCompletedEvents();
               } catch (err) {
@@ -861,10 +859,10 @@ export default function App() {
             setMode("sim");
           }}
           onNew={() => {
-            if (savesList.length >= 20) {
+            if (savesList.length >= MAX_SIM_SAVES) {
               toast({
                 title: "Save limit reached",
-                description: "Delete an old save first. Maximum 20 saves per user.",
+                description: `Delete an old save first. Maximum ${MAX_SIM_SAVES} saves per user.`,
                 variant: "destructive",
               });
               return;
@@ -922,7 +920,7 @@ export default function App() {
             setMode("select");
           }}
           userId={auth.userId}
-          displayName={auth.user?.user_metadata?.display_name ?? auth.user?.email?.split("@")[0] ?? "Anonymous"}
+          displayName={auth.displayName}
           onAuth={() => setMode("auth")}
         />
       )}

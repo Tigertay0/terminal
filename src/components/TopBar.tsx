@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X, LogOut, User, Home, Sun, Moon } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/use-theme";
 import { BrandMark } from "@/components/BrandMark";
 
@@ -237,6 +237,7 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
 
 function UserMenu({ onAuth }: { onAuth?: () => void }) {
   const auth = useAuth();
+  const { toast } = useToast();
   if (!auth.isAuthenticated || !auth.user) {
     return (
       <button
@@ -250,7 +251,7 @@ function UserMenu({ onAuth }: { onAuth?: () => void }) {
       </button>
     );
   }
-  const name = (auth.user.user_metadata?.display_name as string) || auth.user.email?.split("@")[0] || "User";
+  const name = auth.displayName;
   return (
     <div className="flex items-center gap-2 shrink-0">
       <div className="flex items-center gap-1">
@@ -258,7 +259,9 @@ function UserMenu({ onAuth }: { onAuth?: () => void }) {
         <span className="text-2xs font-medium text-foreground" data-testid="text-user">{name}</span>
       </div>
       <button
-        onClick={() => supabase.auth.signOut()}
+        onClick={() =>
+          auth.logout().catch(() => toast({ title: "Could not sign out", description: "Check your connection and try again.", variant: "destructive" }))
+        }
         className="flex items-center gap-1 text-2xs text-muted-foreground hover:text-rf-orange transition-colors"
         data-testid="button-logout"
         title="Sign out"

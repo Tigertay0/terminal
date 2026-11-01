@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Trophy, Clock, TrendingUp, TrendingDown, Minus, Users } from "lucide-react";
-import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/supabase";
+import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/user-data";
 import { getEventTimeRemaining, type EventDefinition } from "@/lib/events";
 
 interface EventLeaderboardProps {
@@ -42,7 +42,7 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
     return () => clearInterval(interval);
   }, [event.eventKey]);
 
-  const userRank = participants.findIndex(p => p.user_id === userId) + 1;
+  const userRank = participants.findIndex(p => p.is_you) + 1;
 
   return (
     <div className="rf-panel flex flex-col h-full" data-testid="event-leaderboard">
@@ -94,7 +94,7 @@ export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
         ) : (
           participants.map((p, i) => {
             const rank = i + 1;
-            const isCurrentUser = p.user_id === userId;
+            const isCurrentUser = p.is_you;
             const isPositive = p.profit >= 0;
             const isCompleted = p.status === "completed";
 

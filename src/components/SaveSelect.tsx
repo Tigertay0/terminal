@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Play, Trash2, Plus, ArrowLeft, Save, Clock, Calendar, DollarSign, TrendingUp, TrendingDown, Trophy } from "lucide-react";
-import type { SimSaveRow } from "@/lib/supabase";
+import type { SimSaveRow, EventParticipantRow } from "@/lib/user-data";
 import { formatWholeDollars as formatCurrency } from "@/lib/finance-api";
-import type { EventParticipantRow } from "@/lib/supabase";
+import { MAX_SIM_SAVES } from "@shared/limits";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -155,7 +155,7 @@ export function SaveSelect({ saves, loading, onContinue, onNew, onDelete, onBack
         {/* New Simulation button */}
         <button
           onClick={() => {
-            if (saves.length >= 20) {
+            if (saves.length >= MAX_SIM_SAVES) {
               // Soft cap — handled via toast in parent, but guard here too
               return;
             }

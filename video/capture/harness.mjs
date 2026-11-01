@@ -8,8 +8,6 @@ import * as mock from "./mock-data.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fontsRoot = path.join(here, "..", "node_modules", "@fontsource");
-const SUPABASE = "https://jwqmzltyxlybyabyrcsx.supabase.co";
-const STORAGE_KEY = "sb-jwqmzltyxlybyabyrcsx-auth-token";
 
 function fontCss() {
   const pick = { inter: ["400", "500", "600", "700"], "jetbrains-mono": ["400", "500", "600", "700"], "ibm-plex-serif": ["300", "400", "500", "300-italic", "400-italic"] };
@@ -22,12 +20,37 @@ function fontCss() {
   return css;
 }
 
-async function installRoutes(context) {
+async function installRoutes(context, { authed }) {
   const css = fontCss();
   await context.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ status: 200, contentType: "text/css", body: css }));
   await context.route("https://fonts.local/**", (r) => {
     const rel = new URL(r.request().url()).pathname.slice(1);
     r.fulfill({ status: 200, contentType: "font/woff2", body: fs.readFileSync(path.join(fontsRoot, rel)) });
+  });
+
+  // The app's own API (auth, saved data, events). Registered first, so the more
+  // specific routes below win; market data falls through to them.
+  await context.route("**/api/**", (r) => {
+    const req = r.request();
+    const { pathname } = new URL(req.url());
+    const method = req.method();
+    if (pathname.startsWith("/api/yf/")) return r.fallback();
+    if (pathname === "/api/auth/get-session") return r.fulfill({ json: authed ? mock.session() : null });
+    if (pathname.startsWith("/api/auth/")) return r.fulfill({ json: {} });
+    if (pathname === "/api/config") return r.fulfill({ json: { google: true } });
+    if (pathname === "/api/watchlist") return method === "GET" ? r.fulfill({ json: { symbols: mock.WATCHLIST } }) : r.fulfill({ status: 204, body: "" });
+    if (pathname === "/api/saves") return method === "GET" ? r.fulfill({ json: globalThis.__captureSaves ?? [] }) : r.fulfill({ status: 201, json: { id: "save-new" } });
+    if (pathname.startsWith("/api/saves/")) return method === "DELETE" ? r.fulfill({ status: 204, body: "" }) : r.fulfill({ json: { id: pathname.split("/").pop() } });
+    if (pathname === "/api/events/completed") return r.fulfill({ json: [] });
+    if (pathname.startsWith("/api/events/entries/")) return r.fulfill({ status: 204, body: "" });
+    const event = pathname.match(/^\/api\/events\/([^/]+)\/(entry|leaderboard)$/);
+    if (event) {
+      const key = decodeURIComponent(event[1]);
+      if (event[2] === "leaderboard") return r.fulfill({ json: mock.leaderboard(key) });
+      if (method === "GET") return r.fulfill({ json: null });
+      return r.fulfill({ status: 201, json: { id: "p1", event_key: key, user_id: mock.USER.id, display_name: "Demo", current_day: 1, profit: 0, portfolio: null, settings: null, status: "active", final_stats: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } });
+    }
+    return r.fulfill({ status: 404, json: { error: "Not found" } });
   });
 
   await context.route("**/api/yf/quote**", (r) => {
@@ -39,32 +62,10 @@ async function installRoutes(context) {
     r.fulfill({ json: mock.chart(u.get("symbol"), u.get("range") ?? "6mo") });
   });
   await context.route("**/api/yf/search**", (r) => r.fulfill({ json: mock.search(new URL(r.request().url()).searchParams.get("q") ?? "") }));
-  await context.route("**/api/perplexity-news**", (r) => {
+  await context.route("**/api/ai-news**", (r) => {
     const body = JSON.parse(r.request().postData() || "{}");
     if (body.mode === "detailed") return r.fulfill({ json: [] });
     r.fulfill({ json: mock.aiNews() });
-  });
-
-  await context.route(`${SUPABASE}/**`, (r) => {
-    const req = r.request();
-    const url = new URL(req.url());
-    const single = (req.headers()["accept"] || "").includes("vnd.pgrst.object");
-    const reply = (rows) => r.fulfill({ json: single ? (Array.isArray(rows) ? rows[0] ?? null : rows) : rows });
-    if (url.pathname.startsWith("/auth/v1/user")) return r.fulfill({ json: mock.USER });
-    if (url.pathname.startsWith("/auth/v1/")) return r.fulfill({ json: {} });
-    if (url.pathname === "/rest/v1/watchlists") return req.method() === "GET" ? reply([{ symbols: mock.WATCHLIST }]) : r.fulfill({ status: 204, body: "" });
-    if (url.pathname === "/rest/v1/sim_saves") {
-      if (req.method() === "GET") return reply(globalThis.__captureSaves ?? []);
-      return reply([{ id: "save-new" }]);
-    }
-    if (url.pathname === "/rest/v1/event_participants") {
-      const key = (url.searchParams.get("event_key") || "eq.grand-opening").replace(/^eq\./, "");
-      if (req.method() !== "GET") return reply([{ id: "p1", event_key: key, user_id: mock.USER.id, display_name: "Demo", current_day: 1, profit: 0, portfolio: null, settings: null, status: "active", final_stats: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
-      if (url.searchParams.get("status") === "eq.completed") return reply([]);
-      if (url.searchParams.get("user_id")) return reply([]);
-      return reply(mock.leaderboard(key));
-    }
-    return r.fulfill({ json: [] });
   });
 }
 
@@ -83,14 +84,11 @@ export async function startDevServer(port = 5173) {
 export async function openApp({ width = 1920, height = 1080, scale = 1, authed = true, url = "http://localhost:5173/" } = {}) {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || "/opt/pw-browsers/chromium", args: ["--disable-gpu", "--font-render-hinting=none"] });
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: scale, colorScheme: "dark" });
-  await installRoutes(context);
-  const sess = mock.session();
-  await context.addInitScript(([key, value, authed]) => {
+  await installRoutes(context, { authed });
+  await context.addInitScript(() => {
     // Theme preference; dark is the product's signature look
     localStorage.setItem("rochambeau-theme", "dark");
-    if (authed) localStorage.setItem(key, value);
-    else localStorage.removeItem(key);
-  }, [STORAGE_KEY, JSON.stringify(sess), authed]);
+  });
   await context.addInitScript(() => {
     // Screencasts don't include the OS cursor, so draw one that tracks the mouse
     const install = () => {

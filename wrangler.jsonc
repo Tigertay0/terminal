@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "terminal",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  // nodejs_compat covers pg's sockets and yahoo-finance2's Node APIs.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  // The built app (Vite output, wired in by @cloudflare/vite-plugin). Only /api/*
+  // runs the Worker; every other path is a static file or falls back to index.html.
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  // Neon Postgres (project terminal, branch main) through Cloudflare's connection
+  // pool, as the terminal_worker role (db/migrations/0003_app_role.sql). Query
+  // caching is disabled, so every read sees the latest write.
+  // localConnectionString is a placeholder: `npm run dev` points local runs at the
+  // Neon dev branch through CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "da58c18cf5654f299e318cf4891aec39",
+      "localConnectionString": "postgres://postgres@localhost:5432/terminal"
+    }
+  ],
+  // AI news spends API credits: at most 5 calls a minute per signed-in user, and
+  // 60 a minute across everyone (counted per Cloudflare location, so approximate).
+  "ratelimits": [
+    { "name": "NEWS_LIMITER", "namespace_id": "5101", "simple": { "limit": 5, "period": 60 } },
+    { "name": "NEWS_GLOBAL_LIMITER", "namespace_id": "5102", "simple": { "limit": 60, "period": 60 } },
+    // Market data is public: each address (a whole school network can share one)
+    // gets 600 requests a minute; the app makes about 20 a minute per open tab.
+    { "name": "MARKET_LIMITER", "namespace_id": "5103", "simple": { "limit": 600, "period": 60 } }
+  ],
+  "vars": {
+    "BETTER_AUTH_URL": "https://terminal.tiger-tayo.workers.dev"
+  }
+  // Secrets (set with `npx wrangler secret put NAME`, never stored here):
+  // BETTER_AUTH_SECRET, and optionally ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET.
+}

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import { BrandMark } from "@/components/BrandMark";
 
 interface AuthScreenProps {
@@ -17,6 +17,25 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
   const [displayName, setDisplayName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  // Google sign-in is offered only once the server has its keys.
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/config")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((config) => { if (!cancelled) setGoogleEnabled(config?.google === true); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Coming back from Google with the Back button restores this page as it was
+  // left, mid-submit; let the buttons work again.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) setSubmitting(false); };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   const handleEmailContinue = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,19 +65,9 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
     setLocalError(null);
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-        },
-      });
-      if (error) {
-        // Provide a clearer message for common issues
-        if (error.message?.includes("provider") || error.message?.includes("not enabled")) {
-          throw new Error("Google sign-in is not configured. Please use email/password or continue as guest.");
-        }
-        throw error;
-      }
+      // Redirects to Google, then back to the app signed in.
+      const { error } = await authClient.signIn.social({ provider: "google", callbackURL: "/", errorCallbackURL: "/" });
+      if (error) throw new Error(error.message || "Google sign-in unavailable.");
     } catch (err: any) {
       setLocalError(err.message || "Google sign-in unavailable. Please use email/password or continue as guest.");
       setSubmitting(false);
@@ -114,6 +123,8 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
           {/* Auth options */}
           <div className="space-y-3">
             {/* Google */}
+            {googleEnabled && (
+            <>
             <button
               type="button"
               onClick={handleGoogle}
@@ -136,6 +147,8 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
               <span className="text-[10px] tracking-[0.2em] font-mono text-muted-foreground">OR</span>
               <div className="flex-1 h-px bg-border" />
             </div>
+            </>
+            )}
 
             {/* Email step */}
             {step === "email" ? (
@@ -187,6 +200,7 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Your name"
+                      maxLength={40}
                       className="w-full h-11 bg-card border border-border focus:border-rf-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                       data-testid="input-display-name"
                     />
@@ -204,7 +218,8 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
                     placeholder="••••••••"
                     required
                     autoFocus
-                    minLength={6}
+                    minLength={mode === "signup" ? 8 : undefined}
+                    maxLength={128}
                     className="w-full h-11 bg-card border border-border focus:border-rf-orange px-3 text-sm text-foreground font-mono outline-none transition-colors placeholder:text-muted-foreground/50"
                     data-testid="input-password"
                   />
