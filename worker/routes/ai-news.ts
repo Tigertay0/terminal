@@ -155,13 +155,13 @@ async function generate<T>(
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
-  } catch {
-    console.error("AI news was not JSON");
+  } catch (error) {
+    console.error("AI news was not JSON:", (error as Error).message, "-", text.slice(0, 500));
     return null;
   }
   const result = schema.safeParse(parsed);
   if (!result.success) {
-    console.error("AI news did not match the schema");
+    console.error("AI news did not match the schema:", result.error.message, "-", text.slice(0, 500));
     return null;
   }
   return result.data;

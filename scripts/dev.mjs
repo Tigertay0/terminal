@@ -18,4 +18,5 @@ if (existsSync(urlFile)) {
 }
 
 const vite = spawn("npx", ["vite", ...process.argv.slice(2)], { cwd: root, env, stdio: "inherit", shell: process.platform === "win32" });
+vite.on("error", (err) => { console.error("Failed to start vite:", err.message); process.exit(1); });
 vite.on("exit", (code) => process.exit(code ?? 0));

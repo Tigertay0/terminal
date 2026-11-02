@@ -21,12 +21,12 @@ export function AuthScreen({ onLogin, onSignup, onSkip, error }: AuthScreenProps
   const [googleEnabled, setGoogleEnabled] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/config")
+    const controller = new AbortController();
+    fetch("/api/config", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
-      .then((config) => { if (!cancelled) setGoogleEnabled(config?.google === true); })
-      .catch(() => {});
-    return () => { cancelled = true; };
+      .then((config) => setGoogleEnabled(config?.google === true))
+      .catch((err) => { if ((err as Error)?.name !== "AbortError") console.error("Failed to load auth config:", err); });
+    return () => controller.abort();
   }, []);
 
   // Coming back from Google with the Back button restores this page as it was
