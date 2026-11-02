@@ -406,14 +406,12 @@ function EventTerminal({
   event,
   participant,
   onExit,
-  userId,
   displayName,
   onAuth,
 }: {
   event: EventDefinition;
   participant: EventParticipantRow;
   onExit: () => void;
-  userId: string;
   displayName: string;
   onAuth: () => void;
 }) {
@@ -643,7 +641,7 @@ function EventTerminal({
           </div>
           <div className="flex-1 min-h-0">
             {eventPanel === "leaderboard" ? (
-              <EventLeaderboard event={event} userId={userId} />
+              <EventLeaderboard event={event} />
             ) : (
               <SimNewsPanel
                 aiNews={sim.aiNews}
@@ -919,7 +917,6 @@ export default function App() {
             setActiveParticipant(null);
             setMode("select");
           }}
-          userId={auth.userId}
           displayName={auth.displayName}
           onAuth={() => setMode("auth")}
         />

@@ -5,7 +5,6 @@ import { getEventTimeRemaining, type EventDefinition } from "@/lib/events";
 
 interface EventLeaderboardProps {
   event: EventDefinition;
-  userId: string;
 }
 
 function formatCurrency(val: number): string {
@@ -20,7 +19,7 @@ function getRankBadge(rank: number) {
   return <span className="text-[10px] text-muted-foreground font-mono w-5 text-center">{rank}</span>;
 }
 
-export function EventLeaderboard({ event, userId }: EventLeaderboardProps) {
+export function EventLeaderboard({ event }: EventLeaderboardProps) {
   const [participants, setParticipants] = useState<LeaderboardEntry[]>([]);
   const [timeLeft, setTimeLeft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);

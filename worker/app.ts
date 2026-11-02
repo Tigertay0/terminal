@@ -4,7 +4,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 import type { Pool } from "pg";
-import { createAuth, googleConfigured, isPublicAuthPath, type Auth } from "./auth";
+import { createAuth, googleConfigured, isPublicAuthPath, siteUrl, type Auth } from "./auth";
 import { BAD_INPUT_CODES, createPool, pgCode } from "./db";
 import type { Env } from "./env";
 import { dataRoutes } from "./routes/data";
@@ -59,7 +59,7 @@ const database = createMiddleware<AppEnv>(async (c, next) => {
  */
 const sameOrigin = createMiddleware<AppEnv>(async (c, next) => {
   const origin = c.req.header("origin");
-  if (UNSAFE_METHODS.has(c.req.method) && origin && origin !== new URL(c.env.BETTER_AUTH_URL).origin) {
+  if (UNSAFE_METHODS.has(c.req.method) && origin && origin !== new URL(siteUrl(c.env)).origin) {
     return c.json({ error: "Cross-site request refused" }, 403);
   }
   await next();

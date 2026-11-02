@@ -68,11 +68,21 @@ function defaultDisplayName(): string {
   return `Trader ${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
-export function authOptions(env: Env, pool: Pool, waitUntil?: (promise: Promise<unknown>) => void) {
+/**
+ * The site's own https:// address (or http://localhost locally), validated so
+ * every caller - Better Auth's config and the CORS/same-origin check - fails
+ * with the same clear message instead of a raw URL-parse error.
+ */
+export function siteUrl(env: Env): string {
   const url = env.BETTER_AUTH_URL?.trim() ?? "";
   if (!/^https:\/\/|^http:\/\/localhost(:\d+)?$/.test(url)) {
     throw new Error("BETTER_AUTH_URL must be the site's https:// address (or http://localhost locally).");
   }
+  return url;
+}
+
+export function authOptions(env: Env, pool: Pool, waitUntil?: (promise: Promise<unknown>) => void) {
+  const url = siteUrl(env);
   if (!env.BETTER_AUTH_SECRET || env.BETTER_AUTH_SECRET.length < MIN_SECRET_LENGTH) {
     throw new Error(`BETTER_AUTH_SECRET must be set to at least ${MIN_SECRET_LENGTH} characters.`);
   }
