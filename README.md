@@ -74,6 +74,10 @@ The Worker connects as `terminal_worker`, which can read and write rows but not 
 
 ## Deploy
 
+Every push to `master` deploys itself: `.github/workflows/deploy.yml` typechecks, runs the tests, builds, then runs `wrangler deploy`. Pull requests get the same checks without the deploy. The workflow needs one repository secret, `CLOUDFLARE_API_TOKEN` (an API token from the "Edit Cloudflare Workers" template); the account id is in `wrangler.jsonc`.
+
+To deploy by hand instead:
+
 ```bash
 npm run deploy
 ```

@@ -1,6 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "terminal",
+  // Not a secret: lets CI deploy with only an API token.
+  "account_id": "e7668d9f865742abf8be8e5715c089ac",
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
   // nodejs_compat covers pg's sockets and yahoo-finance2's Node APIs.
