@@ -92,7 +92,7 @@ export function TimeControlBar({
 
       <div className="w-px h-4 bg-border" />
 
-      <div className="flex items-center gap-1" role="group" aria-label="Market speed">
+      <div className="rf-segmented" role="group" aria-label="Market speed">
         {SPEED_BUTTONS.map(({ speed, label, title, icon: Icon }) => {
           const active = timeSpeed === speed;
           return (
@@ -101,9 +101,7 @@ export function TimeControlBar({
               aria-pressed={active}
               title={title}
               onClick={() => onSetSpeed(speed)}
-              className={`flex items-center gap-2 h-7 px-2 rounded-md transition-colors ${
-                active ? "bg-raised text-foreground rf-marker-b" : "text-muted-foreground hover:text-foreground hover:bg-raised"
-              }`}
+              className="rf-segment"
               data-testid={`speed-${speed}`}
             >
               <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />

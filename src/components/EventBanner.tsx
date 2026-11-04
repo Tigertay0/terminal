@@ -32,7 +32,7 @@ export function EventBanner({ onJoinEvent }: EventBannerProps) {
   ];
 
   return (
-    <section className="relative rounded-lg border border-border bg-card p-5 mb-4 rf-marker" aria-label="Current event" data-testid="event-banner">
+    <section className="relative rounded-lg border border-border bg-card p-5 mb-4" aria-label="Current event" data-testid="event-banner">
       <button
         onClick={() => setDismissed(true)}
         className="absolute top-3 right-3 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-raised transition-colors"

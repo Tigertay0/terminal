@@ -28,9 +28,21 @@ const VARIATION_OPTIONS: { label: string; value: MarketVariation; desc: string }
 
 const formatCash = (n: number) => `$${n.toLocaleString("en-US")}`;
 
-const OPTION = "rounded-md border text-left transition-colors";
-const OPTION_ON = "border-ink/60 bg-raised text-foreground rf-marker";
-const OPTION_OFF = "border-border bg-card text-dim hover:bg-raised hover:text-foreground";
+const OPTION = "relative rounded-md border text-left transition-colors";
+const OPTION_ON = "border-ink bg-raised text-foreground";
+const OPTION_OFF = "border-border bg-card text-dim hover:border-input hover:text-foreground";
+
+/** The radio mark on an option card, so the choice is not shown by colour alone. */
+function RadioMark({ on }: { on: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${on ? "border-ink" : "border-input"}`}
+    >
+      <span className={`w-2 h-2 rounded-full bg-ink transition-[opacity,transform] ${on ? "opacity-100 scale-100" : "opacity-0 scale-50"}`} />
+    </span>
+  );
+}
 
 export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings, onSimClick, userId, onJoinEvent }: ModeSelectProps) {
   const [phase, setPhase] = useState<"choose" | "settings">(startInSettings ? "settings" : "choose");
@@ -53,7 +65,7 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
                 key={value}
                 aria-pressed={cash === value}
                 onClick={() => setCash(value)}
-                className={`${OPTION} h-10 px-3 num text-xs text-center ${cash === value ? OPTION_ON : OPTION_OFF}`}
+                className={`${OPTION} h-10 px-3 flex items-center justify-center gap-2 num text-xs ${cash === value ? OPTION_ON : OPTION_OFF}`}
                 data-testid={`cash-${value}`}
               >
                 {formatCash(value)}
@@ -70,11 +82,14 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
                 key={opt.value}
                 aria-pressed={variation === opt.value}
                 onClick={() => setVariation(opt.value)}
-                className={`${OPTION} px-4 py-3 ${variation === opt.value ? OPTION_ON : OPTION_OFF}`}
+                className={`${OPTION} px-4 py-3 flex items-start justify-between gap-3 ${variation === opt.value ? OPTION_ON : OPTION_OFF}`}
                 data-testid={`variation-${opt.value}`}
               >
-                <div className="text-sm font-medium text-foreground">{opt.label}</div>
-                <div className="text-xs text-muted-foreground mt-1">{opt.desc}</div>
+                <span>
+                  <span className="block text-sm font-medium text-foreground">{opt.label}</span>
+                  <span className="block text-xs text-muted-foreground mt-1">{opt.desc}</span>
+                </span>
+                <RadioMark on={variation === opt.value} />
               </button>
             ))}
           </div>

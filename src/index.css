@@ -21,6 +21,11 @@
   --popover: 30 3% 11%;
   --raised: 30 3% 13%;
 
+  /* Segmented controls: a recessed track, the chosen segment lifted out of it */
+  --seg-track: 30 3% 6.5%;
+  --seg-thumb: 30 3% 15%;
+  --seg-thumb-edge: inset 0 1px 0 hsl(40 8% 92% / 0.06), 0 0 0 1px hsl(40 8% 92% / 0.07);
+
   /* Text roles */
   --foreground: 40 8% 92%;
   --dim: 35 4% 68%;
@@ -105,6 +110,10 @@
   --card: 0 0% 100%;
   --popover: 0 0% 100%;
   --raised: 40 6% 93%;
+
+  --seg-track: 40 6% 92%;
+  --seg-thumb: 0 0% 100%;
+  --seg-thumb-edge: 0 1px 2px hsl(30 10% 10% / 0.08), 0 0 0 1px hsl(30 10% 10% / 0.06);
 
   --foreground: 30 6% 10%;
   --dim: 30 4% 32%;
@@ -193,6 +202,27 @@
   }
   .rf-marker-b {
     box-shadow: inset 0 -2px 0 hsl(var(--primary));
+  }
+
+  /* Segmented control (chart range, market speed). The pressed segment is
+     lifted out of the track; no accent, so the amber stays for real selections. */
+  .rf-segmented {
+    @apply inline-flex items-center gap-0.5 p-0.5 rounded-md border border-border;
+    background-color: hsl(var(--seg-track));
+  }
+  .rf-segment {
+    @apply flex items-center gap-1.5 h-6 px-2 rounded-[5px] text-xs text-muted-foreground;
+    transition-property: color, background-color, box-shadow;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .rf-segment:hover {
+      color: hsl(var(--foreground));
+    }
+  }
+  .rf-segment[aria-pressed="true"] {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--seg-thumb));
+    box-shadow: var(--seg-thumb-edge);
   }
 
   .kbd {
