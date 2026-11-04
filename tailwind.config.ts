@@ -6,12 +6,17 @@ export default {
   theme: {
     extend: {
       borderRadius: {
-        lg: ".375rem",
-        md: ".25rem",
-        sm: ".125rem",
+        lg: "12px",
+        md: "8px",
+        sm: "6px",
       },
       colors: {
         background: "hsl(var(--background) / <alpha-value>)",
+        raised: "hsl(var(--raised) / <alpha-value>)",
+        dim: "hsl(var(--dim) / <alpha-value>)",
+        ink: "hsl(var(--ink) / <alpha-value>)",
+        up: "hsl(var(--up) / <alpha-value>)",
+        down: "hsl(var(--down) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
@@ -74,15 +79,6 @@ export default {
           foreground: "hsl(var(--sidebar-accent-foreground) / <alpha-value>)",
           border: "var(--sidebar-accent-border)",
         },
-        // Rochambeau-specific
-        rf: {
-          green: "hsl(var(--rf-green) / <alpha-value>)",
-          red: "hsl(var(--rf-red) / <alpha-value>)",
-          orange: "hsl(var(--rf-orange) / <alpha-value>)",
-          blue: "hsl(var(--rf-blue) / <alpha-value>)",
-          yellow: "hsl(var(--rf-yellow) / <alpha-value>)",
-          cyan: "hsl(var(--rf-cyan) / <alpha-value>)",
-        },
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
@@ -90,7 +86,7 @@ export default {
         mono: ["var(--font-mono)"],
       },
       fontSize: {
-        "2xs": ["10px", { lineHeight: "14px" }],
+        "2xs": ["11px", { lineHeight: "16px" }],
       },
       keyframes: {
         "accordion-down": {
@@ -101,6 +97,13 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+      },
+      transitionTimingFunction: {
+        DEFAULT: "cubic-bezier(0.22, 1, 0.36, 1)",
+        out: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
+      transitionDuration: {
+        DEFAULT: "150ms",
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

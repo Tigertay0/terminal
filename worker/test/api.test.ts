@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cleanDisplayName } from "../auth";
+import { mapNews } from "../lib/yahoo";
 import { call, json, testEnv } from "./helpers";
 
 // No database here: requests without a session never reach one.
@@ -63,6 +64,8 @@ describe("market data validation", () => {
     ["/api/yf/chart?symbol=AAPL;DROP", "Invalid symbol"],
     ["/api/yf/chart?symbol=AAPL&range=10y", "Invalid range"],
     ["/api/yf/chart?symbol=AAPL&interval=2m", "Invalid interval"],
+    ["/api/yf/news", "No symbol"],
+    ["/api/yf/news?symbol=AAPL;DROP", "Invalid symbol"],
   ])("%s answers 400", async (path, error) => {
     const res = await call(env, path);
     expect(res.status).toBe(400);
@@ -72,6 +75,17 @@ describe("market data validation", () => {
   it("answers an empty search with an empty list", async () => {
     const res = await call(env, "/api/yf/search?q=%20");
     expect(await res.json()).toEqual([]);
+  });
+
+  it("keeps only dated web links in news, newest first", () => {
+    const items = mapNews([
+      { uuid: "a", title: "Older", publisher: "Reuters", link: "https://example.com/a", providerPublishTime: "2026-11-03T10:00:00Z" },
+      { uuid: "b", title: "Script link", link: "javascript:alert(1)", providerPublishTime: "2026-11-03T12:00:00Z" },
+      { uuid: "c", title: "No date", link: "https://example.com/c" },
+      { uuid: "d", title: "Newer", publisher: "Barron's", link: "https://example.com/d", providerPublishTime: new Date("2026-11-04T09:00:00Z") },
+    ]);
+    expect(items.map((n) => n.title)).toEqual(["Newer", "Older"]);
+    expect(items[0]).toMatchObject({ id: "d", publisher: "Barron's", url: "https://example.com/d", publishedAt: "2026-11-04T09:00:00.000Z" });
   });
 
   it("answers CORS preflight for market data", async () => {

@@ -13,12 +13,36 @@ interface PriceChartProps {
 
 type TimeRange = "LIVE" | "1D" | "1W" | "1M" | "3M" | "6M" | "1Y";
 
+const CANVAS_FONT = '11px "IBM Plex Mono", monospace';
+
+/** Reads theme tokens from CSS variables at draw time so light and dark both work. */
+function readPalette() {
+  const css = getComputedStyle(document.documentElement);
+  const color = (v: string, a = 1) => `hsl(${css.getPropertyValue(v).trim()} / ${a})`;
+  return { color };
+}
+
+const BTN = "h-7 px-2 rounded-md text-xs transition-colors";
+const ZOOM_BTN =
+  "h-7 w-7 flex items-center justify-center rounded-md bg-popover/90 border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-raised transition-colors";
+
 export function PriceChart({ symbol, stock, historicalData, intradayTicks }: PriceChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>("3M");
   const [hoverInfo, setHoverInfo] = useState<{ x: number; price: number; date: string; vol: number } | null>(null);
   const [liveZoom, setLiveZoom] = useState(60); // Number of ticks to show in LIVE mode
+  const [themeVersion, setThemeVersion] = useState(0);
+
+  // Redraw the canvas when the theme class on <html> changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => setThemeVersion(v => v + 1));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    // Axis labels are drawn in the webfont; redraw once it has arrived
+    let active = true;
+    document.fonts?.ready.then(() => { if (active) setThemeVersion(v => v + 1); });
+    return () => { active = false; observer.disconnect(); };
+  }, []);
 
   const ZOOM_STEPS = [15, 30, 60, 120, 250, 500];
   const isIntraday = timeRange === "1D" || timeRange === "LIVE";
@@ -107,6 +131,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const ctx = canvas.getContext("2d")!;
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, chartHeight + volHeight);
+    const { color } = readPalette();
 
     const prices = filteredData.map(d => d.close);
     const volumes = filteredData.map(d => d.volume);
@@ -119,7 +144,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const chartW = width - padding.left - padding.right;
 
     // Draw grid lines
-    ctx.strokeStyle = "hsla(220, 10%, 20%, 0.4)";
+    ctx.strokeStyle = color("--border", 0.6);
     ctx.lineWidth = 0.5;
     for (let i = 0; i < 5; i++) {
       const y = padding.top + (chartHeight - padding.top - padding.bottom) * (i / 4);
@@ -133,8 +158,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const firstPrice = prices[0];
     const lastPrice = prices[prices.length - 1];
     const isUp = lastPrice >= firstPrice;
-    const lineColor = isUp ? "hsl(142, 76%, 36%)" : "hsl(0, 72%, 51%)";
-    const fillColor = isUp ? "hsla(142, 76%, 36%, 0.08)" : "hsla(0, 72%, 51%, 0.08)";
+    const lineColor = color(isUp ? "--up" : "--down");
 
     ctx.beginPath();
     ctx.strokeStyle = lineColor;
@@ -152,7 +176,10 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     ctx.lineTo(padding.left + chartW, chartHeight);
     ctx.lineTo(padding.left, chartHeight);
     ctx.closePath();
-    ctx.fillStyle = fillColor;
+    const fillGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+    fillGradient.addColorStop(0, color(isUp ? "--up" : "--down", 0.14));
+    fillGradient.addColorStop(1, color(isUp ? "--up" : "--down", 0));
+    ctx.fillStyle = fillGradient;
     ctx.fill();
 
     // Draw volume bars
@@ -161,8 +188,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
       const x = padding.left + (i / (filteredData.length - 1)) * chartW;
       const barH = (d.volume / maxVol) * (volHeight - 5);
       const barW = Math.max(1, chartW / filteredData.length - 0.5);
-      const barIsUp = d.close >= d.open;
-      ctx.fillStyle = barIsUp ? "hsla(142, 76%, 36%, 0.3)" : "hsla(0, 72%, 51%, 0.3)";
+      ctx.fillStyle = color("--muted-foreground", 0.25);
       ctx.fillRect(x - barW / 2, volTop + volHeight - 5 - barH, barW, barH);
     });
 
@@ -190,7 +216,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [filteredData, timeRange, isIntraday]);
+  }, [filteredData, timeRange, isIntraday, themeVersion]);
 
   // ─── Draw intraday chart (1D / LIVE) ────────────────────────────
   useEffect(() => {
@@ -213,6 +239,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const ctx = canvas.getContext("2d")!;
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, totalHeight);
+    const { color } = readPalette();
 
     const prices = intradayData.map(d => d.price);
     if (prices.length < 2) return;
@@ -236,7 +263,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const getX = (i: number) => padding.left + i * tickSpacing;
 
     // Draw subtle grid
-    ctx.strokeStyle = "hsla(220, 10%, 20%, 0.3)";
+    ctx.strokeStyle = color("--border", 0.5);
     ctx.lineWidth = 0.5;
     for (let i = 0; i < 4; i++) {
       const y = padding.top + drawH * (i / 3);
@@ -247,8 +274,8 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
 
       // Price labels on grid
       const gridPrice = maxPrice - (priceRange * (i / 3));
-      ctx.fillStyle = "hsla(220, 10%, 50%, 0.5)";
-      ctx.font = "9px 'JetBrains Mono', monospace";
+      ctx.fillStyle = color("--muted-foreground");
+      ctx.font = CANVAS_FONT;
       ctx.textAlign = "right";
       ctx.fillText(`$${gridPrice.toFixed(2)}`, width - 4, y - 2);
     }
@@ -257,24 +284,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     const firstPrice = prices[0];
     const lastPrice = prices[prices.length - 1];
     const isUp = lastPrice >= firstPrice;
-    const lineColor = isUp ? "hsl(142, 76%, 36%)" : "hsl(0, 72%, 51%)";
-    const fillColor = isUp ? "hsla(142, 76%, 36%, 0.10)" : "hsla(0, 72%, 51%, 0.10)";
-    const glowColor = isUp ? "hsla(142, 76%, 36%, 0.4)" : "hsla(0, 72%, 51%, 0.4)";
-
-    // Draw glow behind line (for LIVE effect)
-    if (timeRange === "LIVE") {
-      ctx.beginPath();
-      ctx.strokeStyle = glowColor;
-      ctx.lineWidth = 4;
-      ctx.lineJoin = "round";
-      intradayData.forEach((d, i) => {
-        const x = getX(i);
-        const y = padding.top + (1 - (d.price - minPrice) / priceRange) * drawH;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-    }
+    const lineColor = color(isUp ? "--up" : "--down");
 
     // Draw main price line
     ctx.beginPath();
@@ -296,22 +306,19 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     ctx.lineTo(lastDataX, bottomY);
     ctx.lineTo(padding.left, bottomY);
     ctx.closePath();
-    ctx.fillStyle = fillColor;
+    const fillGradient = ctx.createLinearGradient(0, 0, 0, bottomY);
+    fillGradient.addColorStop(0, color(isUp ? "--up" : "--down", 0.14));
+    fillGradient.addColorStop(1, color(isUp ? "--up" : "--down", 0));
+    ctx.fillStyle = fillGradient;
     ctx.fill();
 
-    // Draw current price dot (pulsing effect in LIVE)
+    // Draw current price dot in LIVE
     if (timeRange === "LIVE" && intradayData.length > 0) {
       const lastTick = intradayData[intradayData.length - 1];
       const lx = lastDataX;
       const ly = padding.top + (1 - (lastTick.price - minPrice) / priceRange) * drawH;
 
-      // Outer glow
-      ctx.beginPath();
-      ctx.arc(lx, ly, 5, 0, Math.PI * 2);
-      ctx.fillStyle = glowColor;
-      ctx.fill();
-
-      // Inner dot
+      // Dot
       ctx.beginPath();
       ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
       ctx.fillStyle = lineColor;
@@ -319,7 +326,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
 
       // Current price label — draw to the right of the dot
       ctx.fillStyle = lineColor;
-      ctx.font = "bold 10px 'JetBrains Mono', monospace";
+      ctx.font = CANVAS_FONT;
       ctx.textAlign = "left";
       ctx.fillText(`$${lastTick.price.toFixed(2)}`, lx + 8, ly + 3);
 
@@ -335,8 +342,8 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     }
 
     // Time labels at bottom
-    ctx.fillStyle = "hsla(220, 10%, 50%, 0.4)";
-    ctx.font = "8px 'JetBrains Mono', monospace";
+    ctx.fillStyle = color("--muted-foreground");
+    ctx.font = CANVAS_FONT;
     ctx.textAlign = "center";
     const labelCount = Math.min(6, intradayData.length);
     for (let i = 0; i < labelCount; i++) {
@@ -369,12 +376,12 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [intradayData, timeRange, isIntraday]);
+  }, [intradayData, timeRange, isIntraday, themeVersion]);
 
   if (!stock) {
     return (
       <div className="rf-panel flex flex-col h-full items-center justify-center">
-        <span className="text-muted-foreground text-xs">Select a ticker to view chart</span>
+        <span className="text-muted-foreground text-xs">Select a symbol to see its chart</span>
       </div>
     );
   }
@@ -391,28 +398,26 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
     <div className="rf-panel flex flex-col h-full" data-testid="price-chart">
       {/* Header */}
       <div className="rf-panel-header">
-        <div className="flex items-center gap-3">
-          <span className="text-rf-orange font-bold text-xs">{symbol}</span>
-          <span className="text-2xs text-muted-foreground truncate max-w-[160px]">{stock.name}</span>
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="num font-medium text-xs text-foreground">{symbol}</span>
+          <span className="text-xs text-dim truncate max-w-40">{stock.name}</span>
         </div>
         <div className="flex items-center gap-1">
           {timeRanges.map(r => (
             <button
               key={r}
               onClick={() => setTimeRange(r)}
-              className={`text-2xs px-1.5 py-0.5 rounded-sm font-medium transition-colors ${
+              className={`${BTN} ${
                 timeRange === r
-                  ? r === "LIVE"
-                    ? "bg-rf-green/20 text-rf-green"
-                    : "bg-rf-orange/20 text-rf-orange"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-raised text-foreground rf-marker-b"
+                  : "text-muted-foreground hover:text-foreground hover:bg-raised"
               }`}
               data-testid={`button-range-${r}`}
             >
               {r === "LIVE" ? (
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rf-green animate-pulse" />
-                  LIVE
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-up" />
+                  <span className="text-dim">Live</span>
                 </span>
               ) : r}
             </button>
@@ -421,18 +426,18 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
       </div>
 
       {/* Price info bar */}
-      <div className="flex items-center gap-4 px-3 py-1.5 border-b border-border bg-[hsl(220,14%,7%)]">
+      <div className="flex items-center gap-4 px-3 py-2 border-b border-border bg-card">
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold tabular-nums">{formatPrice(stock.price)}</span>
-          <span className={`text-xs font-medium tabular-nums ${changeColor}`}>
+          <span className="num text-xl text-foreground">{formatPrice(stock.price)}</span>
+          <span className={`num text-xs ${changeColor}`}>
             {formatChange(stock.change)} ({formatPercent(stock.changesPercentage)})
           </span>
         </div>
-        <div className="flex items-center gap-3 text-2xs text-muted-foreground ml-auto">
-          <span>O: <span className="text-foreground tabular-nums">{formatPrice(stock.open)}</span></span>
-          <span>H: <span className="text-foreground tabular-nums">{formatPrice(stock.dayHigh)}</span></span>
-          <span>L: <span className="text-foreground tabular-nums">{formatPrice(stock.dayLow)}</span></span>
-          <span>Vol: <span className="text-foreground tabular-nums">{formatVolume(stock.volume)}</span></span>
+        <div className="flex items-center gap-3 ml-auto">
+          <StatItem label="Open" value={formatPrice(stock.open)} />
+          <StatItem label="High" value={formatPrice(stock.dayHigh)} />
+          <StatItem label="Low" value={formatPrice(stock.dayLow)} />
+          <StatItem label="Volume" value={formatVolume(stock.volume)} />
         </div>
       </div>
 
@@ -441,7 +446,7 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="text-muted-foreground text-xs">No intraday data yet</div>
-            <div className="text-muted-foreground/60 text-[10px] mt-1">Start the simulation to see live ticks</div>
+            <div className="text-muted-foreground text-2xs mt-1">Start the simulation to see live ticks</div>
           </div>
         </div>
       )}
@@ -452,12 +457,12 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
           <canvas ref={canvasRef} className="w-full h-full" />
           {hoverInfo && (
             <div
-              className="absolute top-1 pointer-events-none bg-[hsl(220,14%,9%)]/90 border border-border rounded-sm px-2 py-1"
+              className="absolute top-1 pointer-events-none bg-popover/90 border border-border rounded-md px-2 py-1"
               style={{ left: Math.min(hoverInfo.x + 8, (containerRef.current?.clientWidth || 300) - 120) }}
             >
               <div className="text-2xs text-muted-foreground">{hoverInfo.date}</div>
-              <div className="text-xs font-bold tabular-nums">${formatPrice(hoverInfo.price)}</div>
-              {!isIntraday && <div className="text-2xs text-muted-foreground tabular-nums">Vol: {formatVolume(hoverInfo.vol)}</div>}
+              <div className="num text-xs text-foreground">${formatPrice(hoverInfo.price)}</div>
+              {!isIntraday && <div className="num text-2xs text-muted-foreground">Volume {formatVolume(hoverInfo.vol)}</div>}
             </div>
           )}
 
@@ -465,25 +470,25 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
           {timeRange === "LIVE" && intradayData.length > 0 && (
             <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between pointer-events-none">
               {/* Time window label */}
-              <div className="bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm px-2 py-0.5">
-                <span className="text-[9px] text-muted-foreground font-mono tabular-nums">{liveTimeWindow}</span>
+              <div className="h-7 flex items-center bg-popover/90 border border-border rounded-md px-2">
+                <span className="num text-2xs text-muted-foreground">{liveTimeWindow}</span>
               </div>
               {/* Zoom buttons */}
               <div className="flex items-center gap-1 pointer-events-auto">
                 <button
                   onClick={() => setLiveZoom(prev => ZOOM_STEPS[Math.max(ZOOM_STEPS.indexOf(prev) - 1, 0)])}
-                  className="w-5 h-5 flex items-center justify-center bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-colors text-xs font-bold"
+                  className={ZOOM_BTN}
                   title="Zoom in (fewer ticks)"
                   data-testid="zoom-in"
                 >
                   +
                 </button>
-                <span className="text-[8px] text-muted-foreground font-mono tabular-nums min-w-[28px] text-center bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm px-1 py-0.5">
+                <span className="num h-7 min-w-8 flex items-center justify-center text-2xs text-muted-foreground bg-popover/90 border border-border rounded-md px-1">
                   {liveZoom}t
                 </span>
                 <button
                   onClick={() => setLiveZoom(prev => ZOOM_STEPS[Math.min(ZOOM_STEPS.indexOf(prev) + 1, ZOOM_STEPS.length - 1)])}
-                  className="w-5 h-5 flex items-center justify-center bg-[hsl(220,14%,9%)]/80 border border-border/50 rounded-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-colors text-xs font-bold"
+                  className={ZOOM_BTN}
                   title="Zoom out (more ticks)"
                   data-testid="zoom-out"
                 >
@@ -496,13 +501,13 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
       )}
 
       {/* Key stats bar */}
-      <div className="flex items-center gap-3 px-3 py-1 border-t border-border text-2xs">
-        <StatItem label="Mkt Cap" value={formatNumber(stock.marketCap)} />
+      <div className="flex items-center gap-3 px-3 h-8 border-t border-border overflow-x-auto">
+        <StatItem label="Market cap" value={formatNumber(stock.marketCap)} />
         <StatItem label="P/E" value={stock.pe?.toFixed(1) ?? "—"} />
         <StatItem label="EPS" value={stock.eps?.toFixed(2) ?? "—"} />
-        <StatItem label="52W H" value={formatPrice(stock.yearHigh)} />
-        <StatItem label="52W L" value={formatPrice(stock.yearLow)} />
-        <StatItem label="Avg Vol" value={formatVolume(stock.avgVolume)} />
+        <StatItem label="52-week high" value={formatPrice(stock.yearHigh)} />
+        <StatItem label="52-week low" value={formatPrice(stock.yearLow)} />
+        <StatItem label="Avg volume" value={formatVolume(stock.avgVolume)} />
       </div>
     </div>
   );
@@ -510,9 +515,9 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
 
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-1">
-      <span className="text-muted-foreground">{label}:</span>
-      <span className="text-foreground font-medium tabular-nums">{value}</span>
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <span className="text-2xs text-muted-foreground">{label}</span>
+      <span className="num text-xs text-dim">{value}</span>
     </div>
   );
 }

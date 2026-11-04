@@ -30,7 +30,7 @@ const LAUNCH_EVENT: Omit<EventDefinition, "eventKey" | "startsAt" | "endsAt"> = 
   durationDays: 100,
   startingCash: 10000,
   variation: "high",
-  prize: "🏆 Winner's Prize: 3 months of Snapchat+, 1 month of PS Plus, or 1 month of Xbox Game Pass Ultimate",
+  prize: "Winner's prize: 3 months of Snapchat+, 1 month of PS Plus, or 1 month of Xbox Game Pass Ultimate",
 };
 
 // ─── Rotating Event Templates ────────────────────────────────────
@@ -46,7 +46,7 @@ export interface EventTemplate {
 export const ROTATING_TEMPLATES: EventTemplate[] = [
   {
     name: "The Tech Boom",
-    description: "Ride the wave of tech innovation. Only tech stocks available.",
+    description: "Ten tech names at high volatility. Only tech stocks can be traded.",
     allowedSymbols: ["AAPL", "MSFT", "GOOGL", "META", "NVDA", "TSLA", "AMZN", "CRM", "ORCL", "INTC"],
     durationDays: 20,
     startingCash: 10000,
@@ -102,7 +102,7 @@ export const ROTATING_TEMPLATES: EventTemplate[] = [
   },
   {
     name: "The Sprint",
-    description: "5 days. $10K. Maximum chaos. Good luck.",
+    description: "Five days, $10K and every stock, at high volatility.",
     allowedSymbols: null,
     durationDays: 5,
     startingCash: 10000,

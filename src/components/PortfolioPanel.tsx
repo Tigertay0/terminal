@@ -1,8 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, ShoppingCart, DollarSign, ArrowUpDown, BarChart3 } from "lucide-react";
 import type { TickerData } from "@/hooks/use-finance-data";
 import type { Holding, TradeRecord } from "@/hooks/use-simulation";
-import { formatPrice, formatPercent, formatCurrency } from "@/lib/finance-api";
+import { formatPrice, formatCurrency } from "@/lib/finance-api";
 
 interface PortfolioPanelProps {
   cash: number;
@@ -20,6 +19,20 @@ interface PortfolioPanelProps {
 }
 
 type Tab = "portfolio" | "trade" | "history" | "stats";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "portfolio", label: "Portfolio" },
+  { key: "trade", label: "Trade" },
+  { key: "history", label: "History" },
+  { key: "stats", label: "Stats" },
+];
+
+const EMPTY_STATE = "px-3 py-6 text-xs text-muted-foreground";
+const INPUT_CLASS =
+  "w-full h-8 rounded-md bg-raised border border-border px-2 text-xs num text-foreground outline-none focus:border-ink/60";
+
+const pnlColor = (value: number) => (value >= 0 ? "text-up" : "text-down");
+const signed = (value: number) => (value >= 0 ? "+" : "");
 
 export function PortfolioPanel({
   cash, holdings, trades, startingCash,
@@ -97,46 +110,45 @@ export function PortfolioPanel({
   return (
     <div className="rf-panel flex flex-col h-full" data-testid="portfolio-panel">
       {/* Header with KPIs */}
-      <div className="bg-[hsl(var(--rf-panel-header))] px-2 py-1.5 border-b border-border">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1">
-            <Wallet className="w-3 h-3 text-rf-orange" />
-            <span className="text-[10px] font-bold text-rf-orange tracking-wider">PORTFOLIO</span>
-          </div>
-          <span className={`text-[10px] font-bold ${totalPnL >= 0 ? "text-rf-green" : "text-rf-red"}`}>
-            {totalPnL >= 0 ? "+" : ""}{formatCurrency(totalPnL)} ({totalPnLPct >= 0 ? "+" : ""}{totalPnLPct.toFixed(2)}%)
+      <div className="rf-panel-header justify-between">
+        <span className="rf-panel-title">Portfolio</span>
+        <span className="text-xs">
+          <span className={`num ${pnlColor(totalPnL)}`}>
+            {signed(totalPnL)}{formatCurrency(totalPnL)} ({signed(totalPnLPct)}{totalPnLPct.toFixed(2)}%)
           </span>
+          <span className="text-muted-foreground"> vs start</span>
+        </span>
+      </div>
+      <div className="flex items-end justify-between gap-4 px-3 py-3 border-b border-border shrink-0">
+        <div className="min-w-0">
+          <div className="text-2xs text-muted-foreground">Total value</div>
+          <div className="num text-xl text-foreground leading-tight mt-1 truncate">{formatCurrency(portfolioValue)}</div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <div className="text-[9px] text-muted-foreground">TOTAL VALUE</div>
-            <div className="text-[11px] font-bold text-foreground">{formatCurrency(portfolioValue)}</div>
+        <dl className="text-xs space-y-1 shrink-0">
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Cash</dt>
+            <dd className="num text-dim">{formatCurrency(cash)}</dd>
           </div>
-          <div>
-            <div className="text-[9px] text-muted-foreground">CASH</div>
-            <div className="text-[11px] font-bold text-rf-green">{formatCurrency(cash)}</div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Invested</dt>
+            <dd className="num text-dim">{formatCurrency(portfolioValue - cash)}</dd>
           </div>
-          <div>
-            <div className="text-[9px] text-muted-foreground">INVESTED</div>
-            <div className="text-[11px] font-bold text-foreground">{formatCurrency(portfolioValue - cash)}</div>
-          </div>
-        </div>
+        </dl>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border shrink-0">
-        {(["portfolio", "trade", "history", "stats"] as Tab[]).map(t => (
+      <div className="flex h-9 border-b border-border shrink-0 px-1" role="group" aria-label="Portfolio views">
+        {TABS.map(({ key, label }) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${
-              tab === t
-                ? "text-rf-orange border-b border-rf-orange"
-                : "text-muted-foreground hover:text-foreground"
+            key={key}
+            aria-pressed={tab === key}
+            onClick={() => setTab(key)}
+            className={`px-3 text-xs font-medium transition-colors ${
+              tab === key ? "text-foreground rf-marker-b" : "text-muted-foreground hover:text-foreground"
             }`}
-            data-testid={`tab-${t}`}
+            data-testid={`tab-${key}`}
           >
-            {t.toUpperCase()}
+            {label}
           </button>
         ))}
       </div>
@@ -146,41 +158,38 @@ export function PortfolioPanel({
         {tab === "portfolio" && (
           <div>
             {holdings.size === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center px-4">
-                <ShoppingCart className="w-6 h-6 text-muted-foreground/30 mb-2" />
-                <div className="text-[11px] text-muted-foreground">No holdings yet</div>
-                <div className="text-[10px] text-muted-foreground/60 mt-1">Select a stock and go to Trade to buy</div>
-              </div>
+              <div className={EMPTY_STATE}>No holdings yet. Pick a symbol, then buy it from the Trade tab</div>
             ) : (
               Array.from(holdings.values()).map(h => {
                 const stock = getStock(h.symbol);
                 if (!stock) return null;
                 const pnl = getHoldingPnL(h.symbol);
                 const pnlPct = ((stock.price - h.avgCost) / h.avgCost * 100);
+                const selected = selectedSymbol === h.symbol;
                 return (
                   <div
                     key={h.symbol}
-                    className={`px-2 py-1.5 border-b border-border/50 cursor-pointer hover:bg-white/[0.02] transition-colors ${
-                      selectedSymbol === h.symbol ? "bg-white/[0.04]" : ""
+                    className={`px-3 py-2 border-b border-border/50 cursor-pointer hover:bg-raised/60 transition-colors ${
+                      selected ? "bg-raised rf-marker" : ""
                     }`}
                     onClick={() => onSelectSymbol(h.symbol)}
                     data-testid={`holding-${h.symbol}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[11px] font-bold text-foreground">{h.symbol}</span>
-                        <span className="text-[10px] text-muted-foreground ml-2">{h.shares % 1 === 0 ? h.shares : h.shares.toFixed(4)} shs</span>
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-baseline gap-2">
+                        <span className="num font-medium text-foreground">{h.symbol}</span>
+                        <span className="num text-2xs text-muted-foreground">{h.shares % 1 === 0 ? h.shares : h.shares.toFixed(4)} shares</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-[11px] font-bold text-foreground">{formatCurrency(stock.price * h.shares)}</div>
-                        <div className={`text-[10px] font-medium ${pnl >= 0 ? "text-rf-green" : "text-rf-red"}`}>
-                          {pnl >= 0 ? "+" : ""}{formatCurrency(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)
+                        <div className="num text-foreground">{formatCurrency(stock.price * h.shares)}</div>
+                        <div className={`num ${pnlColor(pnl)}`}>
+                          {signed(pnl)}{formatCurrency(pnl)} ({signed(pnlPct)}{pnlPct.toFixed(1)}%)
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-[9px] text-muted-foreground">Avg: ${formatPrice(h.avgCost)}</span>
-                      <span className="text-[9px] text-muted-foreground">Cur: ${formatPrice(stock.price)}</span>
+                    <div className="flex items-center gap-3 mt-1 text-2xs text-muted-foreground">
+                      <span>Avg <span className="num">${formatPrice(h.avgCost)}</span></span>
+                      <span>Last <span className="num">${formatPrice(stock.price)}</span></span>
                     </div>
                   </div>
                 );
@@ -190,54 +199,53 @@ export function PortfolioPanel({
         )}
 
         {tab === "trade" && (
-          <div className="p-2 space-y-3">
+          <div className="p-3 space-y-3">
             {/* Stock info */}
             {currentStock && (
-              <div className="bg-white/[0.02] rounded-sm p-2 border border-border/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-rf-orange">{selectedSymbol}</span>
-                  <span className="text-xs font-bold text-foreground">${formatPrice(currentStock.price)}</span>
+              <div className="rounded-lg border border-border p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="num font-medium text-foreground">{selectedSymbol}</span>
+                  <span className="num text-foreground">${formatPrice(currentStock.price)}</span>
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{currentStock.name}</div>
+                <div className="text-2xs text-dim mt-1">{currentStock.name}</div>
               </div>
             )}
 
             {/* Buy/Sell toggle */}
-            <div className="grid grid-cols-2 gap-1 bg-white/[0.02] rounded-sm p-0.5">
+            <div className="grid grid-cols-2 gap-1 rounded-md border border-border p-0.5">
               <button
                 onClick={() => setTradeAction("BUY")}
-                className={`py-1.5 text-[10px] font-bold rounded-sm transition-colors ${
+                className={`h-7 text-xs rounded transition-colors ${
                   tradeAction === "BUY"
-                    ? "bg-rf-green/20 text-rf-green"
+                    ? "bg-raised text-up font-medium"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="trade-buy"
               >
-                BUY
+                Buy
               </button>
               <button
                 onClick={() => setTradeAction("SELL")}
-                className={`py-1.5 text-[10px] font-bold rounded-sm transition-colors ${
+                className={`h-7 text-xs rounded transition-colors ${
                   tradeAction === "SELL"
-                    ? "bg-rf-red/20 text-rf-red"
+                    ? "bg-raised text-down font-medium"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="trade-sell"
               >
-                SELL
+                Sell
               </button>
             </div>
 
             {/* Shares / Dollars input */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[9px] text-muted-foreground">{inputMode === "shares" ? "SHARES" : "AMOUNT ($)"}</label>
+                <label className="text-2xs text-muted-foreground">{inputMode === "shares" ? "Shares" : "Amount ($)"}</label>
                 <button
                   onClick={() => { setInputMode(m => m === "shares" ? "dollars" : "shares"); setShares(""); }}
-                  className="text-[9px] font-bold text-rf-cyan hover:text-rf-cyan/80 transition-colors flex items-center gap-0.5"
+                  className="text-2xs text-dim hover:text-foreground transition-colors"
                   data-testid="toggle-input-mode"
                 >
-                  <DollarSign className="w-2.5 h-2.5" />
                   {inputMode === "shares" ? "Use $" : "Use shares"}
                 </button>
               </div>
@@ -248,18 +256,18 @@ export function PortfolioPanel({
                 placeholder={inputMode === "shares" ? "0" : "$0.00"}
                 min="0"
                 step={inputMode === "shares" ? "0.0001" : "0.01"}
-                className="w-full bg-[hsl(220,14%,9%)] border border-border rounded-sm px-2 py-1.5 text-xs font-mono text-foreground outline-none focus:border-rf-orange"
+                className={INPUT_CLASS}
                 data-testid="input-shares"
               />
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-[9px] text-muted-foreground">
-                  Max: {inputMode === "shares"
+              <div className="flex items-center justify-between mt-1 text-2xs text-muted-foreground">
+                <span>
+                  Max <span className="num">{inputMode === "shares"
                     ? `${tradeAction === "BUY" ? maxBuyableShares.toFixed(2) : maxSellableShares % 1 === 0 ? maxSellableShares : maxSellableShares.toFixed(4)} shares`
                     : `${formatCurrency(tradeAction === "BUY" ? maxBuyableDollars : maxSellableDollars)}`
-                  }
+                  }</span>
                 </span>
                 {shares && estimatedCost > 0 && (
-                  <span className="text-[9px] text-muted-foreground">
+                  <span className="num">
                     {inputMode === "dollars" && estimatedShares
                       ? `≈ ${estimatedShares} shs`
                       : `≈ ${formatCurrency(estimatedCost)}`
@@ -268,7 +276,7 @@ export function PortfolioPanel({
                 )}
               </div>
               {/* Quick-fill buttons */}
-              <div className="flex gap-1 mt-1.5">
+              <div className="flex gap-1 mt-2">
                 {[25, 50, 75, 100].map(pct => {
                   let val: string;
                   if (inputMode === "shares") {
@@ -283,7 +291,7 @@ export function PortfolioPanel({
                     <button
                       key={pct}
                       onClick={() => setShares(val)}
-                      className="flex-1 py-0.5 text-[9px] font-bold text-muted-foreground bg-white/[0.03] rounded-sm hover:bg-white/[0.06] hover:text-foreground transition-colors border border-border/30"
+                      className="flex-1 h-7 rounded-md num text-xs text-dim hover:bg-raised hover:text-foreground transition-colors"
                     >
                       {pct}%
                     </button>
@@ -296,21 +304,15 @@ export function PortfolioPanel({
             <button
               onClick={handleTrade}
               disabled={!shares || parseFloat(shares) <= 0}
-              className={`w-full py-2 text-xs font-bold rounded-sm transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
-                tradeAction === "BUY"
-                  ? "bg-rf-green text-black hover:bg-rf-green/90"
-                  : "bg-rf-red text-white hover:bg-rf-red/90"
-              }`}
+              className="w-full h-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               data-testid="button-execute-trade"
             >
-              {tradeAction} {selectedSymbol}
+              {tradeAction === "BUY" ? "Buy" : "Sell"} {selectedSymbol}
             </button>
 
             {/* Message */}
             {message && (
-              <div className={`text-[10px] font-bold text-center py-1 rounded-sm ${
-                message.type === "success" ? "text-rf-green bg-rf-green/10" : "text-rf-red bg-rf-red/10"
-              }`}>
+              <div className={`text-xs text-center ${message.type === "success" ? "text-up" : "text-down"}`}>
                 {message.text}
               </div>
             )}
@@ -320,27 +322,22 @@ export function PortfolioPanel({
         {tab === "history" && (
           <div>
             {trades.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center px-4">
-                <ArrowUpDown className="w-6 h-6 text-muted-foreground/30 mb-2" />
-                <div className="text-[11px] text-muted-foreground">No trades yet</div>
-              </div>
+              <div className={EMPTY_STATE}>No trades yet</div>
             ) : (
               [...trades].reverse().map(t => (
-                <div key={t.id} className="px-2 py-1.5 border-b border-border/50" data-testid={`trade-${t.id}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[9px] font-bold px-1 rounded-sm ${
-                        t.action === "BUY" ? "bg-rf-green/20 text-rf-green" : "bg-rf-red/20 text-rf-red"
-                      }`}>
-                        {t.action}
+                <div key={t.id} className="px-3 py-2 border-b border-border/50" data-testid={`trade-${t.id}`}>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-baseline gap-2">
+                      <span className={t.action === "BUY" ? "text-up" : "text-down"}>
+                        {t.action === "BUY" ? "Buy" : "Sell"}
                       </span>
-                      <span className="text-[11px] font-bold text-foreground">{t.symbol}</span>
+                      <span className="num font-medium text-foreground">{t.symbol}</span>
                     </div>
-                    <span className="text-[11px] font-bold text-foreground">{formatCurrency(t.price * t.shares)}</span>
+                    <span className="num text-foreground">{formatCurrency(t.price * t.shares)}</span>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[9px] text-muted-foreground">{t.shares % 1 === 0 ? t.shares : t.shares.toFixed(4)} shs @ ${formatPrice(t.price)}</span>
-                    <span className="text-[9px] text-muted-foreground">
+                  <div className="flex items-center gap-3 mt-1 text-2xs text-muted-foreground num">
+                    <span>{t.shares % 1 === 0 ? t.shares : t.shares.toFixed(4)} shares @ ${formatPrice(t.price)}</span>
+                    <span>
                       {t.timestamp.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
@@ -359,6 +356,13 @@ export function PortfolioPanel({
 }
 
 // ─── Stats Sub-component ─────────────────────────────────────────
+interface StatEntry {
+  symbol: string;
+  pnl: number;
+  pnlPct: number;
+  value: number;
+}
+
 function StatsView({
   holdings,
   getStock,
@@ -369,7 +373,7 @@ function StatsView({
   getHoldingPnL: (symbol: string) => number;
 }) {
   const stats = useMemo(() => {
-    const entries: { symbol: string; pnl: number; pnlPct: number; value: number }[] = [];
+    const entries: StatEntry[] = [];
     holdings.forEach((h) => {
       const stock = getStock(h.symbol);
       if (!stock) return;
@@ -390,113 +394,64 @@ function StatsView({
   }, [holdings, getStock, getHoldingPnL]);
 
   if (holdings.size === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-8 text-center px-4">
-        <BarChart3 className="w-6 h-6 text-muted-foreground/30 mb-2" />
-        <div className="text-[11px] text-muted-foreground">No holdings to analyze</div>
-        <div className="text-[10px] text-muted-foreground/60 mt-1">Buy some stocks first</div>
-      </div>
-    );
+    return <div className={EMPTY_STATE}>No holdings to analyze. Buy a stock from the Trade tab first</div>;
   }
 
   return (
-    <div className="p-2 space-y-2">
-      {/* Best by $ */}
-      <StatHighlight
-        label="TOP GAINER ($)"
-        icon={<TrendingUp className="w-3 h-3 text-rf-green" />}
-        entry={stats.bestDollar}
-        mode="dollar"
-        positive
-      />
-      {/* Worst by $ */}
-      <StatHighlight
-        label="TOP LOSER ($)"
-        icon={<TrendingDown className="w-3 h-3 text-rf-red" />}
-        entry={stats.worstDollar}
-        mode="dollar"
-        positive={false}
-      />
-      {/* Best by % */}
-      <StatHighlight
-        label="TOP GAINER (%)"
-        icon={<TrendingUp className="w-3 h-3 text-rf-green" />}
-        entry={stats.bestPercent}
-        mode="percent"
-        positive
-      />
-      {/* Worst by % */}
-      <StatHighlight
-        label="TOP LOSER (%)"
-        icon={<TrendingDown className="w-3 h-3 text-rf-red" />}
-        entry={stats.worstPercent}
-        mode="percent"
-        positive={false}
-      />
+    <div className="p-3 space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        <StatHighlight label="Top gainer ($)" entry={stats.bestDollar} mode="dollar" />
+        <StatHighlight label="Top loser ($)" entry={stats.worstDollar} mode="dollar" />
+        <StatHighlight label="Top gainer (%)" entry={stats.bestPercent} mode="percent" />
+        <StatHighlight label="Top loser (%)" entry={stats.worstPercent} mode="percent" />
+      </div>
 
       {/* All holdings ranked */}
       {stats.all.length > 1 && (
-        <>
-          <div className="flex items-center gap-1.5 mt-2 mb-1">
-            <BarChart3 className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[9px] font-bold text-muted-foreground tracking-wider">ALL HOLDINGS RANKED</span>
+        <div>
+          <div className="flex items-center h-7 text-2xs text-muted-foreground border-b border-border">
+            All holdings ranked
           </div>
           {stats.all.map((e, i) => (
-            <div key={e.symbol} className="flex items-center justify-between px-2 py-1 border-b border-border/30">
+            <div key={e.symbol} className="flex items-center justify-between h-8 text-xs border-b border-border/50">
               <div className="flex items-center gap-2">
-                <span className="text-[9px] text-muted-foreground w-4 text-center">#{i + 1}</span>
-                <span className="text-[11px] font-bold text-foreground">{e.symbol}</span>
+                <span className="num text-2xs text-muted-foreground w-5 text-right">{i + 1}</span>
+                <span className="num font-medium text-foreground">{e.symbol}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-[10px] font-bold tabular-nums ${e.pnl >= 0 ? "text-rf-green" : "text-rf-red"}`}>
-                  {e.pnl >= 0 ? "+" : ""}{formatCurrency(e.pnl)}
+                <span className={`num ${pnlColor(e.pnl)}`}>
+                  {signed(e.pnl)}{formatCurrency(e.pnl)}
                 </span>
-                <span className={`text-[10px] tabular-nums ${e.pnlPct >= 0 ? "text-rf-green" : "text-rf-red"}`}>
-                  {e.pnlPct >= 0 ? "+" : ""}{e.pnlPct.toFixed(1)}%
+                <span className={`num w-14 text-right ${pnlColor(e.pnlPct)}`}>
+                  {signed(e.pnlPct)}{e.pnlPct.toFixed(1)}%
                 </span>
               </div>
             </div>
           ))}
-        </>
+        </div>
       )}
     </div>
   );
 }
 
 function StatHighlight({
-  label, icon, entry, mode, positive,
+  label, entry, mode,
 }: {
   label: string;
-  icon: React.ReactNode;
-  entry: { symbol: string; pnl: number; pnlPct: number; value: number } | null;
+  entry: StatEntry | null;
   mode: "dollar" | "percent";
-  positive: boolean;
 }) {
   if (!entry) return null;
-  const color = positive ? (entry.pnl >= 0 ? "text-rf-green" : "text-rf-red") : (entry.pnl <= 0 ? "text-rf-red" : "text-rf-green");
-  const bgColor = positive ? (entry.pnl >= 0 ? "bg-rf-green/[0.06]" : "bg-rf-red/[0.06]") : (entry.pnl <= 0 ? "bg-rf-red/[0.06]" : "bg-rf-green/[0.06]");
-  const borderColor = positive ? (entry.pnl >= 0 ? "border-rf-green/20" : "border-rf-red/20") : (entry.pnl <= 0 ? "border-rf-red/20" : "border-rf-green/20");
+  const value = mode === "dollar" ? entry.pnl : entry.pnlPct;
+  const text = mode === "dollar"
+    ? `${signed(entry.pnl)}${formatCurrency(entry.pnl)}`
+    : `${signed(entry.pnlPct)}${entry.pnlPct.toFixed(2)}%`;
 
   return (
-    <div className={`rounded-sm border ${borderColor} ${bgColor} p-2`}>
-      <div className="flex items-center gap-1.5 mb-1">
-        {icon}
-        <span className="text-[9px] font-bold text-muted-foreground tracking-wider">{label}</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-foreground">{entry.symbol}</span>
-        <div className="text-right">
-          {mode === "dollar" ? (
-            <span className={`text-xs font-bold tabular-nums ${color}`}>
-              {entry.pnl >= 0 ? "+" : ""}{formatCurrency(entry.pnl)}
-            </span>
-          ) : (
-            <span className={`text-xs font-bold tabular-nums ${color}`}>
-              {entry.pnlPct >= 0 ? "+" : ""}{entry.pnlPct.toFixed(2)}%
-            </span>
-          )}
-        </div>
-      </div>
+    <div className="rounded-lg border border-border p-3">
+      <div className="text-2xs text-muted-foreground">{label}</div>
+      <div className={`num text-sm mt-1 ${pnlColor(value)}`}>{text}</div>
+      <div className="num text-2xs text-dim mt-1">{entry.symbol}</div>
     </div>
   );
 }

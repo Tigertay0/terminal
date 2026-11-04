@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { formatPrice, formatPercent, getChangeColor, formatVolume } from "@/lib/finance-api";
 import type { TickerData } from "@/hooks/use-finance-data";
-import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 
 type Tab = "gainers" | "losers" | "active";
 
@@ -12,31 +11,32 @@ interface MarketMoversProps {
   onSelectSymbol: (symbol: string) => void;
 }
 
+const TABS: { key: Tab; label: string }[] = [
+  { key: "gainers", label: "Gainers" },
+  { key: "losers", label: "Losers" },
+  { key: "active", label: "Most active" },
+];
+
+const ROW = "grid grid-cols-[24px_minmax(0,1fr)_80px_72px] items-center gap-2 h-8 px-3";
+
 export function MarketMovers({ gainers, losers, active, onSelectSymbol }: MarketMoversProps) {
   const [tab, setTab] = useState<Tab>("gainers");
-
   const data = tab === "gainers" ? gainers : tab === "losers" ? losers : active;
 
   return (
-    <div className="rf-panel flex flex-col h-full" data-testid="market-movers">
-      <div className="rf-panel-header">
-        <div className="flex items-center gap-1">
-          {([
-            { key: "gainers" as Tab, label: "Gainers", icon: TrendingUp, color: "text-rf-green" },
-            { key: "losers" as Tab, label: "Losers", icon: TrendingDown, color: "text-rf-red" },
-            { key: "active" as Tab, label: "Active", icon: Activity, color: "text-rf-blue" },
-          ]).map(({ key, label, icon: Icon, color }) => (
+    <div className="rf-panel h-full" data-testid="market-movers">
+      <div className="rf-panel-header px-1" role="group" aria-label="Movers list">
+        <div className="flex h-full">
+          {TABS.map(({ key, label }) => (
             <button
               key={key}
+              aria-pressed={tab === key}
               onClick={() => setTab(key)}
-              className={`flex items-center gap-1 text-2xs px-2 py-0.5 rounded-sm font-medium transition-colors ${
-                tab === key
-                  ? `bg-white/[0.06] ${color}`
-                  : "text-muted-foreground hover:text-foreground"
+              className={`px-3 text-xs font-medium transition-colors ${
+                tab === key ? "text-foreground rf-marker-b" : "text-muted-foreground hover:text-foreground"
               }`}
               data-testid={`button-tab-${key}`}
             >
-              <Icon className="w-2.5 h-2.5" />
               {label}
             </button>
           ))}
@@ -44,35 +44,28 @@ export function MarketMovers({ gainers, losers, active, onSelectSymbol }: Market
       </div>
 
       <div className="flex-1 overflow-y-auto rf-scrollbar">
-        {/* Header */}
-        <div className="grid grid-cols-[1fr_70px_65px_55px] gap-1 px-2 py-1 border-b border-border text-2xs text-muted-foreground sticky top-0 bg-[hsl(var(--rf-panel-bg))] z-10">
+        <div className={`${ROW} h-7 text-2xs text-muted-foreground sticky top-0 bg-card z-10 border-b border-border`}>
+          <span className="text-right">#</span>
           <span>Symbol</span>
-          <span className="text-right">Price</span>
-          <span className="text-right">{tab === "active" ? "Volume" : "%Chg"}</span>
-          <span className="text-right">Sector</span>
+          <span className="text-right">Last</span>
+          <span className="text-right">{tab === "active" ? "Volume" : "Chg %"}</span>
         </div>
 
-        {data.slice(0, 8).map((stock, i) => {
-          const changeColor = getChangeColor(stock.changesPercentage);
-          return (
-            <div
-              key={stock.symbol}
-              onClick={() => onSelectSymbol(stock.symbol)}
-              className="grid grid-cols-[1fr_70px_65px_55px] gap-1 px-2 py-0.5 text-[11px] cursor-pointer hover:bg-white/[0.03] transition-colors"
-              data-testid={`mover-${stock.symbol}`}
-            >
-              <div className="flex items-center gap-1 min-w-0">
-                <span className="text-2xs text-muted-foreground w-3 text-right shrink-0">{i + 1}</span>
-                <span className="font-bold truncate">{stock.symbol}</span>
-              </div>
-              <span className="text-right tabular-nums">{formatPrice(stock.price)}</span>
-              <span className={`text-right tabular-nums ${tab === "active" ? "text-rf-blue" : changeColor}`}>
-                {tab === "active" ? formatVolume(stock.volume) : formatPercent(stock.changesPercentage)}
-              </span>
-
-            </div>
-          );
-        })}
+        {data.slice(0, 8).map((stock, i) => (
+          <button
+            key={stock.symbol}
+            onClick={() => onSelectSymbol(stock.symbol)}
+            className={`${ROW} w-full text-left text-xs hover:bg-raised/60 transition-colors`}
+            data-testid={`mover-${stock.symbol}`}
+          >
+            <span className="num text-2xs text-muted-foreground text-right">{i + 1}</span>
+            <span className="num font-medium text-foreground truncate">{stock.symbol}</span>
+            <span className="num text-right text-foreground">{formatPrice(stock.price)}</span>
+            <span className={`num text-right ${tab === "active" ? "text-dim" : getChangeColor(stock.changesPercentage)}`}>
+              {tab === "active" ? formatVolume(stock.volume) : formatPercent(stock.changesPercentage)}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 A web-based market data workstation with real-time stock data and a full simulation mode.
 
-- Real mode: live quotes, charts, market movers from Yahoo Finance
+- Real mode: live quotes, charts, market movers and news from Yahoo Finance
 - Simulation mode: paper trading, time controls, news engine, tutorial, timed events with a leaderboard
 - Accounts: your watchlist, simulation saves and event results persist across devices
 
@@ -28,7 +28,7 @@ Live at **https://terminal.tiger-tayo.workers.dev**
 
 | Route | Who | What |
 |---|---|---|
-| `GET /api/yf/quote?symbols=`, `/chart`, `/search` | anyone | Yahoo Finance data. Cached per Worker instance, and at the edge once the site has a custom domain (the Cache API does nothing on workers.dev). 600 requests a minute per address |
+| `GET /api/yf/quote?symbols=`, `/chart`, `/search`, `/news?symbol=` | anyone | Yahoo Finance data. Cached per Worker instance, and at the edge once the site has a custom domain (the Cache API does nothing on workers.dev). 600 requests a minute per address |
 | `/api/auth/*` | anyone | Sign up, sign in, sign out, session (Better Auth). Sign-up and sign-in are rate limited per address |
 | `GET /api/config` | anyone | Whether Google sign-in is available |
 | `GET/PUT /api/watchlist` | signed in | The user's watchlist (a new account gets the default list on first read) |

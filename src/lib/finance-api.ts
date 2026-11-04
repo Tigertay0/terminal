@@ -1,7 +1,7 @@
 // Finance API helper — calls the Worker's Yahoo Finance proxy (/api/yf)
 
-export async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+export async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res.json();
 }
@@ -16,9 +16,12 @@ export function formatNumber(n: number | undefined | null): string {
   return n.toFixed(2);
 }
 
+const PRICE_FORMAT = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// One price format everywhere: thousands separators, two decimals
 export function formatPrice(n: number | undefined | null): string {
   if (n == null) return "—";
-  return n.toFixed(2);
+  return PRICE_FORMAT.format(n);
 }
 
 export function formatCurrency(n: number | undefined | null): string {
@@ -43,7 +46,7 @@ export function formatPercent(n: number | undefined | null): string {
 export function formatChange(n: number | undefined | null): string {
   if (n == null) return "—";
   const sign = n >= 0 ? "+" : "";
-  return `${sign}${n.toFixed(2)}`;
+  return `${sign}${PRICE_FORMAT.format(n)}`;
 }
 
 export function formatVolume(n: number | undefined | null): string {
@@ -56,5 +59,5 @@ export function formatVolume(n: number | undefined | null): string {
 
 export function getChangeColor(change: number | undefined | null): string {
   if (change == null || change === 0) return "text-muted-foreground";
-  return change > 0 ? "text-rf-green" : "text-rf-red";
+  return change > 0 ? "text-up" : "text-down";
 }
