@@ -32,7 +32,7 @@ import {
   type SimSaveRow, type EventParticipantRow,
 } from "@/lib/user-data";
 import { getCurrentEvent, type EventDefinition } from "@/lib/events";
-import { BrandMark } from "@/components/BrandMark";
+import { LoadingScreen } from "@/components/BrandMark";
 
 import { DEFAULT_WATCHLIST, MAX_SIM_SAVES } from "@shared/limits";
 
@@ -149,22 +149,14 @@ function RealTerminal({ userId, initialWatchlist, onHome, onAuth }: { userId: st
   const currentStock = getStock(selectedSymbol);
 
   if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <BrandMark size={40} className="mx-auto animate-pulse" />
-          <div className="text-rf-orange font-bold text-sm tracking-wider">ROCHAMBEAU FINANCE TERMINAL</div>
-          <div className="text-muted-foreground text-xs">Connecting to Yahoo Finance...</div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen title="Loading market data" detail="Quotes from Yahoo Finance" />;
   }
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden select-none" data-testid="terminal">
       <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} searchSymbols={searchSymbols} onHome={onHome} onAuth={onAuth} />
       <IndexTicker indices={getIndices()} />
-      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[195px_minmax(0,1fr)_240px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
+      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[272px_minmax(0,1fr)_300px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
         <div className="row-span-2 min-h-0">
           <WatchlistPanel symbols={watchlist} getStock={getStock} onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} onRemoveSymbol={handleRemoveSymbol} />
         </div>
@@ -342,15 +334,7 @@ function SimTerminal({
   const historicalData = sim.getSimHistorical(selectedSymbol);
 
   if (baseData.loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <BrandMark size={40} className="mx-auto animate-pulse" />
-          <div className="text-rf-orange font-bold text-sm tracking-wider">SIMULATION MODE</div>
-          <div className="text-muted-foreground text-xs">Initializing market simulation...</div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen title="Starting the simulation" detail="Loading prices from Yahoo Finance" />;
   }
 
   return (
@@ -368,7 +352,7 @@ function SimTerminal({
         saveStatus={userId ? saveStatus : undefined}
         lastSavedAt={userId ? lastSavedAt : undefined}
       />
-      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[195px_minmax(0,1fr)_260px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
+      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[272px_minmax(0,1fr)_320px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
         <div className="row-span-2 min-h-0">
           <WatchlistPanel symbols={watchlist} getStock={sim.getStock} onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} onRemoveSymbol={handleRemoveSymbol} />
         </div>
@@ -569,15 +553,7 @@ function EventTerminal({
   const historicalData = sim.getSimHistorical(selectedSymbol);
 
   if (baseData.loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <BrandMark size={40} className="mx-auto animate-pulse" />
-          <div className="text-rf-cyan font-bold text-sm tracking-wider">EVENT MODE</div>
-          <div className="text-muted-foreground text-xs">Loading {event.name}...</div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen title={event.name} detail="Loading the event market" />;
   }
 
   return (
@@ -607,7 +583,7 @@ function EventTerminal({
         eventMode
         totalEventDays={event.durationDays}
       />
-      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[195px_minmax(0,1fr)_260px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
+      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-[272px_minmax(0,1fr)_320px] grid-rows-[1fr_1fr] gap-px bg-border p-px overflow-hidden">
         <div className="row-span-2 min-h-0">
           <WatchlistPanel symbols={watchlist} getStock={sim.getStock} onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} onRemoveSymbol={handleRemoveSymbol} />
         </div>
@@ -621,23 +597,20 @@ function EventTerminal({
           <MarketMovers gainers={sim.getTopGainers()} losers={sim.getTopLosers()} active={sim.getMostActive()} onSelectSymbol={setSelectedSymbol} />
           <SectorHeatmap stocks={sim.getAllStocks()} onSelectSymbol={setSelectedSymbol} />
         </div>
-        <div className="min-h-0 flex flex-col">
+        <div className="min-h-0 flex flex-col bg-card">
           {/* Toggle tabs */}
-          <div className="flex border-b border-border shrink-0 bg-[hsl(var(--rf-panel-bg))]">
-            <button
-              onClick={() => setEventPanel("leaderboard")}
-              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "leaderboard" ? "text-rf-cyan border-b border-rf-cyan" : "text-muted-foreground hover:text-foreground"}`}
-              data-testid="tab-leaderboard"
-            >
-              LEADERBOARD
-            </button>
-            <button
-              onClick={() => setEventPanel("news")}
-              className={`flex-1 py-1 text-[10px] font-bold tracking-wider transition-colors ${eventPanel === "news" ? "text-rf-cyan border-b border-rf-cyan" : "text-muted-foreground hover:text-foreground"}`}
-              data-testid="tab-news"
-            >
-              NEWS
-            </button>
+          <div className="flex h-9 border-b border-border shrink-0 px-1" role="group" aria-label="Side panel">
+            {([["leaderboard", "Leaderboard"], ["news", "News"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                aria-pressed={eventPanel === key}
+                onClick={() => setEventPanel(key)}
+                className={`px-3 text-xs font-medium transition-colors ${eventPanel === key ? "text-foreground rf-marker-b" : "text-muted-foreground hover:text-foreground"}`}
+                data-testid={`tab-${key}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           <div className="flex-1 min-h-0">
             {eventPanel === "leaderboard" ? (
@@ -724,7 +697,7 @@ export default function App() {
   // ─── Handle Join Event ──────────────────────────────────────────
   const handleJoinEvent = useCallback(async (event: EventDefinition) => {
     if (!auth.userId) {
-      toast({ title: "Please log in to join events", variant: "destructive" });
+      toast({ title: "Sign in to join events", variant: "destructive" });
       return;
     }
 
@@ -734,7 +707,7 @@ export default function App() {
 
       if (participant) {
         if (participant.status === "completed") {
-          toast({ title: "Event already completed", description: "You've already finished this event." });
+          toast({ title: "You already finished this event", description: "Your result is on the leaderboard." });
           return;
         }
         // Resume existing participation
@@ -783,12 +756,7 @@ export default function App() {
   if (auth.loading) {
     return (
       <QueryClientProvider client={queryClient}>
-        <div className="h-screen flex items-center justify-center bg-background">
-          <div className="text-center space-y-3">
-            <BrandMark size={40} className="mx-auto animate-pulse" />
-            <div className="text-rf-orange font-bold text-sm tracking-wider">ROCHAMBEAU FINANCE TERMINAL</div>
-          </div>
-        </div>
+        <LoadingScreen title="Rochambeau Finance Terminal" />
       </QueryClientProvider>
     );
   }
@@ -860,7 +828,7 @@ export default function App() {
             if (savesList.length >= MAX_SIM_SAVES) {
               toast({
                 title: "Save limit reached",
-                description: `Delete an old save first. Maximum ${MAX_SIM_SAVES} saves per user.`,
+                description: `Delete an old save first. Each account holds up to ${MAX_SIM_SAVES}.`,
                 variant: "destructive",
               });
               return;

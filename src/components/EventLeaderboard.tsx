@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { Trophy, Clock, TrendingUp, TrendingDown, Minus, Users } from "lucide-react";
 import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/user-data";
 import { getEventTimeRemaining, type EventDefinition } from "@/lib/events";
 
@@ -13,10 +12,8 @@ function formatCurrency(val: number): string {
 }
 
 function getRankBadge(rank: number) {
-  if (rank === 1) return <span className="text-yellow-400">🥇</span>;
-  if (rank === 2) return <span className="text-gray-300">🥈</span>;
-  if (rank === 3) return <span className="text-amber-600">🥉</span>;
-  return <span className="text-[10px] text-muted-foreground font-mono w-5 text-center">{rank}</span>;
+  const tone = rank <= 3 ? "text-foreground font-medium" : "text-muted-foreground";
+  return <span className={`num text-xs ${tone}`}>{rank}</span>;
 }
 
 export function EventLeaderboard({ event }: EventLeaderboardProps) {
@@ -46,103 +43,70 @@ export function EventLeaderboard({ event }: EventLeaderboardProps) {
   return (
     <div className="rf-panel flex flex-col h-full" data-testid="event-leaderboard">
       {/* Header */}
-      <div className="bg-[hsl(var(--rf-panel-header))] px-2 py-1.5 border-b border-border">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1">
-            <Trophy className="w-3 h-3 text-rf-cyan" />
-            <span className="text-[10px] font-bold text-rf-cyan tracking-wider">LEADERBOARD</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-2.5 h-2.5 text-muted-foreground" />
-            <span className="text-[9px] text-muted-foreground">Ends in</span>
-            <span className="text-[10px] font-bold text-rf-cyan tabular-nums">{timeLeft}</span>
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-foreground font-medium">{event.name}</span>
-          <div className="flex items-center gap-1">
-            <Users className="w-2.5 h-2.5 text-muted-foreground" />
-            <span className="text-[9px] text-muted-foreground">{participants.length} players</span>
-          </div>
-        </div>
-        {userRank > 0 && (
-          <div className="flex items-center gap-1 mt-1 bg-rf-cyan/10 border border-rf-cyan/20 rounded-sm px-1.5 py-0.5">
-            <span className="text-[9px] text-rf-cyan font-bold">YOUR RANK:</span>
-            <span className="text-[10px] text-rf-cyan font-bold">#{userRank}</span>
-            <span className="text-[9px] text-muted-foreground">of {participants.length}</span>
-          </div>
-        )}
+      <div className="rf-panel-header">
+        <span className="rf-panel-title">Leaderboard</span>
+        <span className="text-2xs text-muted-foreground">
+          Ends in <span className="num">{timeLeft}</span>
+        </span>
       </div>
+      <div className="flex items-center justify-between h-8 px-3 border-b border-border">
+        <span className="text-xs text-dim truncate">{event.name}</span>
+        <span className="text-2xs text-muted-foreground shrink-0">
+          <span className="num">{participants.length}</span> players
+        </span>
+      </div>
+      {userRank > 0 && (
+        <div className="px-3 py-2 text-xs text-dim border-b border-border">
+          Your rank <span className="num">#{userRank}</span> of <span className="num">{participants.length}</span>
+        </div>
+      )}
 
       {/* Column Headers */}
-      <div className="flex items-center px-2 py-1 border-b border-border/50 bg-white/[0.01]">
-        <span className="w-6 text-[8px] font-bold text-muted-foreground tracking-wider">#</span>
-        <span className="flex-1 text-[8px] font-bold text-muted-foreground tracking-wider">PLAYER</span>
-        <span className="w-12 text-[8px] font-bold text-muted-foreground tracking-wider text-center">DAY</span>
-        <span className="w-20 text-[8px] font-bold text-muted-foreground tracking-wider text-right">PROFIT</span>
+      <div className="sticky top-0 z-10 flex items-center h-7 px-3 border-b border-border bg-card text-2xs text-muted-foreground">
+        <span className="w-8">#</span>
+        <span className="flex-1">Player</span>
+        <span className="w-12 text-center">Day</span>
+        <span className="w-20 text-right">Profit</span>
       </div>
 
       {/* Participant Rows */}
       <div className="flex-1 overflow-y-auto rf-scrollbar" ref={scrollRef}>
         {participants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center px-4">
-            <Trophy className="w-6 h-6 text-muted-foreground/30 mb-2" />
-            <div className="text-[11px] text-muted-foreground">No participants yet</div>
-            <div className="text-[10px] text-muted-foreground/60 mt-1">Be the first to join!</div>
-          </div>
+          <p className="px-3 py-4 text-xs text-muted-foreground">Nobody has joined yet</p>
         ) : (
           participants.map((p, i) => {
             const rank = i + 1;
             const isCurrentUser = p.is_you;
-            const isPositive = p.profit >= 0;
             const isCompleted = p.status === "completed";
+            const profitTone = p.profit > 0 ? "text-up" : p.profit < 0 ? "text-down" : "text-muted-foreground";
 
             return (
               <div
                 key={p.id}
-                className={`flex items-center px-2 py-1.5 border-b border-border/30 transition-colors ${
-                  isCurrentUser
-                    ? "bg-rf-cyan/[0.06] border-l-2 border-l-rf-cyan"
-                    : "hover:bg-white/[0.02]"
-                } ${rank <= 3 ? "bg-white/[0.01]" : ""}`}
+                className={`flex items-center min-h-8 px-3 py-2 border-b border-border/60 transition-colors ${
+                  isCurrentUser ? "bg-raised rf-marker" : "hover:bg-raised/60"
+                }`}
                 data-testid={`leaderboard-row-${p.id}`}
               >
-                <div className="w-6 flex items-center justify-center shrink-0">
-                  {getRankBadge(rank)}
-                </div>
+                <div className="w-8 shrink-0">{getRankBadge(rank)}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className={`text-[11px] font-medium truncate ${
-                      isCurrentUser ? "text-rf-cyan font-bold" : "text-foreground"
-                    }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs truncate ${isCurrentUser ? "text-foreground font-medium" : "text-foreground"}`}>
                       {p.display_name}
                     </span>
                     {isCurrentUser && (
-                      <span className="text-[8px] bg-rf-cyan/20 text-rf-cyan px-1 rounded-sm font-bold">YOU</span>
+                      <span className="text-2xs text-muted-foreground shrink-0">You</span>
                     )}
                     {isCompleted && (
-                      <span className="text-[8px] bg-rf-green/20 text-rf-green px-1 rounded-sm font-bold">DONE</span>
+                      <span className="text-2xs text-muted-foreground shrink-0">Finished</span>
                     )}
                   </div>
                 </div>
                 <div className="w-12 text-center shrink-0">
-                  <span className="text-[10px] text-muted-foreground tabular-nums">
-                    {p.current_day}
-                  </span>
+                  <span className="num text-xs text-muted-foreground">{p.current_day}</span>
                 </div>
                 <div className="w-20 text-right shrink-0">
-                  <div className={`text-[10px] font-bold tabular-nums flex items-center justify-end gap-0.5 ${
-                    isPositive ? "text-rf-green" : p.profit < 0 ? "text-rf-red" : "text-muted-foreground"
-                  }`}>
-                    {isPositive && p.profit > 0 ? (
-                      <TrendingUp className="w-2.5 h-2.5" />
-                    ) : p.profit < 0 ? (
-                      <TrendingDown className="w-2.5 h-2.5" />
-                    ) : (
-                      <Minus className="w-2.5 h-2.5" />
-                    )}
-                    {formatCurrency(p.profit)}
-                  </div>
+                  <span className={`num text-xs ${profitTone}`}>{formatCurrency(p.profit)}</span>
                 </div>
               </div>
             );

@@ -1,120 +1,110 @@
-import { useState, useEffect } from "react";
-import { Newspaper, Clock, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
+import { fetchJSON } from "@/lib/finance-api";
 
 interface NewsItem {
+  id: string;
   title: string;
-  source: string;
-  time: string;
-  category: string;
-  isBreaking?: boolean;
+  publisher: string;
+  url: string;
+  publishedAt: string;
+  tickers: string[];
 }
 
 interface NewsFeedProps {
   selectedSymbol: string;
 }
 
-// Generate realistic finance news
-function generateNews(symbol: string): NewsItem[] {
-  const baseNews: NewsItem[] = [
-    { title: "Fed Minutes Signal Potential Rate Adjustments in Coming Months", source: "Reuters", time: "2m ago", category: "MACRO", isBreaking: true },
-    { title: "Treasury Yields Climb as Inflation Data Exceeds Expectations", source: "Reuters", time: "8m ago", category: "BONDS" },
-    { title: "Oil Prices Surge on OPEC+ Production Cut Extension", source: "CNBC", time: "14m ago", category: "CMDTY" },
-    { title: "Tech Sector Leads Market Rally Amid Strong Earnings Season", source: "WSJ", time: "22m ago", category: "EQUITY" },
-    { title: "China Manufacturing PMI Data Points to Economic Recovery", source: "FT", time: "31m ago", category: "GLOBAL" },
-    { title: "Semiconductor Stocks Jump on AI Demand Forecasts", source: "Barrons", time: "38m ago", category: "TECH" },
-    { title: "European Markets Close Higher on ECB Policy Signals", source: "Reuters", time: "45m ago", category: "GLOBAL" },
-    { title: "Corporate Bond Issuance Hits Record Amid Rate Uncertainty", source: "Reuters", time: "52m ago", category: "FI" },
-    { title: "Dollar Index Weakens After Mixed Employment Report", source: "FX Weekly", time: "1h ago", category: "FX" },
-    { title: "Crypto Markets Stabilize After Weekend Volatility", source: "CoinDesk", time: "1h ago", category: "CRYPTO" },
-    { title: "S&P 500 Approaches All-Time High on Broad Market Strength", source: "MarketWatch", time: "1h ago", category: "EQUITY" },
-    { title: "Bank Earnings Expected to Show Resilient Net Interest Income", source: "WSJ", time: "2h ago", category: "FIN" },
-    { title: "IPO Pipeline Grows as Market Conditions Improve", source: "Renaissance", time: "2h ago", category: "EQUITY" },
-    { title: "Gold Hits New Record as Investors Seek Safe Haven Assets", source: "Kitco", time: "2h ago", category: "CMDTY" },
-    { title: "Housing Data Shows Continued Strength in Existing Home Sales", source: "NAR", time: "3h ago", category: "ECON" },
-  ];
+const REFRESH_MS = 120_000;
 
-  const symbolNews: Record<string, NewsItem[]> = {
-    AAPL: [
-      { title: "Apple Accelerates AI Integration Across Product Line", source: "Reuters", time: "5m ago", category: "AAPL" },
-      { title: "iPhone Sales Beat Estimates in Greater China Region", source: "WSJ", time: "18m ago", category: "AAPL" },
-    ],
-    MSFT: [
-      { title: "Microsoft Azure Revenue Growth Accelerates on AI Workloads", source: "CNBC", time: "7m ago", category: "MSFT" },
-      { title: "Microsoft Copilot Enterprise Adoption Exceeds 200K Customers", source: "Reuters", time: "25m ago", category: "MSFT" },
-    ],
-    NVDA: [
-      { title: "NVIDIA Blackwell Chips See Unprecedented Demand From Hyperscalers", source: "Reuters", time: "3m ago", category: "NVDA", isBreaking: true },
-      { title: "NVIDIA Data Center Revenue Expected to Double Year-Over-Year", source: "Barrons", time: "19m ago", category: "NVDA" },
-    ],
-    TSLA: [
-      { title: "Tesla FSD V13 Rollout Begins Across North America", source: "Electrek", time: "6m ago", category: "TSLA" },
-      { title: "Tesla Energy Storage Deployments Surge in Q1", source: "Reuters", time: "28m ago", category: "TSLA" },
-    ],
-    GOOGL: [
-      { title: "Google Cloud AI Revenue Hits $10B Annual Run Rate", source: "CNBC", time: "11m ago", category: "GOOGL" },
-      { title: "Alphabet Faces New Antitrust Remedies in Search Case", source: "NYT", time: "42m ago", category: "GOOGL" },
-    ],
-  };
+type FeedState =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ready"; items: NewsItem[] };
 
-  const specificNews = symbolNews[symbol] || [];
-  return [...specificNews, ...baseNews];
+function timeAgo(iso: string, now: number): string {
+  const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }
 
+/** Real Yahoo Finance stories about the selected symbol, refreshed every two minutes. */
 export function NewsFeed({ selectedSymbol }: NewsFeedProps) {
-  const [news, setNews] = useState<NewsItem[]>([]);
+  const [state, setState] = useState<FeedState>({ status: "loading" });
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    setNews(generateNews(selectedSymbol));
+    let cancelled = false;
+    const load = async (showLoading: boolean) => {
+      if (showLoading) setState({ status: "loading" });
+      try {
+        const items = await fetchJSON<NewsItem[]>(`/api/yf/news?symbol=${encodeURIComponent(selectedSymbol)}`);
+        if (!cancelled) {
+          setState({ status: "ready", items });
+          setNow(Date.now());
+        }
+      } catch (err) {
+        console.error("News fetch failed:", err);
+        // Keep stories already on screen when a background refresh fails
+        if (!cancelled) setState(prev => (prev.status === "ready" && !showLoading ? prev : { status: "error" }));
+      }
+    };
+    load(true);
+    const interval = setInterval(() => load(false), REFRESH_MS);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [selectedSymbol]);
 
-  const getCategoryColor = (cat: string) => {
-    if (cat === "MACRO" || cat === "ECON") return "text-rf-yellow";
-    if (cat === "EQUITY" || cat === "TECH") return "text-rf-green";
-    if (cat === "FX" || cat === "CRYPTO") return "text-rf-cyan";
-    if (cat === "CMDTY") return "text-rf-orange";
-    if (cat === "BONDS" || cat === "FI" || cat === "FIN") return "text-rf-blue";
-    if (cat === "GLOBAL") return "text-muted-foreground";
-    return "text-rf-orange"; // ticker-specific
-  };
-
   return (
-    <div className="rf-panel flex flex-col h-full" data-testid="news-feed">
+    <div className="rf-panel h-full" data-testid="news-feed">
       <div className="rf-panel-header">
-        <div className="flex items-center gap-1.5">
-          <Newspaper className="w-3 h-3 text-rf-orange" />
-          <span className="text-2xs font-bold text-rf-orange tracking-wider uppercase">News</span>
-        </div>
-        <span className="text-2xs text-muted-foreground">LIVE</span>
+        <span className="rf-panel-title">News</span>
+        <span className="text-2xs text-muted-foreground">
+          <span className="num">{selectedSymbol}</span> · Yahoo Finance
+        </span>
       </div>
 
       <div className="flex-1 overflow-y-auto rf-scrollbar">
-        {news.map((item, i) => (
-          <div
-            key={i}
-            className={`px-2 py-1.5 border-b border-border/50 hover:bg-white/[0.02] cursor-pointer transition-colors ${
-              item.isBreaking ? "bg-rf-red/[0.04]" : ""
-            }`}
+        {state.status === "loading" && (
+          <div className="px-3 py-3 space-y-4" aria-label="Loading news">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="space-y-2">
+                <div className="h-3 bg-raised rounded w-full" />
+                <div className="h-3 bg-raised rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {state.status === "error" && (
+          <p className="px-3 py-4 text-xs text-muted-foreground">News is unavailable right now. It retries every two minutes.</p>
+        )}
+
+        {state.status === "ready" && state.items.length === 0 && (
+          <p className="px-3 py-4 text-xs text-muted-foreground">No recent stories for <span className="num">{selectedSymbol}</span></p>
+        )}
+
+        {state.status === "ready" && state.items.map((item, i) => (
+          <a
+            key={item.id}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block px-3 py-2 border-b border-border/60 hover:bg-raised/60 transition-colors"
             data-testid={`news-item-${i}`}
           >
-            <div className="flex items-start gap-1.5">
-              {item.isBreaking && (
-                <span className="text-[9px] font-bold bg-rf-red/20 text-rf-red px-1 py-0 rounded-sm shrink-0 mt-px">
-                  ALERT
-                </span>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="text-[11px] text-foreground leading-tight line-clamp-2">{item.title}</div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className={`text-[9px] font-bold ${getCategoryColor(item.category)}`}>{item.category}</span>
-                  <span className="text-[9px] text-muted-foreground">{item.source}</span>
-                  <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                    <Clock className="w-2 h-2" />
-                    {item.time}
-                  </span>
-                </div>
-              </div>
+            <div className="text-xs text-foreground leading-snug line-clamp-2">
+              {item.title}
+              <ArrowUpRight className="inline w-3 h-3 ml-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
             </div>
-          </div>
+            <div className="flex items-center gap-2 mt-1 text-2xs text-muted-foreground">
+              <span className="truncate">{item.publisher}</span>
+              <span>·</span>
+              <span className="shrink-0">{timeAgo(item.publishedAt, now)}</span>
+            </div>
+          </a>
         ))}
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { Hono, type Context } from "hono";
 import { SYMBOL_PATTERN } from "../../shared/limits";
 import type { AppEnv } from "../app";
-import { CHART_INTERVALS, CHART_RANGES, fetchChart, fetchQuotes, searchStocks } from "../lib/yahoo";
+import { CHART_INTERVALS, CHART_RANGES, fetchChart, fetchNews, fetchQuotes, searchStocks } from "../lib/yahoo";
 
 /** Public, read-only market data from Yahoo Finance. */
 
@@ -95,6 +95,19 @@ yahooRoutes.get("/chart", async (c) => {
   } catch (err) {
     console.error("Chart error:", (err as Error)?.message || err);
     return c.json({ error: "Failed to fetch chart data" }, 502);
+  }
+});
+
+yahooRoutes.get("/news", async (c) => {
+  const symbol = (c.req.query("symbol") ?? "").trim().toUpperCase();
+  if (!symbol) return c.json({ error: "No symbol" }, 400);
+  if (!SYMBOL_PATTERN.test(symbol)) return c.json({ error: "Invalid symbol" }, 400);
+
+  try {
+    return await cachedJson(c, `/news/${symbol}`, 120, () => fetchNews(symbol));
+  } catch (err) {
+    console.error("News error:", (err as Error)?.message || err);
+    return c.json({ error: "Failed to fetch news" }, 502);
   }
 });
 

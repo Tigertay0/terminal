@@ -1,6 +1,7 @@
 import { MemoryCookieStore } from "tough-cookie";
 import YahooFinance from "yahoo-finance2";
 import { ExtendedCookieJar } from "yahoo-finance2/lib/cookieJar";
+import { SYMBOL_PATTERN } from "../../shared/limits";
 
 // Yahoo's session cookie and crumb are kept for the whole isolate, but each call
 // gets its own client. A client's request queue and in-flight crumb lookup are
@@ -24,6 +25,10 @@ const searchCacheMap = new Map<string, CacheEntry<MappedSearchResult[]>>();
 const SEARCH_TTL = 300_000;
 const chartCacheMap = new Map<string, CacheEntry<ChartBar[]>>();
 const CHART_TTL = 60_000;
+const newsCacheMap = new Map<string, CacheEntry<NewsItem[]>>();
+const NEWS_TTL = 120_000;
+const NEWS_COUNT = 12;
+const MAX_TEXT = 300;
 
 // Keys come from request input, so cap each cache to keep a warm instance's memory bounded.
 const MAX_CACHE_ENTRIES = 500;
@@ -211,6 +216,67 @@ export async function searchStocks(query: string): Promise<MappedSearchResult[]>
 
   setCached(searchCacheMap, cacheKey, mapped);
   return mapped;
+}
+
+/** The subset of yahoo-finance2's (untyped) news fields this app reads. */
+interface RawYahooNews {
+  uuid?: string;
+  title?: string;
+  publisher?: string;
+  link?: string;
+  providerPublishTime?: string | number | Date;
+  relatedTickers?: string[];
+}
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  publisher: string;
+  url: string;
+  publishedAt: string;
+  tickers: string[];
+}
+
+/** Only web links reach the page, so a story can never carry a javascript: or data: URL. */
+function safeLink(link: string | undefined): string | null {
+  if (!link) return null;
+  try {
+    const url = new URL(link);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+export function mapNews(raw: RawYahooNews[]): NewsItem[] {
+  const items: NewsItem[] = [];
+  for (const n of raw) {
+    const url = safeLink(n.link);
+    const published = n.providerPublishTime != null ? new Date(n.providerPublishTime) : null;
+    if (!n.title || !url || !published || Number.isNaN(published.getTime())) continue;
+    items.push({
+      id: n.uuid || url,
+      title: n.title.slice(0, MAX_TEXT),
+      publisher: (n.publisher || "").slice(0, MAX_TEXT),
+      url,
+      publishedAt: published.toISOString(),
+      tickers: (n.relatedTickers ?? []).filter((t) => typeof t === "string" && SYMBOL_PATTERN.test(t)).slice(0, 5),
+    });
+  }
+  return items.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+}
+
+/** Recent Yahoo Finance stories about one symbol, newest first. */
+export async function fetchNews(symbol: string): Promise<NewsItem[]> {
+  const cached = newsCacheMap.get(symbol);
+  if (cached && Date.now() - cached.ts < NEWS_TTL) return cached.data;
+
+  const result = await yahooClient().search(symbol, { quotesCount: 0, newsCount: NEWS_COUNT });
+  // yahoo-finance2's return type is untyped (yahooClient(): any); narrow at this boundary only.
+  const items = mapNews((result.news || []) as RawYahooNews[]);
+
+  setCached(newsCacheMap, symbol, items);
+  return items;
 }
 
 /** The subset of yahoo-finance2's (untyped) chart-bar fields this app reads. */

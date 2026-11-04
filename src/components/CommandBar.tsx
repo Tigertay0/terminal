@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Terminal, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 interface CommandBarProps {
   onCommand: (cmd: string) => void;
@@ -9,6 +9,7 @@ interface CommandBarProps {
 export function CommandBar({ onCommand, commandHistory }: CommandBarProps) {
   const [input, setInput] = useState("");
   const [historyIdx, setHistoryIdx] = useState(-1);
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -33,6 +34,8 @@ export function CommandBar({ onCommand, commandHistory }: CommandBarProps) {
         setHistoryIdx(-1);
         setInput("");
       }
+    } else if (e.key === "Escape") {
+      inputRef.current?.blur();
     }
   };
 
@@ -49,26 +52,30 @@ export function CommandBar({ onCommand, commandHistory }: CommandBarProps) {
   }, []);
 
   return (
-    <div className="flex items-center h-7 px-2 gap-2 bg-sidebar border-t border-border shrink-0" data-testid="command-bar">
-      <Terminal className="w-3 h-3 text-rf-orange shrink-0" />
-      <ChevronRight className="w-3 h-3 text-rf-orange shrink-0" />
+    <div className="flex items-center h-9 px-3 gap-2 bg-sidebar border-t border-border shrink-0" data-testid="command-bar">
+      <ChevronRight className="w-4 h-4 text-ink shrink-0" strokeWidth={1.5} />
       <input
         ref={inputRef}
         type="text"
         value={input}
         onChange={e => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type ticker symbol or command... (press /)"
-        className="bg-transparent text-foreground text-[11px] font-mono w-full outline-none placeholder:text-muted-foreground/50"
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder="Symbol or command"
+        aria-label="Command"
+        className="num bg-transparent text-foreground text-xs w-full outline-none placeholder:font-sans placeholder:text-muted-foreground"
         data-testid="input-command"
       />
-      <span className="text-2xs text-muted-foreground/40 shrink-0 font-mono">/</span>
-      <div className="w-px h-3 bg-border mx-1" />
-      <span
-        className="text-[9px] text-muted-foreground/30 shrink-0 whitespace-nowrap"
-      >
-        Created by Adetayo Agueh
+      <span className="flex items-center gap-1 text-2xs text-muted-foreground shrink-0">
+        {focused ? (
+          <><span className="kbd">↵</span> run <span className="kbd ml-2">↑</span> history</>
+        ) : (
+          <><span className="kbd">/</span> to type</>
+        )}
       </span>
+      <div className="w-px h-4 bg-border mx-2" />
+      <span className="text-2xs text-muted-foreground shrink-0 whitespace-nowrap">Created by Adetayo Agueh</span>
     </div>
   );
 }

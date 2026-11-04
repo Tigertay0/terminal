@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, X, LogOut, User, Home, Sun, Moon } from "lucide-react";
+import { Search, X, LogOut, Home, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/use-theme";
-import { BrandMark } from "@/components/BrandMark";
+import { Wordmark } from "@/components/BrandMark";
 
 interface SearchResult {
   symbol: string;
@@ -21,7 +21,38 @@ interface TopBarProps {
   onAuth?: () => void;
 }
 
-export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHome, onAuth }: TopBarProps) {
+const TYPE_LABEL: Record<string, string> = { EQUITY: "Stock", ETF: "ETF", INDEX: "Index", MUTUALFUND: "Fund" };
+
+const ICON = "w-4 h-4";
+const ICON_BUTTON = "h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-raised transition-colors";
+
+/** New York wall-clock parts, so the clock and market status are right in any time zone. */
+function newYorkTime(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short", month: "short", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(date);
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? "";
+  const hour = Number(get("hour")) % 24;
+  const minute = Number(get("minute"));
+  return {
+    weekday: get("weekday"),
+    date: `${get("month")} ${get("day")}`,
+    time: `${String(hour).padStart(2, "0")}:${get("minute")}:${get("second")}`,
+    minutes: hour * 60 + minute,
+  };
+}
+
+function marketStatus(weekday: string, minutes: number): { label: string; open: boolean } {
+  const isWeekday = !["Sat", "Sun"].includes(weekday);
+  if (isWeekday && minutes >= 570 && minutes < 960) return { label: "Open", open: true };
+  if (isWeekday && minutes >= 240 && minutes < 570) return { label: "Pre-market", open: false };
+  if (isWeekday && minutes >= 960 && minutes < 1200) return { label: "After hours", open: false };
+  return { label: "Closed", open: false };
+}
+
+export function TopBar({ onSearch, selectedSymbol, searchSymbols, onHome, onAuth }: TopBarProps) {
   const [time, setTime] = useState(new Date());
   const [searchValue, setSearchValue] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -96,141 +127,96 @@ export function TopBar({ onSearch, selectedSymbol, simMode, searchSymbols, onHom
     }
   };
 
-  const timeStr = time.toLocaleTimeString("en-US", { hour12: false });
-  const dateStr = time.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const day = time.getDay();
-  const totalMinutes = hours * 60 + minutes;
-  const isWeekday = day >= 1 && day <= 5;
-  const isMarketOpen = isWeekday && totalMinutes >= 570 && totalMinutes < 960;
-  const isPreMarket = isWeekday && totalMinutes >= 240 && totalMinutes < 570;
-  const isAfterHours = isWeekday && totalMinutes >= 960 && totalMinutes < 1200;
-
-  let marketStatus = "CLOSED";
-  let statusColor = "text-rf-red";
-  if (isMarketOpen) { marketStatus = "OPEN"; statusColor = "text-rf-green"; }
-  else if (isPreMarket) { marketStatus = "PRE-MKT"; statusColor = "text-rf-yellow"; }
-  else if (isAfterHours) { marketStatus = "AFTER-HRS"; statusColor = "text-rf-yellow"; }
+  const ny = newYorkTime(time);
+  const status = marketStatus(ny.weekday, ny.minutes);
 
   return (
     <div
-      className="flex items-center h-8 px-2 gap-3 border-b border-border bg-sidebar shrink-0 select-none"
+      className="flex items-center h-11 px-3 gap-4 border-b border-border bg-sidebar shrink-0 select-none"
       data-testid="topbar"
     >
-      {/* Brand mark */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <BrandMark size={20} />
-        <span className="text-rf-orange font-bold text-xs tracking-wider">ROCHAMBEAU</span>
-        {simMode && (
-          <span className="text-[9px] font-bold bg-rf-orange/20 text-rf-orange px-1.5 py-0.5 rounded-sm ml-1">SIM</span>
-        )}
-      </div>
+      <Wordmark className="shrink-0" />
 
-      <div className="w-px h-4 bg-border" />
-
-      {/* Home button */}
       {onHome && (
-        <>
-          <button
-            onClick={onHome}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-rf-orange hover:bg-rf-orange/10 transition-all"
-            title="Back to Mode Select"
-            data-testid="button-home"
-          >
-            <Home className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold tracking-wider">HOME</span>
-          </button>
-          <div className="w-px h-4 bg-border" />
-        </>
+        <button
+          onClick={onHome}
+          className="flex items-center gap-2 h-7 px-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-raised transition-colors"
+          title="Back to mode select"
+          data-testid="button-home"
+        >
+          <Home className={ICON} strokeWidth={1.5} />
+          Home
+        </button>
       )}
 
-      {/* Search bar with autocomplete */}
-      <div className="relative flex-1 max-w-md" ref={dropdownRef}>
+      {/* Search with autocomplete */}
+      <div className="relative flex-1 max-w-sm" ref={dropdownRef}>
         <form onSubmit={handleSubmit} className="flex items-center">
-          <div className="flex items-center bg-card border border-border rounded-sm px-2 h-5 w-full">
-            <Search className="w-3 h-3 text-muted-foreground shrink-0" />
+          <label className="flex items-center gap-2 h-7 w-full px-2 rounded-md bg-raised border border-border focus-within:border-ink/60 transition-colors">
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
             <input
               type="text"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
               onKeyDown={handleKeyDown}
               onFocus={() => { if (results.length > 0) setShowDropdown(true); }}
-              placeholder="Search any stock, ETF, or index..."
-              className="bg-transparent text-foreground text-[11px] font-mono pl-1.5 w-full outline-none placeholder:text-muted-foreground"
+              placeholder="Search symbols"
+              aria-label="Search symbols"
+              className="bg-transparent text-foreground text-xs w-full outline-none placeholder:text-muted-foreground"
               data-testid="input-search"
             />
             {searchValue && (
-              <button type="button" onClick={() => { setSearchValue(""); setShowDropdown(false); }} className="text-muted-foreground hover:text-foreground">
-                <X className="w-3 h-3" />
+              <button type="button" aria-label="Clear search" onClick={() => { setSearchValue(""); setShowDropdown(false); }} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-4 h-4" strokeWidth={1.5} />
               </button>
             )}
-            <span className="text-2xs text-muted-foreground shrink-0 ml-1">GO</span>
-          </div>
+          </label>
         </form>
 
-        {/* Autocomplete dropdown */}
         {showDropdown && results.length > 0 && (
-          <div className="absolute top-6 left-0 right-0 bg-card border border-border rounded-sm shadow-xl z-50 max-h-64 overflow-y-auto rf-scrollbar" data-testid="search-dropdown">
+          <div className="absolute top-9 left-0 right-0 bg-popover border border-border rounded-lg shadow-md z-50 max-h-72 overflow-y-auto rf-scrollbar p-1" data-testid="search-dropdown">
             {results.map((r, i) => (
               <button
                 key={r.symbol}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 text-left hover:bg-white/[0.04] transition-colors ${
-                  i === selectedIdx ? "bg-white/[0.06]" : ""
+                className={`w-full h-8 flex items-center justify-between gap-3 px-2 rounded-md text-left transition-colors hover:bg-raised ${
+                  i === selectedIdx ? "bg-raised" : ""
                 }`}
                 onClick={() => selectResult(r)}
                 data-testid={`search-result-${r.symbol}`}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[11px] font-bold text-rf-orange shrink-0">{r.symbol}</span>
-                  <span className="text-[11px] text-foreground truncate">{r.name}</span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <span className="text-[9px] text-muted-foreground uppercase">{r.type}</span>
-                  <span className="text-[9px] text-muted-foreground">{r.exchange}</span>
-                </div>
+                <span className="flex items-center gap-3 min-w-0">
+                  <span className="num text-xs font-medium text-foreground w-16 shrink-0">{r.symbol}</span>
+                  <span className="text-xs text-dim truncate">{r.name}</span>
+                </span>
+                <span className="text-2xs text-muted-foreground shrink-0">{TYPE_LABEL[r.type] ?? r.type} · {r.exchange}</span>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Active symbol */}
       {selectedSymbol && (
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="text-rf-orange font-bold text-xs">{selectedSymbol}</span>
-          <span className="text-2xs text-muted-foreground">Equity</span>
-        </div>
+        <span className="num text-xs font-medium text-foreground shrink-0">{selectedSymbol}</span>
       )}
 
       <div className="flex-1" />
 
-      {/* Market status */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center gap-1">
-          <div className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? "bg-rf-green" : isPreMarket || isAfterHours ? "bg-rf-yellow" : "bg-rf-red"}`} />
-          <span className={`text-2xs font-medium ${statusColor}`}>{marketStatus}</span>
-        </div>
-        <span className="text-2xs text-muted-foreground">NYSE</span>
+      <div className="flex items-center gap-2 shrink-0 text-xs" title="New York Stock Exchange regular session">
+        <span className={`w-1.5 h-1.5 rounded-full ${status.open ? "bg-up" : "bg-muted-foreground/60"}`} />
+        <span className={status.open ? "text-foreground" : "text-muted-foreground"}>{status.label}</span>
+        <span className="text-muted-foreground">NYSE</span>
       </div>
 
-      <div className="w-px h-4 bg-border" />
-
-      {/* User menu */}
-      <UserMenu onAuth={onAuth} />
-
-      <div className="w-px h-4 bg-border" />
-
-      {/* Theme toggle */}
-      <ThemeToggle />
-
-      {/* Clock */}
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-2xs text-muted-foreground">{dateStr}</span>
-        <span className="text-xs font-bold text-foreground tabular-nums">{timeStr}</span>
+      <div className="flex items-baseline gap-2 shrink-0">
+        <span className="text-xs text-muted-foreground">{ny.date}</span>
+        <span className="num text-xs text-foreground">{ny.time}</span>
         <span className="text-2xs text-muted-foreground">ET</span>
       </div>
+
+      <div className="w-px h-4 bg-border" />
+
+      <UserMenu onAuth={onAuth} />
+      <ThemeToggle />
     </div>
   );
 }
@@ -242,31 +228,26 @@ function UserMenu({ onAuth }: { onAuth?: () => void }) {
     return (
       <button
         onClick={onAuth}
-        className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-sm hover:bg-rf-orange/10 transition-all cursor-pointer"
-        title="Sign in"
+        className="h-7 px-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-raised transition-colors shrink-0"
         data-testid="button-sign-in"
       >
-        <User className="w-3 h-3 text-muted-foreground" />
-        <span className="text-2xs text-muted-foreground hover:text-rf-orange transition-colors">Guest</span>
+        Sign in
       </button>
     );
   }
-  const name = auth.displayName;
   return (
-    <div className="flex items-center gap-2 shrink-0">
-      <div className="flex items-center gap-1">
-        <div className="w-1.5 h-1.5 rounded-full bg-rf-green" />
-        <span className="text-2xs font-medium text-foreground" data-testid="text-user">{name}</span>
-      </div>
+    <div className="flex items-center gap-1 shrink-0">
+      <span className="text-xs text-dim px-1" data-testid="text-user">{auth.displayName}</span>
       <button
         onClick={() =>
           auth.logout().catch(() => toast({ title: "Could not sign out", description: "Check your connection and try again.", variant: "destructive" }))
         }
-        className="flex items-center gap-1 text-2xs text-muted-foreground hover:text-rf-orange transition-colors"
+        className={ICON_BUTTON}
         data-testid="button-logout"
         title="Sign out"
+        aria-label="Sign out"
       >
-        <LogOut className="w-3 h-3" />
+        <LogOut className={ICON} strokeWidth={1.5} />
       </button>
     </div>
   );
@@ -274,18 +255,10 @@ function UserMenu({ onAuth }: { onAuth?: () => void }) {
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
   return (
-    <button
-      onClick={toggleTheme}
-      className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-muted-foreground hover:text-rf-orange hover:bg-rf-orange/10 transition-all"
-      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      data-testid="button-theme-toggle"
-    >
-      {theme === "dark" ? (
-        <Sun className="w-3.5 h-3.5" />
-      ) : (
-        <Moon className="w-3.5 h-3.5" />
-      )}
+    <button onClick={toggleTheme} className={ICON_BUTTON} title={label} aria-label={label} data-testid="button-theme-toggle">
+      {theme === "dark" ? <Sun className={ICON} strokeWidth={1.5} /> : <Moon className={ICON} strokeWidth={1.5} />}
     </button>
   );
 }

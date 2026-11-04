@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Zap, X, ArrowRight, Clock, Trophy } from "lucide-react";
+import { X } from "lucide-react";
 import { getCurrentEvent, getEventTimeRemaining, type EventDefinition } from "@/lib/events";
 
 interface EventBannerProps {
   onJoinEvent: (event: EventDefinition) => void;
 }
+
+const VOLATILITY: Record<string, string> = { low: "Low volatility", realistic: "Realistic volatility", high: "High volatility" };
 
 export function EventBanner({ onJoinEvent }: EventBannerProps) {
   const [dismissed, setDismissed] = useState(false);
@@ -22,107 +24,42 @@ export function EventBanner({ onJoinEvent }: EventBannerProps) {
 
   if (dismissed) return null;
 
+  const facts = [
+    `${event.durationDays} trading day${event.durationDays !== 1 ? "s" : ""}`,
+    `$${event.startingCash.toLocaleString("en-US")} to start`,
+    VOLATILITY[event.variation] ?? event.variation,
+    event.allowedSymbols ? `${event.allowedSymbols.length} stocks` : "Every stock",
+  ];
+
   return (
-    <div
-      className="relative overflow-hidden rounded-sm border border-rf-cyan/30 bg-gradient-to-r from-rf-cyan/[0.08] via-rf-cyan/[0.04] to-transparent mb-6"
-      data-testid="event-banner"
-    >
-      {/* Animated glow line at top */}
-      <div
-        className="absolute top-0 left-0 right-0 h-[1px]"
-        style={{
-          background: "linear-gradient(90deg, transparent, hsl(187, 80%, 55%), transparent)",
-          animation: "eventGlow 3s ease-in-out infinite",
-        }}
-      />
+    <section className="relative rounded-lg border border-border bg-card p-5 mb-4 rf-marker" aria-label="Current event" data-testid="event-banner">
+      <button
+        onClick={() => setDismissed(true)}
+        className="absolute top-3 right-3 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-raised transition-colors"
+        aria-label="Hide event"
+        data-testid="dismiss-event-banner"
+      >
+        <X className="w-4 h-4" strokeWidth={1.5} />
+      </button>
 
-      <div className="flex items-center gap-4 px-4 py-3">
-        {/* Icon + Badge */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative">
-            <div className="w-9 h-9 rounded-sm bg-rf-cyan/15 flex items-center justify-center border border-rf-cyan/20">
-              <Trophy className="w-4.5 h-4.5 text-rf-cyan" />
-            </div>
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-rf-cyan rounded-full animate-pulse" />
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-bold tracking-[0.2em] text-rf-cyan bg-rf-cyan/15 px-1.5 py-0.5 rounded-sm border border-rf-cyan/20">
-                NEW
-              </span>
-              <span className="text-[9px] font-bold tracking-wider text-muted-foreground">
-                LIMITED TIME EVENT
-              </span>
-            </div>
-            <span className="text-sm font-bold text-foreground mt-0.5 tracking-wide">
-              {event.name}
-            </span>
-          </div>
-        </div>
-
-        {/* Description + Meta */}
-        <div className="flex-1 min-w-0 hidden sm:block">
-          <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
-            {event.description}
+      <div className="flex flex-col md:flex-row md:items-end gap-5 md:gap-8 pr-8">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground">
+            Event · ends in <span className="num text-dim">{timeLeft}</span>
           </p>
-          {event.prize && (
-            <p className="text-[9px] font-bold text-rf-orange mt-0.5 flex items-center gap-1">
-              {event.prize}
-            </p>
-          )}
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-[9px] text-muted-foreground flex items-center gap-1">
-              <Zap className="w-2.5 h-2.5 text-rf-cyan" />
-              {event.durationDays} day{event.durationDays !== 1 ? "s" : ""}
-            </span>
-            <span className="text-[9px] text-muted-foreground">
-              ${event.startingCash.toLocaleString()} start
-            </span>
-            <span className="text-[9px] text-muted-foreground capitalize">
-              {event.variation} volatility
-            </span>
-            {event.allowedSymbols && (
-              <span className="text-[9px] text-muted-foreground">
-                {event.allowedSymbols.length} stocks
-              </span>
-            )}
-          </div>
+          <h2 className="mt-2 text-base font-medium text-foreground">{event.name}</h2>
+          <p className="mt-1 text-sm text-dim">{event.description}</p>
+          <p className="mt-3 text-xs text-muted-foreground">{facts.join(" · ")}</p>
+          {event.prize && <p className="mt-1 text-xs text-dim">{event.prize}</p>}
         </div>
-
-        {/* Timer + CTA */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="text-right hidden sm:block">
-            <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-              <Clock className="w-2.5 h-2.5" />
-              <span>Ends in</span>
-            </div>
-            <span className="text-xs font-bold text-rf-cyan tabular-nums">{timeLeft}</span>
-          </div>
-          <button
-            onClick={() => onJoinEvent(event)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-sm bg-rf-cyan text-black text-xs font-bold hover:bg-rf-cyan/90 transition-all group"
-            data-testid="join-event-btn"
-          >
-            JOIN EVENT
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </button>
-          <button
-            onClick={() => setDismissed(true)}
-            className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors"
-            data-testid="dismiss-event-banner"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button
+          onClick={() => onJoinEvent(event)}
+          className="h-10 px-5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-[background-color,transform] shrink-0 self-start md:self-end"
+          data-testid="join-event-btn"
+        >
+          Join event
+        </button>
       </div>
-
-      {/* CSS animation */}
-      <style>{`
-        @keyframes eventGlow {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 1; }
-        }
-      `}</style>
-    </div>
+    </section>
   );
 }

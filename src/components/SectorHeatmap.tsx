@@ -15,55 +15,51 @@ function sectorGroup(sector: string): string {
   return sector;
 }
 
+/** Tile tint grows with the size of the move: up in green, down in red, at most 3%. */
+function heatStyle(pct: number): React.CSSProperties {
+  const strength = Math.min(Math.abs(pct) / 3, 1);
+  const alpha = 0.08 + strength * 0.32;
+  const hue = pct >= 0 ? "var(--up)" : "var(--down)";
+  return { backgroundColor: `hsl(${hue} / ${alpha.toFixed(2)})` };
+}
+
 export function SectorHeatmap({ stocks, onSelectSymbol }: SectorHeatmapProps) {
   const sectorGroups = SECTORS.map(sector => ({
     name: sector,
     stocks: stocks.filter(s => sectorGroup(s.sector) === sector),
   }));
 
-  const getHeatColor = (pct: number) => {
-    if (pct > 2) return "bg-[hsl(142,76%,20%)]";
-    if (pct > 1) return "bg-[hsl(142,76%,16%)]";
-    if (pct > 0.5) return "bg-[hsl(142,76%,13%)]";
-    if (pct > 0) return "bg-[hsl(142,76%,10%)]";
-    if (pct > -0.5) return "bg-[hsl(0,72%,12%)]";
-    if (pct > -1) return "bg-[hsl(0,72%,15%)]";
-    if (pct > -2) return "bg-[hsl(0,72%,19%)]";
-    return "bg-[hsl(0,72%,24%)]";
-  };
-
   return (
-    <div className="rf-panel flex flex-col h-full" data-testid="sector-heatmap">
+    <div className="rf-panel h-full" data-testid="sector-heatmap">
       <div className="rf-panel-header">
-        <span className="text-2xs font-bold text-rf-orange tracking-wider uppercase">Sector Map</span>
+        <span className="rf-panel-title">Sectors</span>
+        <span className="text-2xs text-muted-foreground">Average change today</span>
       </div>
-      <div className="flex-1 overflow-y-auto rf-scrollbar p-1.5 space-y-1.5">
+      <div className="flex-1 overflow-y-auto rf-scrollbar px-3 py-3 space-y-4">
         {sectorGroups.map(group => {
           const avgChg = group.stocks.length > 0
             ? group.stocks.reduce((s, st) => s + st.changesPercentage, 0) / group.stocks.length
             : 0;
-          const changeColor = getChangeColor(avgChg);
 
           return (
-            <div key={group.name}>
-              <div className="flex items-center justify-between px-1 mb-0.5">
-                <span className="text-2xs font-bold text-foreground">{group.name}</span>
-                <span className={`text-2xs tabular-nums ${changeColor}`}>{formatPercent(avgChg)}</span>
+            <div key={group.name} className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-dim">{group.name}</span>
+                <span className={`num ${getChangeColor(avgChg)}`}>{formatPercent(avgChg)}</span>
               </div>
-              <div className="flex flex-wrap gap-0.5">
+              <div className="flex flex-wrap gap-1">
                 {group.stocks.map(stock => (
-                  <div
+                  <button
                     key={stock.symbol}
                     onClick={() => onSelectSymbol(stock.symbol)}
-                    className={`${getHeatColor(stock.changesPercentage)} px-1.5 py-0.5 rounded-sm cursor-pointer hover:ring-1 hover:ring-rf-orange/30 transition-all`}
+                    style={heatStyle(stock.changesPercentage)}
+                    className="min-w-14 px-2 py-1 rounded-md text-left hover:ring-1 hover:ring-foreground/30 transition-shadow"
                     title={`${stock.symbol}: ${formatPercent(stock.changesPercentage)}`}
                     data-testid={`heat-${stock.symbol}`}
                   >
-                    <div className="text-[9px] font-bold text-foreground">{stock.symbol}</div>
-                    <div className={`text-[8px] tabular-nums ${getChangeColor(stock.changesPercentage)}`}>
-                      {formatPercent(stock.changesPercentage)}
-                    </div>
-                  </div>
+                    <div className="num text-2xs font-medium text-foreground">{stock.symbol}</div>
+                    <div className="num text-2xs text-dim">{formatPercent(stock.changesPercentage)}</div>
+                  </button>
                 ))}
               </div>
             </div>

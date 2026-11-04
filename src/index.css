@@ -2,7 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Rochambeau Finance Terminal theme */
+/*
+ * Rochambeau Finance Terminal theme.
+ * One graphite ramp with a faint warm tint, amber as the only accent,
+ * green and red only for up and down.
+ */
 :root {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
@@ -10,89 +14,75 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* Core surfaces */
-  --background: 220 15% 5%;
-  --foreground: 40 10% 85%;
-  --border: 220 10% 15%;
+  /* Surfaces, deepest to raised */
+  --sidebar: 30 3% 6%;
+  --background: 30 3% 7.5%;
+  --card: 30 3% 9%;
+  --popover: 30 3% 11%;
+  --raised: 30 3% 13%;
 
-  /* Cards / panels */
-  --card: 220 14% 7%;
-  --card-foreground: 40 10% 85%;
-  --card-border: 220 10% 12%;
+  /* Text roles */
+  --foreground: 40 8% 92%;
+  --dim: 35 4% 68%;
+  --muted-foreground: 35 3% 54%;
 
-  /* Sidebar */
-  --sidebar: 220 16% 6%;
-  --sidebar-foreground: 40 10% 85%;
-  --sidebar-border: 220 10% 13%;
-  --sidebar-primary: 36 100% 50%;
-  --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 220 12% 12%;
-  --sidebar-accent-foreground: 40 10% 85%;
-  --sidebar-ring: 36 100% 50%;
+  /* Hairlines */
+  --border: 30 3% 15%;
+  --card-border: 30 3% 15%;
+  --popover-border: 30 3% 17%;
+  --input: 30 3% 20%;
 
-  /* Popover */
-  --popover: 220 14% 9%;
-  --popover-foreground: 40 10% 85%;
-  --popover-border: 220 10% 15%;
+  --card-foreground: var(--foreground);
+  --popover-foreground: var(--foreground);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: var(--border);
 
-  /* Primary — brand amber */
+  /* Amber: the fill for the one primary action, and the ink for selection */
   --primary: 36 100% 50%;
-  --primary-foreground: 0 0% 0%;
-
-  /* Secondary */
-  --secondary: 220 12% 14%;
-  --secondary-foreground: 40 10% 85%;
-
-  /* Muted */
-  --muted: 220 10% 16%;
-  --muted-foreground: 220 8% 50%;
-
-  /* Accent */
-  --accent: 220 12% 14%;
-  --accent-foreground: 40 10% 85%;
-
-  /* Destructive */
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 98%;
-
-  /* Input / ring */
-  --input: 220 10% 22%;
+  --primary-foreground: 30 20% 6%;
+  --ink: 36 100% 52%;
   --ring: 36 100% 50%;
 
-  /* Chart colors */
-  --chart-1: 36 100% 50%;
-  --chart-2: 142 76% 36%;
-  --chart-3: 0 72% 51%;
-  --chart-4: 199 89% 48%;
-  --chart-5: 262 83% 58%;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--raised);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-ring: var(--ring);
 
-  /* Rochambeau-specific semantic colors */
-  --rf-green: 142 76% 36%;
-  --rf-red: 0 72% 51%;
-  --rf-orange: 36 100% 50%;
-  --rf-blue: 199 89% 48%;
-  --rf-yellow: 48 96% 53%;
-  --rf-cyan: 174 72% 56%;
-  --rf-panel-bg: 220 15% 8%;
-  --rf-panel-header: 220 15% 10%;
+  --secondary: var(--raised);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--raised);
+  --accent: var(--raised);
+  --accent-foreground: var(--foreground);
 
-  /* Fonts */
-  --font-sans: 'Inter', system-ui, sans-serif;
+  /* Up and down */
+  --up: 151 50% 53%;
+  --down: 358 75% 59%;
+  --destructive: var(--down);
+  --destructive-foreground: 0 0% 100%;
+
+  --chart-1: var(--primary);
+  --chart-2: var(--up);
+  --chart-3: var(--down);
+  --chart-4: 35 3% 54%;
+  --chart-5: 35 3% 36%;
+
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
   --font-serif: Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
 
-  --radius: .375rem;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --radius: .5rem;
   --spacing: 0.25rem;
 
-  /* Shadows — minimal for terminal aesthetic */
-  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.25);
-  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.30);
-  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.30), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
-  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.30), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
-  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.30), 0px 2px 4px -2px hsl(0 0% 0% / 0.20);
-  --shadow-lg: 0px 8px 10px -1px hsl(0 0% 0% / 0.30), 0px 4px 6px -2px hsl(0 0% 0% / 0.20);
-  --shadow-xl: 0px 16px 20px -2px hsl(0 0% 0% / 0.30), 0px 8px 10px -3px hsl(0 0% 0% / 0.20);
-  --shadow-2xl: 0px 24px 48px -12px hsl(0 0% 0% / 0.50);
+  --shadow-2xs: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-md: 0 8px 24px hsl(0 0% 0% / 0.35);
+  --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.4);
+  --shadow-xl: 0 16px 40px hsl(0 0% 0% / 0.45);
+  --shadow-2xl: 0 24px 48px hsl(0 0% 0% / 0.5);
   --tracking-normal: 0em;
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
@@ -104,97 +94,42 @@
   --destructive-border: hsl(var(--destructive));
 }
 
-/* Light mode theme */
 .light {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
-  --opaque-button-border-intensity: 9;
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .06);
 
-  /* Core surfaces */
-  --background: 40 20% 97%;
-  --foreground: 220 15% 15%;
-  --border: 220 10% 85%;
-
-  /* Cards / panels */
+  --sidebar: 40 8% 95%;
+  --background: 40 8% 97%;
   --card: 0 0% 100%;
-  --card-foreground: 220 15% 15%;
-  --card-border: 220 10% 88%;
-
-  /* Sidebar */
-  --sidebar: 40 15% 95%;
-  --sidebar-foreground: 220 15% 15%;
-  --sidebar-border: 220 10% 85%;
-  --sidebar-primary: 36 100% 45%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 40 10% 92%;
-  --sidebar-accent-foreground: 220 15% 15%;
-  --sidebar-ring: 36 100% 45%;
-
-  /* Popover */
   --popover: 0 0% 100%;
-  --popover-foreground: 220 15% 15%;
-  --popover-border: 220 10% 85%;
+  --raised: 40 6% 93%;
 
-  /* Primary — brand amber (slightly deeper for contrast on white) */
-  --primary: 36 100% 45%;
-  --primary-foreground: 0 0% 100%;
+  --foreground: 30 6% 10%;
+  --dim: 30 4% 32%;
+  --muted-foreground: 30 3% 43%;
 
-  /* Secondary */
-  --secondary: 220 12% 92%;
-  --secondary-foreground: 220 15% 15%;
+  --border: 30 4% 88%;
+  --card-border: 30 4% 88%;
+  --popover-border: 30 4% 85%;
+  --input: 30 4% 80%;
 
-  /* Muted */
-  --muted: 220 10% 92%;
-  --muted-foreground: 220 8% 46%;
+  /* The fill stays bright with dark text; amber used as text is darker for contrast on white */
+  --primary: 36 100% 50%;
+  --primary-foreground: 30 20% 6%;
+  --ink: 30 90% 35%;
+  --ring: 30 90% 40%;
 
-  /* Accent */
-  --accent: 220 12% 92%;
-  --accent-foreground: 220 15% 15%;
+  --up: 142 72% 29%;
+  --down: 0 72% 45%;
+  --chart-4: 30 3% 43%;
+  --chart-5: 30 3% 70%;
 
-  /* Destructive */
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
-
-  /* Input / ring */
-  --input: 220 10% 82%;
-  --ring: 36 100% 45%;
-
-  /* Chart colors */
-  --chart-1: 36 100% 45%;
-  --chart-2: 142 76% 30%;
-  --chart-3: 0 72% 48%;
-  --chart-4: 199 89% 42%;
-  --chart-5: 262 83% 50%;
-
-  /* Rochambeau-specific semantic colors */
-  --rf-green: 142 76% 30%;
-  --rf-red: 0 72% 48%;
-  --rf-orange: 36 100% 45%;
-  --rf-blue: 199 89% 42%;
-  --rf-yellow: 48 96% 42%;
-  --rf-cyan: 174 72% 38%;
-  --rf-panel-bg: 40 15% 96%;
-  --rf-panel-header: 40 12% 93%;
-
-  /* Shadows — softer for light mode */
-  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.08);
-  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.08), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
-  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.08), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
-  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.08), 0px 2px 4px -2px hsl(0 0% 0% / 0.05);
-  --shadow-lg: 0px 8px 10px -1px hsl(0 0% 0% / 0.08), 0px 4px 6px -2px hsl(0 0% 0% / 0.05);
-  --shadow-xl: 0px 16px 20px -2px hsl(0 0% 0% / 0.10), 0px 8px 10px -3px hsl(0 0% 0% / 0.05);
-  --shadow-2xl: 0px 24px 48px -12px hsl(0 0% 0% / 0.15);
-
-  --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
-  --primary-border: hsl(var(--primary));
-  --secondary-border: hsl(var(--secondary));
-  --muted-border: hsl(var(--muted));
-  --accent-border: hsl(var(--accent));
-  --destructive-border: hsl(var(--destructive));
+  --shadow-md: 0 8px 24px hsl(0 0% 0% / 0.06);
+  --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.08);
+  --shadow-xl: 0 16px 40px hsl(0 0% 0% / 0.08);
+  --shadow-2xl: 0 24px 48px hsl(0 0% 0% / 0.12);
 }
 
 @layer base {
@@ -209,16 +144,19 @@
   }
 
   body {
-    @apply font-mono antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground;
     font-variant-numeric: tabular-nums lining-nums;
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 1px;
   }
 }
 
-/* Rochambeau-specific utilities */
 @layer utilities {
-  /* Hide ugly search cancel button */
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
   }
@@ -230,69 +168,83 @@
     pointer-events: none;
   }
 
+  /* A terminal pane: flat surface, hairline edge */
   .rf-panel {
-    @apply bg-[hsl(var(--rf-panel-bg))] border border-[hsl(var(--border))] rounded-sm;
+    @apply bg-card flex flex-col min-h-0;
   }
 
+  /* Every pane header shares one height so the grid lines up */
   .rf-panel-header {
-    @apply bg-[hsl(var(--rf-panel-header))] px-3 py-1.5 border-b border-[hsl(var(--border))] flex items-center justify-between gap-2;
+    @apply h-9 shrink-0 px-3 border-b border-border flex items-center justify-between gap-2;
   }
 
-  .rf-green { color: hsl(var(--rf-green)); }
-  .rf-red { color: hsl(var(--rf-red)); }
-  .rf-orange { color: hsl(var(--rf-orange)); }
-  .rf-blue { color: hsl(var(--rf-blue)); }
-  .rf-yellow { color: hsl(var(--rf-yellow)); }
-  .rf-cyan { color: hsl(var(--rf-cyan)); }
-
-  .rf-ticker-up {
-    @apply text-[hsl(142,76%,36%)];
-  }
-  .rf-ticker-down {
-    @apply text-[hsl(0,72%,51%)];
-  }
-  .rf-ticker-flat {
-    @apply text-[hsl(var(--muted-foreground))];
+  .rf-panel-title {
+    @apply text-xs font-medium text-foreground;
   }
 
-  /* Scrollbar styling */
+  /* Figures, symbols and clocks */
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  /* The signature: a 2px amber marker on whatever is active, and nowhere else */
+  .rf-marker {
+    box-shadow: inset 2px 0 0 hsl(var(--primary));
+  }
+  .rf-marker-b {
+    box-shadow: inset 0 -2px 0 hsl(var(--primary));
+  }
+
+  .kbd {
+    @apply inline-flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded border border-border bg-raised font-mono text-2xs text-muted-foreground leading-none;
+  }
+
+  .rf-ticker-up { color: hsl(var(--up)); }
+  .rf-ticker-down { color: hsl(var(--down)); }
+  .rf-ticker-flat { color: hsl(var(--muted-foreground)); }
+
   .rf-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   .rf-scrollbar::-webkit-scrollbar-track {
-    background: hsl(var(--background));
+    background: transparent;
   }
   .rf-scrollbar::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
-    border-radius: 3px;
+    border-radius: 4px;
+    border: 2px solid hsl(var(--card));
   }
   .rf-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
   }
 
-  /* Blinking cursor for command bar */
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
-  }
-  .rf-cursor-blink {
-    animation: blink 1s step-end infinite;
-  }
-
-  /* Number flash animation */
-  @keyframes flash-green {
-    0% { background-color: hsla(142, 76%, 36%, 0.3); }
+  /* A changed number tints briefly */
+  @keyframes flash-up {
+    0% { background-color: hsl(var(--up) / 0.18); }
     100% { background-color: transparent; }
   }
-  @keyframes flash-red {
-    0% { background-color: hsla(0, 72%, 51%, 0.3); }
+  @keyframes flash-down {
+    0% { background-color: hsl(var(--down) / 0.18); }
     100% { background-color: transparent; }
   }
   .flash-up {
-    animation: flash-green 0.6s ease-out;
+    animation: flash-up 0.6s var(--ease);
   }
   .flash-down {
-    animation: flash-red 0.6s ease-out;
+    animation: flash-down 0.6s var(--ease);
+  }
+
+  /* One entrance for a screen's main content */
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .rise-in {
+    animation: rise-in 400ms var(--ease) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rise-in, .flash-up, .flash-down { animation: none; }
   }
 }

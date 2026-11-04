@@ -1,4 +1,4 @@
-import { Trophy, TrendingUp, TrendingDown, BarChart3, Calendar, DollarSign, Target, ArrowRight, Star } from "lucide-react";
+import { useEffect } from "react";
 import type { TradeRecord, Holding } from "@/hooks/use-simulation";
 import type { TickerData } from "@/hooks/use-finance-data";
 import type { EventDefinition } from "@/lib/events";
@@ -19,27 +19,22 @@ interface EventCompleteProps {
   onGoHome: () => void;
 }
 
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  subValue?: string;
-  color?: string;
-}
-
-function StatCard({ icon, label, value, subValue, color = "text-foreground" }: StatCardProps) {
+/** One line of the tear sheet: label on the left, figure and a note on the right. */
+function SheetRow({ label, value, note, tone = "text-foreground" }: { label: string; value: string; note?: string; tone?: string }) {
   return (
-    <div className="bg-white/[0.03] border border-border/50 rounded-sm p-3">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        {icon}
-        <span className="text-[9px] font-bold text-muted-foreground tracking-wider">{label}</span>
-      </div>
-      <div className={`text-sm font-bold ${color}`}>{value}</div>
-      {subValue && <div className="text-[10px] text-muted-foreground mt-0.5">{subValue}</div>}
+    <div className="flex items-center justify-between gap-4 h-9 border-b border-border/60 last:border-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-right">
+        <span className={`num text-xs ${tone}`}>{value}</span>
+        {note && <span className="text-xs text-muted-foreground ml-2">{note}</span>}
+      </dd>
     </div>
   );
 }
 
+const signed = (n: number) => `${n >= 0 ? "+" : ""}${formatCurrency(n)}`;
+
+/** The event result, laid out like a printed tear sheet. */
 export function EventComplete({
   event,
   finalCash,
@@ -58,18 +53,13 @@ export function EventComplete({
   const profitPct = ((profit / event.startingCash) * 100).toFixed(1);
   const isPositive = profit >= 0;
 
-  // ─── Compute achievements ─────────────────────────────────────
+  // ─── Compute the recap ────────────────────────────────────────
   // Best & worst traded stock
   const stockPnL = new Map<string, number>();
   for (const trade of trades) {
-    if (trade.action === "SELL") {
-      // Find matching buys to estimate PnL
-      const current = stockPnL.get(trade.symbol) ?? 0;
-      stockPnL.set(trade.symbol, current + trade.price * trade.shares);
-    } else {
-      const current = stockPnL.get(trade.symbol) ?? 0;
-      stockPnL.set(trade.symbol, current - trade.price * trade.shares);
-    }
+    const current = stockPnL.get(trade.symbol) ?? 0;
+    const amount = trade.price * trade.shares;
+    stockPnL.set(trade.symbol, trade.action === "SELL" ? current + amount : current - amount);
   }
   // Also account for unrealized gains
   for (const [sym, holding] of holdings) {
@@ -97,159 +87,104 @@ export function EventComplete({
   }
 
   // Biggest single trade
-  let biggestTrade = trades.length > 0
+  const biggestTrade = trades.length > 0
     ? trades.reduce((max, t) => (t.price * t.shares > max.price * max.shares ? t : max), trades[0])
     : null;
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onViewLeaderboard(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onViewLeaderboard]);
+
+  const buys = trades.filter(t => t.action === "BUY").length;
+  const sells = trades.length - buys;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" data-testid="event-complete">
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-rf-cyan/40"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `float ${3 + Math.random() * 4}s ease-in-out ${Math.random() * 2}s infinite alternate`,
-            }}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" data-testid="event-complete">
+      <div role="dialog" aria-modal="true" aria-labelledby="event-complete-title" className="w-full max-w-md max-h-[90vh] overflow-y-auto rf-scrollbar rounded-lg border border-border bg-popover shadow-xl rise-in">
+        <div className="px-6 pt-6 pb-5 border-b border-border">
+          <p className="text-xs text-muted-foreground">Event finished · {event.name}</p>
+          <h2 id="event-complete-title" className={`num text-4xl mt-3 leading-none ${isPositive ? "text-up" : "text-down"}`}>
+            {signed(profit)}
+          </h2>
+          <p className="text-xs text-dim mt-2">
+            <span className="num">{isPositive ? "+" : ""}{profitPct}%</span> on a <span className="num">{formatCurrency(event.startingCash)}</span> start
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+          <div className="px-4 py-4">
+            <div className="text-2xs text-muted-foreground">Rank</div>
+            <div className="num text-lg text-foreground mt-1">{leaderboardRank > 0 ? `#${leaderboardRank}` : "—"}</div>
+            <div className="text-2xs text-muted-foreground mt-1">of <span className="num">{totalParticipants}</span> players</div>
+          </div>
+          <div className="px-4 py-4">
+            <div className="text-2xs text-muted-foreground">Final value</div>
+            <div className="num text-lg text-foreground mt-1">{formatCurrency(portfolioValue)}</div>
+          </div>
+          <div className="px-4 py-4">
+            <div className="text-2xs text-muted-foreground">Days played</div>
+            <div className="num text-lg text-foreground mt-1">{dayNumber}</div>
+            <div className="text-2xs text-muted-foreground mt-1">of <span className="num">{event.durationDays}</span></div>
+          </div>
+        </div>
+
+        <dl className="px-6 py-3 border-b border-border">
+          <SheetRow
+            label="Best stock"
+            value={bestStock.symbol}
+            note={bestStock.pnl !== 0 ? signed(bestStock.pnl) : "no gains"}
+            tone={bestStock.pnl > 0 ? "text-up" : "text-foreground"}
           />
-        ))}
-      </div>
-
-      <div className="relative w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto rounded-sm border border-rf-cyan/30 bg-background shadow-2xl shadow-rf-cyan/10">
-        {/* Header */}
-        <div className="relative px-6 pt-8 pb-6 text-center border-b border-border bg-gradient-to-b from-rf-cyan/[0.08] to-transparent">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rf-cyan/10 border-2 border-rf-cyan/30 flex items-center justify-center">
-            <Trophy className="w-8 h-8 text-rf-cyan" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground tracking-wide mb-1">EVENT COMPLETE</h2>
-          <p className="text-xs text-muted-foreground">{event.name}</p>
-
-          {/* Final Profit */}
-          <div className="mt-4 bg-white/[0.03] border border-border/50 rounded-sm p-3 inline-block">
-            <div className="text-[9px] text-muted-foreground tracking-wider mb-1">FINAL PROFIT/LOSS</div>
-            <div className={`text-2xl font-bold tabular-nums ${isPositive ? "text-rf-green" : "text-rf-red"}`}>
-              {isPositive ? "+" : ""}{formatCurrency(profit)}
-            </div>
-            <div className={`text-xs ${isPositive ? "text-rf-green/70" : "text-rf-red/70"}`}>
-              {isPositive ? "+" : ""}{profitPct}% return
-            </div>
-          </div>
-
-          {/* Prize callout */}
-          {event.prize && (
-            <div className="mt-3 bg-rf-orange/[0.08] border border-rf-orange/20 rounded-sm px-3 py-2 inline-block">
-              <p className="text-[10px] font-bold text-rf-orange">{event.prize}</p>
-            </div>
+          <SheetRow
+            label="Worst stock"
+            value={worstStock.symbol}
+            note={worstStock.pnl !== 0 ? formatCurrency(worstStock.pnl) : "no losses"}
+            tone={worstStock.pnl < 0 ? "text-down" : "text-foreground"}
+          />
+          <SheetRow
+            label="Best day"
+            value={bestDay.gain > 0 ? `Day ${bestDay.day}` : "—"}
+            note={bestDay.gain > 0 ? signed(bestDay.gain) : undefined}
+          />
+          <SheetRow label="Trades" value={`${trades.length}`} note={`${buys} buys, ${sells} sells`} />
+          {biggestTrade && (
+            <SheetRow
+              label="Biggest trade"
+              value={`${biggestTrade.action === "BUY" ? "Buy" : "Sell"} ${biggestTrade.symbol}`}
+              note={`${biggestTrade.shares} × $${biggestTrade.price.toFixed(2)}`}
+            />
           )}
-        </div>
+          <SheetRow
+            label="Cash left"
+            value={formatCurrency(finalCash)}
+            note={portfolioValue > 0 ? `${((finalCash / portfolioValue) * 100).toFixed(0)}% of portfolio` : undefined}
+          />
+        </dl>
 
-        {/* Rank */}
-        <div className="px-6 py-4 border-b border-border bg-white/[0.01]">
-          <div className="flex items-center justify-center gap-3">
-            <div className="text-center">
-              <div className="text-[9px] text-muted-foreground tracking-wider">YOUR RANK</div>
-              <div className="text-2xl font-bold text-rf-cyan">
-                #{leaderboardRank}
-              </div>
-              <div className="text-[10px] text-muted-foreground">of {totalParticipants} players</div>
-            </div>
-            <div className="w-px h-12 bg-border" />
-            <div className="text-center">
-              <div className="text-[9px] text-muted-foreground tracking-wider">FINAL VALUE</div>
-              <div className="text-lg font-bold text-foreground">{formatCurrency(portfolioValue)}</div>
-              <div className="text-[10px] text-muted-foreground">from {formatCurrency(event.startingCash)}</div>
-            </div>
-            <div className="w-px h-12 bg-border" />
-            <div className="text-center">
-              <div className="text-[9px] text-muted-foreground tracking-wider">DAYS PLAYED</div>
-              <div className="text-lg font-bold text-foreground">{dayNumber}</div>
-              <div className="text-[10px] text-muted-foreground">of {event.durationDays}</div>
-            </div>
-          </div>
-        </div>
+        {event.prize && (
+          <p className="px-6 py-3 text-xs text-dim border-b border-border">{event.prize}</p>
+        )}
 
-        {/* Achievements Grid */}
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-1.5 mb-3">
-            <Star className="w-3.5 h-3.5 text-rf-orange" />
-            <span className="text-[10px] font-bold text-rf-orange tracking-wider">ACHIEVEMENTS & RECAP</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <StatCard
-              icon={<TrendingUp className="w-3 h-3 text-rf-green" />}
-              label="BEST STOCK"
-              value={bestStock.symbol}
-              subValue={bestStock.pnl !== 0 ? `${bestStock.pnl >= 0 ? "+" : ""}${formatCurrency(bestStock.pnl)}` : "No trades"}
-              color="text-rf-green"
-            />
-            <StatCard
-              icon={<TrendingDown className="w-3 h-3 text-rf-red" />}
-              label="WORST STOCK"
-              value={worstStock.symbol}
-              subValue={worstStock.pnl !== 0 ? `${formatCurrency(worstStock.pnl)}` : "No losses"}
-              color="text-rf-red"
-            />
-            <StatCard
-              icon={<Calendar className="w-3 h-3 text-rf-cyan" />}
-              label="BEST TRADING DAY"
-              value={bestDay.gain > 0 ? `Day ${bestDay.day}` : "—"}
-              subValue={bestDay.gain > 0 ? `+${formatCurrency(bestDay.gain)} gain` : "No standout day"}
-              color="text-rf-cyan"
-            />
-            <StatCard
-              icon={<BarChart3 className="w-3 h-3 text-rf-orange" />}
-              label="TOTAL TRADES"
-              value={`${trades.length}`}
-              subValue={`${trades.filter(t => t.action === "BUY").length} buys, ${trades.filter(t => t.action === "SELL").length} sells`}
-            />
-            {biggestTrade && (
-              <StatCard
-                icon={<DollarSign className="w-3 h-3 text-foreground" />}
-                label="BIGGEST TRADE"
-                value={`${biggestTrade.action} ${biggestTrade.symbol}`}
-                subValue={`${biggestTrade.shares} shares × $${biggestTrade.price.toFixed(2)} = ${formatCurrency(biggestTrade.shares * biggestTrade.price)}`}
-              />
-            )}
-            <StatCard
-              icon={<Target className="w-3 h-3 text-foreground" />}
-              label="CASH REMAINING"
-              value={formatCurrency(finalCash)}
-              subValue={`${((finalCash / portfolioValue) * 100).toFixed(0)}% of portfolio`}
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="px-6 py-4 space-y-2">
+        <div className="px-6 py-4 flex items-center gap-2">
           <button
             onClick={onViewLeaderboard}
-            className="w-full py-2.5 bg-rf-cyan text-black font-bold text-sm rounded-sm hover:bg-rf-cyan/90 transition-colors flex items-center justify-center gap-2"
+            autoFocus
+            className="flex-1 h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-[background-color,transform]"
             data-testid="view-leaderboard-btn"
           >
-            <Trophy className="w-4 h-4" />
-            VIEW LEADERBOARD
+            View leaderboard
           </button>
           <button
             onClick={onGoHome}
-            className="w-full py-2 text-muted-foreground text-xs hover:text-foreground transition-colors flex items-center justify-center gap-1"
+            className="h-10 px-4 rounded-md text-sm text-dim hover:text-foreground hover:bg-raised transition-colors"
             data-testid="go-home-btn"
           >
-            Back to Home
-            <ArrowRight className="w-3 h-3" />
+            Back to home
           </button>
         </div>
       </div>
-
-      {/* CSS animation */}
-      <style>{`
-        @keyframes float {
-          from { transform: translateY(0px) scale(1); opacity: 0.4; }
-          to { transform: translateY(-30px) scale(1.5); opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }
