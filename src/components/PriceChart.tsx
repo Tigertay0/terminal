@@ -22,7 +22,6 @@ function readPalette() {
   return { color };
 }
 
-const BTN = "h-7 px-2 rounded-md text-xs transition-colors";
 const ZOOM_BTN =
   "h-7 w-7 flex items-center justify-center rounded-md bg-popover/90 border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-raised transition-colors";
 
@@ -402,16 +401,13 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
           <span className="num font-medium text-xs text-foreground">{symbol}</span>
           <span className="text-xs text-dim truncate max-w-40">{stock.name}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="rf-segmented" role="group" aria-label="Chart range">
           {timeRanges.map(r => (
             <button
               key={r}
+              aria-pressed={timeRange === r}
               onClick={() => setTimeRange(r)}
-              className={`${BTN} ${
-                timeRange === r
-                  ? "bg-raised text-foreground rf-marker-b"
-                  : "text-muted-foreground hover:text-foreground hover:bg-raised"
-              }`}
+              className="rf-segment"
               data-testid={`button-range-${r}`}
             >
               {r === "LIVE" ? (
