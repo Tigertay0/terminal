@@ -49,22 +49,24 @@ export function WatchlistPanel({
           return (
             <div
               key={sym}
-              role="button"
-              tabIndex={0}
-              aria-pressed={isSelected}
-              onClick={() => onSelectSymbol(sym)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelectSymbol(sym); } }}
-              className={`${ROW} text-xs cursor-pointer transition-colors group ${
+              className={`relative ${ROW} text-xs cursor-pointer transition-colors group ${
                 isSelected ? "bg-raised rf-marker" : "hover:bg-raised/60"
               }`}
               data-testid={`watchlist-item-${sym}`}
             >
+              <button
+                type="button"
+                onClick={() => onSelectSymbol(sym)}
+                aria-current={isSelected ? "true" : undefined}
+                aria-label={`Select ${sym}`}
+                className="absolute inset-0"
+              />
               <span className="flex items-center gap-1 min-w-0">
                 <span className="num font-medium text-foreground truncate">{sym}</span>
                 {onRemoveSymbol && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onRemoveSymbol(sym); }}
-                    className="ml-auto opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+                    className="relative z-10 ml-auto opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
                     aria-label={`Remove ${sym}`}
                     data-testid={`button-remove-${sym}`}
                   >

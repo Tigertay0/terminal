@@ -219,7 +219,7 @@
       color: hsl(var(--foreground));
     }
   }
-  .rf-segment[aria-pressed="true"] {
+  .rf-segment[aria-checked="true"] {
     color: hsl(var(--foreground));
     background-color: hsl(var(--seg-thumb));
     box-shadow: var(--seg-thumb-edge);

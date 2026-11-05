@@ -92,13 +92,14 @@ export function TimeControlBar({
 
       <div className="w-px h-4 bg-border" />
 
-      <div className="rf-segmented" role="group" aria-label="Market speed">
+      <div className="rf-segmented" role="radiogroup" aria-label="Market speed">
         {SPEED_BUTTONS.map(({ speed, label, title, icon: Icon }) => {
           const active = timeSpeed === speed;
           return (
             <button
               key={speed}
-              aria-pressed={active}
+              role="radio"
+              aria-checked={active}
               title={title}
               onClick={() => onSetSpeed(speed)}
               className="rf-segment"

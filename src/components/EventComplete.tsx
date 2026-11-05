@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { TradeRecord, Holding } from "@/hooks/use-simulation";
 import type { TickerData } from "@/hooks/use-finance-data";
 import type { EventDefinition } from "@/lib/events";
 import { formatWholeDollars as formatCurrency } from "@/lib/finance-api";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface EventCompleteProps {
   event: EventDefinition;
@@ -91,6 +92,9 @@ export function EventComplete({
     ? trades.reduce((max, t) => (t.price * t.shares > max.price * max.shares ? t : max), trades[0])
     : null;
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onViewLeaderboard(); };
     window.addEventListener("keydown", onKey);
@@ -102,7 +106,7 @@ export function EventComplete({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" data-testid="event-complete">
-      <div role="dialog" aria-modal="true" aria-labelledby="event-complete-title" className="w-full max-w-md max-h-[90vh] overflow-y-auto rf-scrollbar rounded-lg border border-border bg-popover shadow-xl rise-in">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="event-complete-title" className="w-full max-w-md max-h-[90vh] overflow-y-auto rf-scrollbar rounded-lg border border-border bg-popover shadow-xl rise-in">
         <div className="px-6 pt-6 pb-5 border-b border-border">
           <p className="text-xs text-muted-foreground">Event finished · {event.name}</p>
           <h2 id="event-complete-title" className={`num text-4xl mt-3 leading-none ${isPositive ? "text-up" : "text-down"}`}>

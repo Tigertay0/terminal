@@ -15,7 +15,6 @@ interface SearchResult {
 interface TopBarProps {
   onSearch: (query: string) => void;
   selectedSymbol: string;
-  simMode?: boolean;
   searchSymbols?: (query: string) => Promise<SearchResult[]>;
   onHome?: () => void;
   onAuth?: () => void;

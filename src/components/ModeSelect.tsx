@@ -59,11 +59,12 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
       >
         <fieldset>
           <legend className="text-xs text-dim mb-3">Starting cash</legend>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2" role="group" aria-label="Starting cash">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2" role="radiogroup" aria-label="Starting cash">
             {CASH_OPTIONS.map(value => (
               <button
                 key={value}
-                aria-pressed={cash === value}
+                role="radio"
+                aria-checked={cash === value}
                 onClick={() => setCash(value)}
                 className={`${OPTION} h-10 px-3 flex items-center justify-center gap-2 num text-xs ${cash === value ? OPTION_ON : OPTION_OFF}`}
                 data-testid={`cash-${value}`}
@@ -76,11 +77,12 @@ export function ModeSelect({ onSelectReal, onSelectSim, onBack, startInSettings,
 
         <fieldset className="mt-8">
           <legend className="text-xs text-dim mb-3">Market volatility</legend>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="group" aria-label="Market volatility">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Market volatility">
             {VARIATION_OPTIONS.map(opt => (
               <button
                 key={opt.value}
-                aria-pressed={variation === opt.value}
+                role="radio"
+                aria-checked={variation === opt.value}
                 onClick={() => setVariation(opt.value)}
                 className={`${OPTION} px-4 py-3 flex items-start justify-between gap-3 ${variation === opt.value ? OPTION_ON : OPTION_OFF}`}
                 data-testid={`variation-${opt.value}`}
