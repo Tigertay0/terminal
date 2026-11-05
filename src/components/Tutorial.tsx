@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   GraduationCap, ArrowRight, ArrowLeft, X, Play, ShoppingCart,
   TrendingUp, Newspaper, Clock, Wallet, CheckCircle
 } from "lucide-react";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface TutorialProps {
   onComplete: () => void;
@@ -71,6 +72,8 @@ export function Tutorial({ onComplete }: TutorialProps) {
   const current = STEPS[step];
   const Icon = current.icon;
   const isLast = step === STEPS.length - 1;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onComplete(); };
@@ -83,7 +86,7 @@ export function Tutorial({ onComplete }: TutorialProps) {
       <div className="fixed inset-0 bg-black/60 z-40" />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" data-testid="tutorial-overlay">
-        <div role="dialog" aria-modal="true" aria-labelledby="tutorial-title" className="w-full max-w-md bg-popover border border-border rounded-lg shadow-xl rise-in overflow-hidden">
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="tutorial-title" className="w-full max-w-md bg-popover border border-border rounded-lg shadow-xl rise-in overflow-hidden">
           <div className="flex items-center justify-between h-11 px-4 border-b border-border">
             <span className="text-xs text-dim">
               Walkthrough <span className="num text-muted-foreground ml-2">{step + 1} of {STEPS.length}</span>

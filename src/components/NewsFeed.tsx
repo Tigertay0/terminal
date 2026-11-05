@@ -20,7 +20,7 @@ const REFRESH_MS = 120_000;
 type FeedState =
   | { status: "loading" }
   | { status: "error" }
-  | { status: "ready"; items: NewsItem[] };
+  | { status: "ready"; items: NewsItem[]; stale: boolean };
 
 function timeAgo(iso: string, now: number): string {
   const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
@@ -29,6 +29,16 @@ function timeAgo(iso: string, now: number): string {
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.round(hours / 24)}d ago`;
+}
+
+/** Only http(s) links reach <a href>; the worker already filters this, checked again here in case the payload is ever tampered with in transit. */
+function safeHref(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? url : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Real Yahoo Finance stories about the selected symbol, refreshed every two minutes. */
@@ -43,13 +53,15 @@ export function NewsFeed({ selectedSymbol }: NewsFeedProps) {
       try {
         const items = await fetchJSON<NewsItem[]>(`/api/yf/news?symbol=${encodeURIComponent(selectedSymbol)}`);
         if (!cancelled) {
-          setState({ status: "ready", items });
+          setState({ status: "ready", items, stale: false });
           setNow(Date.now());
         }
       } catch (err) {
         console.error("News fetch failed:", err);
-        // Keep stories already on screen when a background refresh fails
-        if (!cancelled) setState(prev => (prev.status === "ready" && !showLoading ? prev : { status: "error" }));
+        // Keep stories already on screen when a background refresh fails, but flag them as stale
+        if (!cancelled) {
+          setState(prev => (prev.status === "ready" && !showLoading ? { ...prev, stale: true } : { status: "error" }));
+        }
       }
     };
     load(true);
@@ -63,6 +75,7 @@ export function NewsFeed({ selectedSymbol }: NewsFeedProps) {
         <span className="rf-panel-title">News</span>
         <span className="text-2xs text-muted-foreground">
           <span className="num">{selectedSymbol}</span> · Yahoo Finance
+          {state.status === "ready" && state.stale && " · Updates paused"}
         </span>
       </div>
 
@@ -89,7 +102,7 @@ export function NewsFeed({ selectedSymbol }: NewsFeedProps) {
         {state.status === "ready" && state.items.map((item, i) => (
           <a
             key={item.id}
-            href={item.url}
+            href={safeHref(item.url)}
             target="_blank"
             rel="noopener noreferrer"
             className="group block px-3 py-2 border-b border-border/60 hover:bg-raised/60 transition-colors"

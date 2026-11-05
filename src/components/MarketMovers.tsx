@@ -25,12 +25,13 @@ export function MarketMovers({ gainers, losers, active, onSelectSymbol }: Market
 
   return (
     <div className="rf-panel h-full" data-testid="market-movers">
-      <div className="rf-panel-header px-1" role="group" aria-label="Movers list">
+      <div className="rf-panel-header px-1" role="tablist" aria-label="Movers list">
         <div className="flex h-full">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
-              aria-pressed={tab === key}
+              role="tab"
+              aria-selected={tab === key}
               onClick={() => setTab(key)}
               className={`px-3 text-xs font-medium transition-colors ${
                 tab === key ? "text-foreground rf-marker-b" : "text-muted-foreground hover:text-foreground"

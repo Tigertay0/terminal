@@ -401,11 +401,12 @@ export function PriceChart({ symbol, stock, historicalData, intradayTicks }: Pri
           <span className="num font-medium text-xs text-foreground">{symbol}</span>
           <span className="text-xs text-dim truncate max-w-40">{stock.name}</span>
         </div>
-        <div className="rf-segmented" role="group" aria-label="Chart range">
+        <div className="rf-segmented" role="radiogroup" aria-label="Chart range">
           {timeRanges.map(r => (
             <button
               key={r}
-              aria-pressed={timeRange === r}
+              role="radio"
+              aria-checked={timeRange === r}
               onClick={() => setTimeRange(r)}
               className="rf-segment"
               data-testid={`button-range-${r}`}

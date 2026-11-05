@@ -340,7 +340,7 @@ function SimTerminal({
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden select-none" data-testid="sim-terminal">
       {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
-      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} simMode searchSymbols={baseData.searchSymbols} onHome={onExit} onAuth={onAuth} />
+      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} searchSymbols={baseData.searchSymbols} onHome={onExit} onAuth={onAuth} />
       <TimeControlBar
         simTime={sim.simTime}
         dayNumber={sim.dayNumber}
@@ -574,7 +574,7 @@ function EventTerminal({
           onGoHome={onExit}
         />
       )}
-      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} simMode searchSymbols={baseData.searchSymbols} onHome={onExit} onAuth={onAuth} />
+      <TopBar onSearch={handleSearch} selectedSymbol={selectedSymbol} searchSymbols={baseData.searchSymbols} onHome={onExit} onAuth={onAuth} />
       <TimeControlBar
         simTime={sim.simTime}
         dayNumber={sim.dayNumber}
@@ -599,11 +599,12 @@ function EventTerminal({
         </div>
         <div className="min-h-0 flex flex-col bg-card">
           {/* Toggle tabs */}
-          <div className="flex h-9 border-b border-border shrink-0 px-1" role="group" aria-label="Side panel">
+          <div className="flex h-9 border-b border-border shrink-0 px-1" role="tablist" aria-label="Side panel">
             {([["leaderboard", "Leaderboard"], ["news", "News"]] as const).map(([key, label]) => (
               <button
                 key={key}
-                aria-pressed={eventPanel === key}
+                role="tab"
+                aria-selected={eventPanel === key}
                 onClick={() => setEventPanel(key)}
                 className={`px-3 text-xs font-medium transition-colors ${eventPanel === key ? "text-foreground rf-marker-b" : "text-muted-foreground hover:text-foreground"}`}
                 data-testid={`tab-${key}`}

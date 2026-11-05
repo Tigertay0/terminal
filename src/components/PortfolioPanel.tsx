@@ -137,11 +137,12 @@ export function PortfolioPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex h-9 border-b border-border shrink-0 px-1" role="group" aria-label="Portfolio views">
+      <div className="flex h-9 border-b border-border shrink-0 px-1" role="tablist" aria-label="Portfolio views">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
-            aria-pressed={tab === key}
+            role="tab"
+            aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={`px-3 text-xs font-medium transition-colors ${
               tab === key ? "text-foreground rf-marker-b" : "text-muted-foreground hover:text-foreground"
