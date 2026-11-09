@@ -18,7 +18,8 @@ import { PG, pgCode } from "../db";
  * touches.
  */
 
-const uuid = z.string().uuid();
+// Ids come from gen_random_uuid(), so the strict RFC 9562 check fits.
+const uuid = z.uuid();
 const eventKey = z.string().regex(/^[a-z0-9_-]{1,64}$/i);
 // The length is checked before any item is, so a huge array is refused cheaply.
 const symbols = z
@@ -28,10 +29,10 @@ const symbols = z
 const KB = 1024;
 /** A JSON object no bigger than `maxBytes` once serialised (stored as JSONB). */
 const jsonObject = (maxBytes: number) =>
-  z.record(z.unknown()).refine((value) => JSON.stringify(value).length <= maxBytes, "Too large");
+  z.record(z.string(), z.unknown()).refine((value) => JSON.stringify(value).length <= maxBytes, "Too large");
 const day = z.number().int().min(0).max(1_000_000);
-// Matches the CHECK on event_participants.profit.
-const profit = z.number().finite().min(-1e12).max(1e12);
+// Matches the CHECK on event_participants.profit. Zod 4 numbers already reject Infinity/NaN.
+const profit = z.number().min(-1e12).max(1e12);
 // A portfolio carries its trade history; final stats carry one snapshot per day.
 const portfolioJson = jsonObject(512 * KB);
 
@@ -41,7 +42,7 @@ const savePayload = z.object({
   portfolio: portfolioJson,
   watchlist: symbols,
   day_number: day,
-  sim_time: z.string().datetime({ offset: true }),
+  sim_time: z.iso.datetime({ offset: true }),
 });
 
 const progressPayload = z.object({
